@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "title": "Fix AC Water Leak",
+    "category": "Technician",
+    "location": "Dhanmondi, Dhaka",
+    "budget": 500,
+    "status": "in-progress",
+    "date": "2025-06-20",
+    "images": [
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg",
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg"
+    ],
+    "applicants": [
+      { "name": "Rahim Uddin", "price": 450, "rating": 4.7 },
+      { "name": "Salman Sheikh", "price": 500, "rating": 4.9 }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Install Bathroom Pipe",
+    "category": "Plumber",
+    "location": "Mirpur, Dhaka",
+    "budget": 800,
+    "status": "completed",
+    "date": "2025-06-18",
+    "images": [
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg"
+    ],
+    "applicants": [
+      { "name": "Jalal Mistri", "price": 750, "rating": 4.6 }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Washing Machine Fix",
+    "category": "Mechanic",
+    "location": "Banani, Dhaka",
+    "budget": 600,
+    "status": "active",
+    "date": "2025-06-22",
+    "images": [
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg"
+    ],
+    "applicants": []
+  },
+  {
+    "id": 4,
+    "title": "Electric Wiring Setup",
+    "category": "Electrician",
+    "location": "Uttara, Dhaka",
+    "budget": 1000,
+    "status": "active",
+    "date": "2025-06-25",
+    "images": [
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg",
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg"
+    ],
+    "applicants": [
+      { "name": "Tanvir Mahmud", "price": 950, "rating": 4.8 }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Kitchen Sink Plumbing",
+    "category": "Plumber",
+    "location": "Mohakhali, Dhaka",
+    "budget": 700,
+    "status": "completed",
+    "date": "2025-06-17",
+    "images": [
+      "https://www.realsimple.com/thmb/vX5iLDFcU2ebXER4yJv7XaTI6EQ=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-2161780422-2c0c043bcdf04315809453f6ffea281e.jpg"
+    ],
+    "applicants": [
+      { "name": "Nurul Islam", "price": 680, "rating": 4.5 },
+      { "name": "Shahid Mistri", "price": 700, "rating": 4.7 }
+    ]
+  }
+]
