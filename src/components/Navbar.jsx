@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { getAuth, signOut } from 'firebase/auth';
 
 export default function WorkerNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const auth = getAuth();
 
   // Dummy notification counts (replace with real state or context later)
   const notifCount = 2;
@@ -11,6 +14,16 @@ export default function WorkerNavbar() {
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : 'auto';
   }, [isMenuOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('✅ Logged out successfully');
+      navigate('/login'); // redirect to login page
+    } catch (error) {
+      console.error('❌ Logout failed:', error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -58,7 +71,7 @@ export default function WorkerNavbar() {
             <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-40 text-black">
               <li><Link to="/edit-profile">Edit Profile</Link></li>
               <li><Link to="/settings">Settings</Link></li>
-              <li><a href="#">Logout</a></li>
+              <li><button onClick={handleLogout} className="text-left">Logout</button></li>
             </ul>
           </div>
         </div>
@@ -121,7 +134,7 @@ export default function WorkerNavbar() {
               </div>
 
               <hr className="my-4" />
-              <a href="#" onClick={() => setIsMenuOpen(false)}>Logout</a>
+              <button onClick={handleLogout} className="text-left">Logout</button>
             </nav>
           </div>
         </>

@@ -17,6 +17,9 @@ import Applications from './routes/Applications';
 import Orders from './routes/Orders';
 import EditProfile from './routes/EditProfile';
 import JobDetails from './routes/JobDetails'; // dynamic job preview
+import WorkerLogin from './Authentication/WorkerLogin';
+import WorkerRegister from './Authentication/WorkerRegister';
+import AuthProvider from './Authentication/AuthProvider';
 
 const router = createBrowserRouter([
   {
@@ -31,12 +34,16 @@ const router = createBrowserRouter([
       { path: 'orders', element: <Orders /> },
       { path: 'edit-profile', element: <EditProfile /> },
       { path: 'job/:jobId', element: <JobDetails /> },
+      { path: 'login', element: <WorkerLogin /> },
+      { path: 'registration', element: <WorkerRegister /> },
     ],
   },
 ]);
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+       <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>
 );
