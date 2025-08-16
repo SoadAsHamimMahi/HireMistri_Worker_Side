@@ -1,87 +1,118 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { AuthContext } from '../Authentication/AuthProvider';
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 export default function WorkerNavbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const ctx = useContext(AuthContext) || {};
   const navigate = useNavigate();
   const auth = getAuth();
 
-  // Dummy notification counts (replace with real state or context later)
-  const notifCount = 2;
-  const msgCount = 1;
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [uid, setUid] = useState(ctx?.user?.uid || auth.currentUser?.uid || null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => { document.body.style.overflow = isMenuOpen ? 'hidden' : 'auto'; }, [isMenuOpen]);
+
+  useEffect(() => { setUid(ctx?.user?.uid || null); }, [ctx?.user]);
+  useEffect(() => onAuthStateChanged(auth, u => setUid(u?.uid || null)), [auth]);
 
   useEffect(() => {
-    document.body.style.overflow = isMenuOpen ? 'hidden' : 'auto';
-  }, [isMenuOpen]);
+    let ignore = false;
+    (async () => {
+      if (!uid) { setProfile(null); return; }
+      try {
+        const res = await fetch(`${API_BASE}/api/users/${uid}`);
+        if (res.ok && !ignore) setProfile(await res.json());
+      } catch { if (!ignore) setProfile(null); }
+    })();
+    return () => { ignore = true; };
+  }, [uid]);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      console.log('✅ Logged out successfully');
-      navigate('/login'); // redirect to login page
-    } catch (error) {
-      console.error('❌ Logout failed:', error);
-    }
-  };
+  const handleLogout = async () => { await signOut(auth); navigate('/login'); };
+
+  const isAuthed = !!uid;
+
+  const avatar = profile?.profileCover || ctx?.user?.photoURL || '/default-profile.png';
+  const displayName =
+    profile?.displayName ||
+    [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
+    ctx?.user?.displayName ||
+    'My Account';
+  const secondaryLine = profile?.phone || uid || '';
+
+  const notifCount = 2; // TODO wire real counts
+  const msgCount = 1;
 
   return (
     <div className="w-full">
-      {/* Top Navbar */}
       <div className="navbar bg-black text-white px-4 md:px-6 shadow-sm justify-between items-center">
-        {/* Left: Logo */}
         <Link to="/" className="text-3xl font-bold text-white">
           Hire<span className="text-green-500">Mistri</span>
         </Link>
 
-        {/* Desktop Menu */}
+        {/* Desktop */}
         <div className="hidden lg:flex items-center gap-4 text-sm">
-          <NavLink to="/dashboard" className="hover:text-green-400">Dashboard</NavLink>
           <NavLink to="/jobs" className="hover:text-green-400">Find Jobs</NavLink>
-          <NavLink to="/applications" className="hover:text-green-400">Applications</NavLink>
-          <NavLink to="/orders" className="hover:text-green-400">Orders</NavLink>
 
-          {/* Notifications */}
-          <div className="indicator">
-            <button className="btn btn-ghost btn-circle text-lg">
-              <i className="far fa-bell"></i>
-            </button>
-            {notifCount > 0 && (
-              <span className="badge badge-sm badge-error indicator-item">{notifCount}</span>
-            )}
-          </div>
+          {isAuthed ? (
+            <>
+              <NavLink to="/dashboard" className="hover:text-green-400">Dashboard</NavLink>
+              <NavLink to="/applications" className="hover:text-green-400">Applications</NavLink>
+              <NavLink to="/orders" className="hover:text-green-400">Orders</NavLink>
 
-          {/* Messages */}
-          <div className="indicator">
-            <button className="btn btn-ghost btn-circle text-lg">
-              <i className="far fa-envelope"></i>
-            </button>
-            {msgCount > 0 && (
-              <span className="badge badge-sm badge-primary indicator-item">{msgCount}</span>
-            )}
-          </div>
-
-          {/* Profile Dropdown */}
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-              <div className="w-8 rounded-full">
-                <img src="https://i.pravatar.cc/100?img=5" alt="User" />
+              {/* notifications */}
+              <div className="indicator">
+                <button className="btn btn-ghost btn-circle text-lg">
+                  <i className="far fa-bell"></i>
+                </button>
+                {notifCount > 0 && <span className="badge badge-sm badge-error indicator-item">{notifCount}</span>}
               </div>
+              {/* messages */}
+              <div className="indicator">
+                <button className="btn btn-ghost btn-circle text-lg">
+                  <i className="far fa-envelope"></i>
+                </button>
+                {msgCount > 0 && <span className="badge badge-sm badge-primary indicator-item">{msgCount}</span>}
+              </div>
+
+              {/* profile */}
+              <div className="dropdown dropdown-end">
+                <div tabIndex={0} role="button" className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/10">
+                  <div className="avatar">
+                    <div className="w-8 h-8 rounded-full ring ring-white/20 ring-offset-2 overflow-hidden">
+                      <img src={avatar} alt="User" />
+                    </div>
+                  </div>
+                  <span className="text-blue-300 hover:text-blue-200 font-semibold">{displayName}</span>
+                  <svg className="w-4 h-4 text-blue-300" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.585l3.71-3.356a.75.75 0 011.02 1.1l-4.22 3.818a.75.75 0 01-1.02 0L5.21 8.33a.75.75 0 01.02-1.12z"/></svg>
+                </div>
+                <ul tabIndex={0} className="menu dropdown-content mt-3 z-[1] p-0 shadow bg-base-100 rounded-box w-64 text-gray-800">
+                  <li className="px-4 py-3 border-b">
+                    <div className="font-semibold text-base">{displayName}</div>
+                    {secondaryLine && <div className="text-xs text-gray-500 mt-0.5">{secondaryLine}</div>}
+                  </li>
+                  <li><Link to="/edit-profile" className="py-3"><i className="far fa-user mr-3" /> My Profile</Link></li>
+                  <li><Link to="/settings" className="py-3"><i className="far fa-cog mr-3" /> Account Settings</Link></li>
+                  <li><a href="mailto:support@hiremistri.example" className="py-3"><i className="far fa-question-circle mr-3" /> Need Help?</a></li>
+                  <li className="border-t"><button onClick={handleLogout} className="py-3 text-left"><i className="far fa-sign-out-alt mr-3" /> Sign Out</button></li>
+                </ul>
+              </div>
+            </>
+          ) : (
+            // ======= Public (not logged in) =======
+            <div className="flex items-center gap-3">
+              <NavLink to="/login" className="btn btn-sm btn-ghost normal-case">Log in</NavLink>
+              <NavLink to="/register" className="btn btn-sm btn-primary normal-case">Create account</NavLink>
             </div>
-            <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-40 text-black">
-              <li><Link to="/edit-profile">Edit Profile</Link></li>
-              <li><Link to="/settings">Settings</Link></li>
-              <li><button onClick={handleLogout} className="text-left">Logout</button></li>
-            </ul>
-          </div>
+          )}
         </div>
 
-        {/* Mobile Hamburger */}
+        {/* Mobile hamburger */}
         <div className="lg:hidden">
-          <button
-            className="btn btn-ghost btn-circle"
-            onClick={() => setIsMenuOpen(true)}
-          >
+          <button className="btn btn-ghost btn-circle" onClick={() => setIsMenuOpen(true)}>
             <i className="fas fa-bars text-white text-xl"></i>
           </button>
         </div>
@@ -90,51 +121,43 @@ export default function WorkerNavbar() {
       {/* Mobile Drawer */}
       {isMenuOpen && (
         <>
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-            onClick={() => setIsMenuOpen(false)}
-          />
-
-          <div className="fixed top-0 right-0 w-4/5 h-full bg-white text-black z-50 px-6 py-6 overflow-y-auto animate-fadeSlideIn rounded-l-xl shadow-lg">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={() => setIsMenuOpen(false)} />
+          <div className="fixed top-0 right-0 w-4/5 h-full bg-white text-black z-50 px-6 py-6 overflow-y-auto rounded-l-xl shadow-lg">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://i.pravatar.cc/100?img=5"
-                  alt="User"
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="font-semibold">Rakib Hossain</div>
-              </div>
+              {isAuthed ? (
+                <div className="flex items-center gap-3">
+                  <img src={avatar} alt="User" className="w-10 h-10 rounded-full object-cover" />
+                  <div>
+                    <div className="font-semibold">{displayName}</div>
+                    {secondaryLine && <div className="text-xs text-gray-500">{secondaryLine}</div>}
+                  </div>
+                </div>
+              ) : (
+                <div className="font-semibold">Welcome to HireMistri</div>
+              )}
               <button className="text-xl" onClick={() => setIsMenuOpen(false)}>✕</button>
             </div>
 
             <nav className="flex flex-col gap-3 text-sm">
-              <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
               <Link to="/jobs" onClick={() => setIsMenuOpen(false)}>Find Jobs</Link>
-              <Link to="/applications" onClick={() => setIsMenuOpen(false)}>Applications</Link>
-              <Link to="/orders" onClick={() => setIsMenuOpen(false)}>My Orders</Link>
-              <Link to="/edit-profile" onClick={() => setIsMenuOpen(false)}>Profile</Link>
 
-              {/* Notifications */}
-              <div className="flex items-center gap-2 mt-2">
-                <i className="far fa-bell"></i>
-                <span className="text-sm">Notifications</span>
-                {notifCount > 0 && (
-                  <span className="badge badge-sm badge-error ml-auto">{notifCount}</span>
-                )}
-              </div>
-
-              {/* Messages */}
-              <div className="flex items-center gap-2">
-                <i className="far fa-envelope"></i>
-                <span className="text-sm">Messages</span>
-                {msgCount > 0 && (
-                  <span className="badge badge-sm badge-primary ml-auto">{msgCount}</span>
-                )}
-              </div>
-
-              <hr className="my-4" />
-              <button onClick={handleLogout} className="text-left">Logout</button>
+              {isAuthed ? (
+                <>
+                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                  <Link to="/applications" onClick={() => setIsMenuOpen(false)}>Applications</Link>
+                  <Link to="/orders" onClick={() => setIsMenuOpen(false)}>My Orders</Link>
+                  <Link to="/edit-profile" onClick={() => setIsMenuOpen(false)}>My Profile</Link>
+                  <Link to="/settings" onClick={() => setIsMenuOpen(false)}>Account Settings</Link>
+                  <hr className="my-4" />
+                  <button onClick={() => { setIsMenuOpen(false); handleLogout(); }} className="text-left">Sign Out</button>
+                </>
+              ) : (
+                <>
+                  <hr className="my-2" />
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)} className="btn btn-outline">Log in</Link>
+                  <Link to="/register" onClick={() => setIsMenuOpen(false)} className="btn btn-primary">Create account</Link>
+                </>
+              )}
             </nav>
           </div>
         </>

@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../Authentication/AuthProvider';
 
-const Dashboard = () => {
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+
+export default function Dashboard() {
+  const { user } = useContext(AuthContext) || {};
+  const uid = user?.uid || null;
+
   const stats = [
     { label: 'Jobs Applied', value: 6, icon: 'fas fa-briefcase' },
     { label: 'Active Orders', value: 2, icon: 'fas fa-box' },
@@ -10,55 +16,117 @@ const Dashboard = () => {
   ];
 
   const [jobData, setJobData] = useState([]);
+  const [profile, setProfile] = useState(null);
+
   const [filters, setFilters] = useState({
     category: 'All',
-    location: 'All',
+    location: 'All',     // <-- will be set to Address Line 1 when profile loads
     budget: 'All',
     applicants: 'All',
     search: '',
   });
 
+  /* Load worker profile (for Address Line 1 suggestion) */
   useEffect(() => {
-    const fetchJobs = async () => {
+    if (!uid) return;
+    (async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/browse-jobs');
-        setJobData(res.data);
+        const { data } = await axios.get(`${API_BASE}/api/users/${uid}`);
+        setProfile(data || {});
+        // Prefer Address Line 1; fall back to city; else keep 'All'
+        const suggestedLoc =
+          (data?.address1 && data.address1.trim()) ||
+          (data?.city && data.city.trim()) ||
+          'All';
+
+        if (suggestedLoc && suggestedLoc !== 'All') {
+          setFilters((prev) => ({ ...prev, location: suggestedLoc }));
+        }
+      } catch (e) {
+        console.warn('Could not load user profile for location suggestion:', e);
+      }
+    })();
+  }, [uid]);
+
+  /* Load jobs */
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/browse-jobs`);
+        setJobData(res.data || []);
       } catch (err) {
         console.error('❌ Failed to fetch browse jobs:', err);
       }
-    };
-    fetchJobs();
+    })();
   }, []);
 
-  const categories = ['All', ...new Set(jobData.map(job => job.category))];
-  const locations = ['All', ...new Set(jobData.map(job => job.location))];
+  /* Build dropdown lists */
+  const categories = useMemo(() => {
+    const set = new Set(['All']);
+    jobData.forEach((j) => j?.category && set.add(j.category));
+    return Array.from(set);
+  }, [jobData]);
 
-  const filteredJobs = jobData
-    .filter(job => job.status === 'active')
-    .filter(job => {
-      const matchCategory = filters.category === 'All' || job.category === filters.category;
-      const matchLocation = filters.location === 'All' || job.location === filters.location;
-      const matchBudget =
-        filters.budget === 'All' ||
-        (filters.budget === '0-500' && job.budget <= 500) ||
-        (filters.budget === '501-1000' && job.budget > 500 && job.budget <= 1000) ||
-        (filters.budget === '1001+' && job.budget > 1000);
-      const matchApplicants =
-        filters.applicants === 'All' ||
-        (filters.applicants === 'With' && job.applicants?.length > 0) ||
-        (filters.applicants === 'None' && (!job.applicants || job.applicants.length === 0));
-      const matchSearch =
-        filters.search.trim() === '' ||
-        job.title
-          .toLowerCase()
-          .split(/[^a-zA-Z0-9]+/)
-          .some(word => word.startsWith(filters.search.toLowerCase()));
+  // Start with unique job locations
+  const baseLocations = useMemo(() => {
+    const set = new Set(['All']);
+    jobData.forEach((j) => j?.location && set.add(j.location));
+    return Array.from(set);
+  }, [jobData]);
 
-      return matchCategory && matchLocation && matchBudget && matchApplicants && matchSearch;
-    });
+  // Ensure Address Line 1 (suggested) appears in the list so the select can show it
+  const locations = useMemo(() => {
+    const list = [...baseLocations];
+    const addr1 = (profile?.address1 || '').trim();
+    if (addr1 && !list.includes(addr1)) {
+      // Insert just after "All"
+      list.splice(1, 0, addr1);
+    }
+    return list;
+  }, [baseLocations, profile?.address1]);
+
+  /* Filtering */
+  const filteredJobs = useMemo(() => {
+    return jobData
+      .filter((job) => job.status === 'active')
+      .filter((job) => {
+        const matchCategory =
+          filters.category === 'All' || job.category === filters.category;
+
+        // Location match: if user chose their Address Line 1, treat it as
+        // "near you" and show everything (or you can keep exact match if you prefer)
+        const chosenLoc = filters.location;
+        const isAddress1 = chosenLoc && profile?.address1 && chosenLoc === profile.address1;
+
+        const matchLocation =
+          chosenLoc === 'All' ||
+          (isAddress1 ? true : job.location === chosenLoc);
+
+        const matchBudget =
+          filters.budget === 'All' ||
+          (filters.budget === '0-500' && job.budget <= 500) ||
+          (filters.budget === '501-1000' && job.budget > 500 && job.budget <= 1000) ||
+          (filters.budget === '1001+' && job.budget > 1000);
+
+        const matchApplicants =
+          filters.applicants === 'All' ||
+          (filters.applicants === 'With' && job.applicants?.length > 0) ||
+          (filters.applicants === 'None' && (!job.applicants || job.applicants.length === 0));
+
+        const q = filters.search.trim().toLowerCase();
+        const matchSearch =
+          !q ||
+          job.title
+            ?.toLowerCase()
+            .split(/[^a-z0-9]+/i)
+            .some((word) => word.startsWith(q));
+
+        return matchCategory && matchLocation && matchBudget && matchApplicants && matchSearch;
+      });
+  }, [jobData, filters, profile?.address1]);
 
   const handleChange = (type, value) => {
-    setFilters(prev => ({ ...prev, [type]: value }));
+    setFilters((prev) => ({ ...prev, [type]: value }));
   };
 
   return (
@@ -71,13 +139,10 @@ const Dashboard = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
-          >
+        {stats.map((stat, i) => (
+          <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
             <div className="flex items-center gap-4">
-              <i className={`${stat.icon} text-green-500 text-2xl`}></i>
+              <i className={`${stat.icon} text-green-500 text-2xl`} />
               <div>
                 <h4 className="text-lg font-semibold text-gray-800">{stat.value}</h4>
                 <p className="text-sm text-gray-600">{stat.label}</p>
@@ -113,20 +178,26 @@ const Dashboard = () => {
             <label className="block text-sm font-medium mb-1">Category</label>
             <select
               className="select select-bordered w-full"
+              value={filters.category}
               onChange={(e) => handleChange('category', e.target.value)}
             >
-              {categories.map(cat => <option key={cat}>{cat}</option>)}
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
           </div>
 
-          {/* Location */}
+          {/* Location (defaults to Address Line 1) */}
           <div>
             <label className="block text-sm font-medium mb-1">Location</label>
             <select
               className="select select-bordered w-full"
+              value={filters.location}
               onChange={(e) => handleChange('location', e.target.value)}
             >
-              {locations.map(loc => <option key={loc}>{loc}</option>)}
+              {locations.map((loc) => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
             </select>
           </div>
 
@@ -135,6 +206,7 @@ const Dashboard = () => {
             <label className="block text-sm font-medium mb-1">Budget</label>
             <select
               className="select select-bordered w-full"
+              value={filters.budget}
               onChange={(e) => handleChange('budget', e.target.value)}
             >
               <option value="All">All Budgets</option>
@@ -149,6 +221,7 @@ const Dashboard = () => {
             <label className="block text-sm font-medium mb-1">Applicants</label>
             <select
               className="select select-bordered w-full"
+              value={filters.applicants}
               onChange={(e) => handleChange('applicants', e.target.value)}
             >
               <option value="All">All Jobs</option>
@@ -164,32 +237,27 @@ const Dashboard = () => {
               type="text"
               placeholder="Search..."
               className="input input-bordered w-full"
+              value={filters.search}
               onChange={(e) => handleChange('search', e.target.value)}
             />
           </div>
         </div>
 
-        {/* Job Cards Grid */}
+        {/* Jobs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredJobs.map(job => {
+          {filteredJobs.map((job) => {
             const jobId =
               (typeof job._id === 'string' && job._id) ||
               (job._id && job._id.$oid) ||
               job.id;
 
             return (
-              <div
-                key={jobId}
-                className="bg-white border rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
-              >
-                {/* Job Image */}
+              <div key={jobId} className="bg-white border rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
                 <img
                   src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
                   alt={job.title}
                   className="w-full h-40 object-cover"
                 />
-
-                {/* Job Info */}
                 <div className="p-4 flex flex-col gap-2">
                   <h3 className="text-lg font-semibold text-gray-800">{job.title}</h3>
                   <p className="text-sm text-gray-600">📍 {job.location}</p>
@@ -211,7 +279,6 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {/* Updated Apply Button -> Navigates to Job Details */}
                   <Link
                     to={`/jobs/${jobId}`}
                     className="btn btn-sm bg-green-500 text-white hover:bg-green-600 mt-3 w-full text-center"
@@ -223,10 +290,7 @@ const Dashboard = () => {
             );
           })}
         </div>
-
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
