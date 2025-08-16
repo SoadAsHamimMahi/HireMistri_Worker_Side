@@ -1,9 +1,18 @@
+// src/pages/Dashboard.jsx
 import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+
+// safe, defensive tokenizer used for "near you" matching
+function tokens(s = '') {
+  return String(s || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean);
+}
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext) || {};
@@ -20,25 +29,23 @@ export default function Dashboard() {
 
   const [filters, setFilters] = useState({
     category: 'All',
-    location: 'All',     // <-- will be set to Address Line 1 when profile loads
+    location: 'All',   // will be replaced with Address Line 1 or city after profile loads
     budget: 'All',
     applicants: 'All',
     search: '',
   });
 
-  /* Load worker profile (for Address Line 1 suggestion) */
+  /* Load worker profile (to suggest Address Line 1) */
   useEffect(() => {
     if (!uid) return;
     (async () => {
       try {
         const { data } = await axios.get(`${API_BASE}/api/users/${uid}`);
         setProfile(data || {});
-        // Prefer Address Line 1; fall back to city; else keep 'All'
         const suggestedLoc =
           (data?.address1 && data.address1.trim()) ||
           (data?.city && data.city.trim()) ||
           'All';
-
         if (suggestedLoc && suggestedLoc !== 'All') {
           setFilters((prev) => ({ ...prev, location: suggestedLoc }));
         }
@@ -60,68 +67,93 @@ export default function Dashboard() {
     })();
   }, []);
 
-  /* Build dropdown lists */
+  /* Dropdown options */
   const categories = useMemo(() => {
     const set = new Set(['All']);
     jobData.forEach((j) => j?.category && set.add(j.category));
     return Array.from(set);
   }, [jobData]);
 
-  // Start with unique job locations
   const baseLocations = useMemo(() => {
     const set = new Set(['All']);
     jobData.forEach((j) => j?.location && set.add(j.location));
     return Array.from(set);
   }, [jobData]);
 
-  // Ensure Address Line 1 (suggested) appears in the list so the select can show it
+  // Ensure Address Line 1 is present in the list so <select value> can show it
   const locations = useMemo(() => {
     const list = [...baseLocations];
     const addr1 = (profile?.address1 || '').trim();
-    if (addr1 && !list.includes(addr1)) {
-      // Insert just after "All"
-      list.splice(1, 0, addr1);
-    }
+    if (addr1 && !list.includes(addr1)) list.splice(1, 0, addr1);
     return list;
   }, [baseLocations, profile?.address1]);
 
   /* Filtering */
   const filteredJobs = useMemo(() => {
+    const selectedLoc = (filters.location || '').trim();
+    const isAddr1Selected =
+      selectedLoc &&
+      profile?.address1 &&
+      selectedLoc.toLowerCase() === profile.address1.toLowerCase();
+
+    const addrTokens = isAddr1Selected ? tokens(profile.address1) : [];
+
     return jobData
-      .filter((job) => job.status === 'active')
+      .filter((job) => (job.status || 'active').toLowerCase() === 'active')
       .filter((job) => {
+        // Category
         const matchCategory =
           filters.category === 'All' || job.category === filters.category;
 
-        // Location match: if user chose their Address Line 1, treat it as
-        // "near you" and show everything (or you can keep exact match if you prefer)
-        const chosenLoc = filters.location;
-        const isAddress1 = chosenLoc && profile?.address1 && chosenLoc === profile.address1;
+        // Location
+        let matchLocation = true;
+        if (filters.location !== 'All') {
+          if (isAddr1Selected) {
+            // partial/nearby match using tokens from Address Line 1
+            const haystack = [
+              job.location,
+              job.city,
+              job.address1,
+              job.address2,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
 
-        const matchLocation =
-          chosenLoc === 'All' ||
-          (isAddress1 ? true : job.location === chosenLoc);
+            matchLocation = addrTokens.some((t) => haystack.includes(t));
+          } else {
+            // exact dropdown match (case-insensitive)
+            matchLocation =
+              (job.location || '').trim().toLowerCase() === selectedLoc.toLowerCase();
+          }
+        }
 
+        // Budget
+        const b = Number(job.budget) || 0;
         const matchBudget =
           filters.budget === 'All' ||
-          (filters.budget === '0-500' && job.budget <= 500) ||
-          (filters.budget === '501-1000' && job.budget > 500 && job.budget <= 1000) ||
-          (filters.budget === '1001+' && job.budget > 1000);
+          (filters.budget === '0-500' && b <= 500) ||
+          (filters.budget === '501-1000' && b > 500 && b <= 1000) ||
+          (filters.budget === '1001+' && b > 1000);
 
+        // Applicants
+        const apps = job.applicants?.length || 0;
         const matchApplicants =
           filters.applicants === 'All' ||
-          (filters.applicants === 'With' && job.applicants?.length > 0) ||
-          (filters.applicants === 'None' && (!job.applicants || job.applicants.length === 0));
+          (filters.applicants === 'With' && apps > 0) ||
+          (filters.applicants === 'None' && apps === 0);
 
-        const q = filters.search.trim().toLowerCase();
-        const matchSearch =
-          !q ||
-          job.title
-            ?.toLowerCase()
-            .split(/[^a-z0-9]+/i)
-            .some((word) => word.startsWith(q));
+        // Search
+        const q = (filters.search || '').trim().toLowerCase();
+        const matchSearch = !q || (job.title || '').toLowerCase().includes(q);
 
-        return matchCategory && matchLocation && matchBudget && matchApplicants && matchSearch;
+        return (
+          matchCategory &&
+          matchLocation &&
+          matchBudget &&
+          matchApplicants &&
+          matchSearch
+        );
       });
   }, [jobData, filters, profile?.address1]);
 
@@ -129,6 +161,7 @@ export default function Dashboard() {
     setFilters((prev) => ({ ...prev, [type]: value }));
   };
 
+  /* ---------- UI ---------- */
   return (
     <div className="p-6 w-5/6 mx-auto">
       {/* Greeting */}
@@ -140,7 +173,10 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
+          <div
+            key={i}
+            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
+          >
             <div className="flex items-center gap-4">
               <i className={`${stat.icon} text-green-500 text-2xl`} />
               <div>
@@ -154,10 +190,18 @@ export default function Dashboard() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <Link to="/edit-profile" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">Edit Profile</Link>
-        <Link to="/jobs" className="btn bg-green-500 text-white hover:bg-green-600">Browse Jobs</Link>
-        <Link to="/applications" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">Applications</Link>
-        <Link to="/orders" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">My Orders</Link>
+        <Link to="/edit-profile" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">
+          Edit Profile
+        </Link>
+        <Link to="/jobs" className="btn bg-green-500 text-white hover:bg-green-600">
+          Browse Jobs
+        </Link>
+        <Link to="/applications" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">
+          Applications
+        </Link>
+        <Link to="/orders" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">
+          My Orders
+        </Link>
       </div>
 
       {/* Availability Toggle */}
