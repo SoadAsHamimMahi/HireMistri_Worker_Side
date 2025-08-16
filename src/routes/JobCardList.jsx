@@ -1,63 +1,146 @@
-
-import React from 'react';
-import jobData from '../FakeData/fake_posted_jobs.json';
+import React from "react";
+import jobData from "../FakeData/fake_posted_jobs.json";
 
 const JobCardList = () => {
-  const activeJobs = jobData.filter(job => job.status === "active");
+  const activeJobs = (jobData || []).filter(
+    (j) => String(j.status || "active").toLowerCase() === "active"
+  );
+
+  const statusTone = (s) => {
+    const k = String(s || "active").toLowerCase();
+    if (k === "active") return "bg-green-100 text-green-700";
+    if (k === "in-progress") return "bg-yellow-100 text-yellow-700";
+    if (k === "completed") return "bg-blue-100 text-blue-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const FallbackImg =
+    "https://via.placeholder.com/640x400?text=No+Image";
 
   return (
-    <div className="space-y-6">
-      {activeJobs.map(job => (
-        <div
-          key={job.id}
-          className="bg-white border rounded-xl shadow-md flex flex-col md:flex-row gap-4 p-4 transition hover:shadow-lg"
-        >
-          {/* Left: Image */}
-          <div className="md:w-1/3">
-            <img
-              src={job.images[0]}
-              alt={job.title}
-              className="rounded-lg w-full h-36 object-cover"
-            />
-          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {activeJobs.map((job) => {
+        const img =
+          (Array.isArray(job.images) && job.images[0]) || FallbackImg;
+        const applicants = job.applicants || [];
 
-          {/* Right: Info */}
-          <div className="md:w-2/3 flex flex-col justify-between">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">{job.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">📍 {job.location}</p>
-                <p className="text-sm text-gray-600">📂 {job.category}</p>
-                <p className="text-sm text-gray-500">🗓️ Posted on: {job.date}</p>
+        return (
+          <div
+            key={job.id}
+            className="group bg-white border rounded-xl overflow-hidden hover:shadow-md transition"
+          >
+            {/* Image */}
+            <div className="relative">
+              <div className="aspect-[16/9] bg-base-200 overflow-hidden">
+                <img
+                  src={img}
+                  alt={job.title}
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition"
+                  loading="lazy"
+                />
               </div>
-              <span className="text-green-600 font-semibold text-sm whitespace-nowrap mt-1">
-                ৳{job.budget}
-              </span>
+
+              {/* Budget chip */}
+              {job.budget != null && (
+                <div className="absolute top-2 right-2 badge badge-success badge-outline bg-white/90">
+                  ৳{job.budget}
+                </div>
+              )}
             </div>
 
-            {/* Applicants */}
-            {job.applicants && job.applicants.length > 0 && (
-              <div className="mt-3 bg-gray-50 p-3 rounded-md border">
-                <p className="text-sm font-medium mb-2 text-gray-700">👷 Applicants:</p>
-                <ul className="text-sm space-y-1">
-                  {job.applicants.map((a, i) => (
-                    <li key={i} className="flex items-center justify-between">
-                      <span>✅ {a.name}</span>
-                      <span className="text-gray-700">৳{a.price} – ⭐ {a.rating}</span>
-                    </li>
-                  ))}
-                </ul>
+            {/* Body */}
+            <div className="p-4 flex flex-col gap-3">
+              {/* Title + status */}
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="font-semibold text-gray-900 leading-snug line-clamp-2">
+                  {job.title}
+                </h3>
+                <span
+                  className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${statusTone(
+                    job.status
+                  )}`}
+                >
+                  {job.status || "active"}
+                </span>
               </div>
-            )}
 
-            <div className="mt-4">
-              <button className="btn btn-sm bg-green-500 text-white hover:bg-green-600 px-5">
-                Apply
-              </button>
+              {/* Meta */}
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <div className="flex items-center gap-1.5">
+                  <span>📍</span>
+                  <span className="truncate">{job.location || "—"}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span>🧰</span>
+                  <span className="truncate">{job.category || "—"}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span>🗓️</span>
+                  <span className="truncate">
+                    {job.date || "—"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span>⏱️</span>
+                  <span className="truncate">
+                    {job.durationEstimateHrs
+                      ? `${job.durationEstimateHrs} hrs`
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Applicants preview */}
+              <div className="rounded-lg bg-base-100 border p-2">
+                <div className="flex items-center justify-between text-xs text-gray-700">
+                  <span className="font-medium">Applicants</span>
+                  <span className="text-gray-500">
+                    {applicants.length} total
+                  </span>
+                </div>
+
+                {applicants.length > 0 ? (
+                  <ul className="mt-1 space-y-1">
+                    {applicants.slice(0, 2).map((a, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-base-200 grid place-items-center text-[10px] font-bold">
+                            {(a.name || "?").slice(0, 1).toUpperCase()}
+                          </div>
+                          <span className="text-gray-800">
+                            {a.name || "Unknown"}
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          ৳{a.price ?? "—"} <span className="ml-1">⭐ {a.rating ?? "—"}</span>
+                        </div>
+                      </li>
+                    ))}
+                    {applicants.length > 2 && (
+                      <li className="text-[11px] text-gray-500">
+                        +{applicants.length - 2} more…
+                      </li>
+                    )}
+                  </ul>
+                ) : (
+                  <div className="text-[11px] text-gray-500 mt-1">
+                    No applicants yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <button className="btn btn-sm btn-outline">View</button>
+                <button className="btn btn-sm btn-primary">Apply</button>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

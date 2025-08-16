@@ -113,7 +113,7 @@ export default function WorkerNavbar() {
               <Link to="/jobs" onClick={() => setIsMenuOpen(false)}>Find Jobs</Link>
               <Link to="/applications" onClick={() => setIsMenuOpen(false)}>Applications</Link>
               <Link to="/orders" onClick={() => setIsMenuOpen(false)}>My Orders</Link>
-              <Link to="/edit-profile" onClick={() => setIsMenuOpen(false)}>Edit Profile</Link>
+              <Link to="/edit-profile" onClick={() => setIsMenuOpen(false)}>Profile</Link>
 
               {/* Notifications */}
               <div className="flex items-center gap-2 mt-2">

@@ -1,158 +1,319 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   BriefcaseIcon,
   MapPinIcon,
   CalendarDaysIcon,
   CurrencyBangladeshiIcon,
+  FunnelIcon,
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
+import { AuthContext } from '../Authentication/AuthProvider';
 
-const WORKER_ID = 'user001'; // update to logged-in user id when needed
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
-const statusColors = {
-  Pending: 'badge-warning',
-  Accepted: 'badge-success',
-  Completed: 'badge-primary',
-  Rejected: 'badge-error',
+const STATUS_TONES = {
+  pending:  'badge-ghost',
+  accepted: 'badge-success',
+  completed:'badge-primary',
+  rejected: 'badge-error',
 };
 
-const Applications = () => {
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+}
+
+export default function Applications() {
+  const { user } = useContext(AuthContext) || {};
+  const [authReady, setAuthReady] = useState(Boolean(user));
+  useEffect(() => { setAuthReady(true); }, [user]);
+
   const [applications, setApplications] = useState([]);
-  const [filteredApps, setFilteredApps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  // filters
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false); // mobile toggle
 
+  // fetch apps (worker's) and merge job fields
   useEffect(() => {
-    const fetchApplicationsWithJobs = async () => {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/applications/${WORKER_ID}`);
-        const apps = res.data;
+    if (!authReady) return;
+    if (!user?.uid) { setLoading(false); setApplications([]); return; } // not signed in
 
-        const jobRequests = apps.map(app =>
-          axios
-            .get(`http://localhost:5000/api/jobs/${app.jobId}`)
-            .then(res => res.data)
-            .catch(err => {
-              console.warn(`❌ Job not found for ${app.jobId}`);
-              return null;
-            })
+    let ignore = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr('');
+
+        // 1) worker's applications
+        const { data: apps } = await axios.get(`${API_BASE}/api/applications/${user.uid}`);
+
+        // 2) fetch jobs for each application (try browse-jobs then jobs)
+        const jobs = await Promise.all(
+          (apps || []).map(async (app) => {
+            const id = app.jobId;
+            try {
+              const { data } = await axios.get(`${API_BASE}/api/browse-jobs/${id}`);
+              return data;
+            } catch {
+              try {
+                const { data } = await axios.get(`${API_BASE}/api/jobs/${id}`);
+                return data;
+              } catch {
+                console.warn('Job not found for', id);
+                return null;
+              }
+            }
+          })
         );
 
-        const jobs = await Promise.all(jobRequests);
+        // 3) merge shallow job fields into app cards
+        const merged = (apps || []).map((app, i) => {
+          const j = jobs[i] || {};
+          return {
+            ...app,
+            title: j.title ?? app.title,
+            location: j.location ?? app.location,
+            budget: j.budget ?? app.budget,
+            category: j.category ?? app.category,
+            createdAt: app.createdAt || app.updatedAt,
+            jobImages: j.images || [],
+          };
+        });
 
-        const merged = apps.map((app, index) => ({
-          ...app,
-          ...(jobs[index] || {}) // merge job data if available
-        }));
-
-        setApplications(merged);
-      } catch (err) {
-        console.error("❌ Failed to load applications:", err);
+        if (!ignore) setApplications(merged);
+      } catch (e) {
+        console.error('❌ Failed to load applications:', e);
+        if (!ignore) setErr('Failed to load applications');
+      } finally {
+        if (!ignore) setLoading(false);
       }
-    };
+    })();
 
-    fetchApplicationsWithJobs();
-  }, []);
+    return () => { ignore = true; };
+  }, [authReady, user?.uid]);
 
-  useEffect(() => {
-    const filtered = applications.filter(app =>
-      (statusFilter === 'All' || app.status === statusFilter) &&
-      (categoryFilter === 'All' || app.category === categoryFilter) &&
-      app.title?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredApps(filtered);
+  // dynamic categories list (includes All)
+  const categories = useMemo(() => {
+    const set = new Set(['All']);
+    applications.forEach(a => a?.category && set.add(a.category));
+    return Array.from(set);
+  }, [applications]);
+
+  // filter + search
+  const filteredApps = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return applications.filter(app => {
+      const sOK =
+        statusFilter === 'All' ||
+        (app.status && app.status.toLowerCase() === statusFilter.toLowerCase());
+      const cOK =
+        categoryFilter === 'All' ||
+        (app.category && app.category === categoryFilter);
+      const tOK = !q || (app.title || '').toLowerCase().includes(q);
+      return sOK && cOK && tOK;
+    });
   }, [applications, statusFilter, categoryFilter, searchTerm]);
 
-  const handleCancel = id => {
-    const updated = applications.filter(app => app._id !== id);
-    setApplications(updated);
+  // local handlers
+  const handleCancel = (id) => {
+    setApplications(prev => prev.filter(a => a._id !== id));
     toast.success('Application cancelled.');
   };
-
-  const handleReapply = job => {
-    toast(`Re-applied to: ${job.title}`, { icon: '🔄' });
+  const handleReapply = (job) => {
+    toast(`Re-applied to: ${job.title || 'Job'}`, { icon: '🔄' });
   };
 
   const statuses = ['All', 'Pending', 'Accepted', 'Completed', 'Rejected'];
-  const categories = ['All', 'Electrician', 'Mechanic', 'Plumber'];
 
   return (
-    <div className="flex gap-6 max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <Toaster />
 
-      {/* Filters */}
-      <aside className="w-full md:w-1/4 space-y-4">
-        <h3 className="text-lg font-semibold">🔍 Filters</h3>
-        <div>
-          <label className="block text-sm font-medium mb-1">Status</label>
-          <select className="select select-bordered w-full" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            {statuses.map(status => <option key={status}>{status}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Category</label>
-          <select className="select select-bordered w-full" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-            {categories.map(cat => <option key={cat}>{cat}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Search by Title</label>
-          <input type="text" className="input input-bordered w-full" placeholder="e.g. AC Repair"
-            value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-        </div>
-      </aside>
-
-      {/* Applications List */}
-      <main className="w-full md:w-3/4 space-y-6">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <BriefcaseIcon className="w-5 h-5" /> My Applications
+      {/* Page title + mobile filter toggle */}
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+          <BriefcaseIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+          My Applications
         </h2>
 
-        {filteredApps.length === 0 ? (
-          <p className="text-gray-500">No applications found with current filters.</p>
-        ) : (
-          filteredApps.map(app => (
-            <div key={app._id} className="card bg-base-100 shadow-lg border border-gray-200 rounded-xl">
-              <div className="flex justify-between items-start p-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-primary mb-1">{app.title || 'Untitled Job'}</h3>
-                  <div className="flex flex-col gap-1 text-sm text-gray-600">
-                    <div className="flex items-center gap-2"><MapPinIcon className="w-4 h-4" /><span>{app.location || 'N/A'}</span></div>
-                    <div className="flex items-center gap-2"><CurrencyBangladeshiIcon className="w-4 h-4" /><span>{app.budget || '৳N/A'}</span></div>
-                    <div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4" /><span>Applied on: {app.appliedAt}</span></div>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <span className="badge badge-outline">{app.category}</span>
-                    {app.startDate && <span className="badge badge-info">🎯 Starts: {app.startDate}</span>}
-                  </div>
-                </div>
+        {/* Mobile only filter button */}
+        <button
+          className="btn btn-outline btn-sm md:hidden"
+          onClick={() => setFiltersOpen(o => !o)}
+          aria-expanded={filtersOpen}
+          aria-controls="filters"
+        >
+          <FunnelIcon className="w-4 h-4 mr-1" />
+          Filters
+        </button>
+      </div>
 
-                <div className="flex flex-col items-end gap-3">
-                  <span className={`badge badge-sm ${statusColors[app.status] || 'badge-ghost'}`}>{app.status}</span>
-                  <div className="flex gap-2">
-                    {app.status === 'Pending' && <button className="btn btn-xs btn-error" onClick={() => handleCancel(app._id)}>Cancel</button>}
-                    {app.status === 'Rejected' && <button className="btn btn-xs btn-accent" onClick={() => handleReapply(app)}>Reapply</button>}
-                  </div>
-                </div>
-              </div>
+      {/* Responsive layout: 1 col on mobile, 4 cols on lg (1 sidebar + 3 content) */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Filters */}
+        <aside
+          id="filters"
+          className={`
+            space-y-4 rounded-xl border bg-white p-4
+            ${filtersOpen ? 'block' : 'hidden'}
+            md:block md:col-span-1
+          `}
+        >
+          <h3 className="text-lg font-semibold">🔍 Filters</h3>
 
-              {app.status === 'Completed' && app.review && (
-                <div className="bg-base-200 px-4 py-3 border-t">
-                  <p className="font-medium">⭐ Client Review</p>
-                  <p className="text-yellow-500">Rating: {app.review.rating} / 5.0</p>
-                  <p className="italic">“{app.review.text}”</p>
-                </div>
-              )}
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Status</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              {statuses.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Category</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+            >
+              {categories.map(cat => <option key={cat}>{cat}</option>)}
+            </select>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Search by Title</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="e.g. AC Repair"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </aside>
+
+        {/* Applications list */}
+        <main className="lg:col-span-3 space-y-4">
+          {!authReady ? (
+            <div className="text-gray-500">Checking sign-in…</div>
+          ) : loading ? (
+            <div className="text-gray-500">Loading…</div>
+          ) : err ? (
+            <div className="text-rose-600">❌ {err}</div>
+          ) : filteredApps.length === 0 ? (
+            <div className="rounded-xl border bg-white p-6 text-gray-500">
+              No applications found with current filters.
             </div>
-          ))
-        )}
-      </main>
+          ) : (
+            filteredApps.map(app => {
+              const tone = STATUS_TONES[(app.status || 'pending').toLowerCase()] || 'badge-ghost';
+              return (
+                <div
+                  key={app._id}
+                  className="card bg-white shadow-sm border rounded-xl"
+                >
+                  {/* Card body: stacks on mobile, splits on md+ */}
+                  <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    {/* Left: job summary */}
+                    <div className="min-w-0">
+                      <h3 className="text-lg sm:text-xl font-semibold text-primary mb-1 break-words">
+                        {app.title || 'Untitled Job'}
+                      </h3>
+
+                      <div className="flex flex-col gap-1 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <MapPinIcon className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{app.location || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CurrencyBangladeshiIcon className="w-4 h-4 shrink-0" />
+                          <span>
+                            {typeof app.budget === 'number'
+                              ? `৳${app.budget}`
+                              : (app.budget || '৳N/A')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CalendarDaysIcon className="w-4 h-4 shrink-0" />
+                          <span>Applied on: {fmtDate(app.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {!!app.category && (
+                          <span className="badge badge-outline">{app.category}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: status + actions (stack on mobile) */}
+                    <div className="flex md:flex-col items-center md:items-end gap-2 md:gap-3">
+                      <span className={`badge ${tone} w-auto md:self-end`}>
+                        {app.status || 'pending'}
+                      </span>
+
+                      <div className="flex flex-wrap gap-2 justify-end w-full md:w-auto">
+                        <Link
+                          to={`/jobs/${app.jobId}`}
+                          className="btn btn-sm btn-outline"
+                        >
+                          View Job
+                        </Link>
+
+                        {app.status?.toLowerCase() === 'pending' && (
+                          <button
+                            className="btn btn-sm btn-error text-white"
+                            onClick={() => handleCancel(app._id)}
+                          >
+                            Cancel
+                          </button>
+                        )}
+
+                        {app.status?.toLowerCase() === 'rejected' && (
+                          <button
+                            className="btn btn-sm btn-accent"
+                            onClick={() => handleReapply(app)}
+                          >
+                            Reapply
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Proposal snippet */}
+                  {app.proposalText && (
+                    <div className="px-4 md:px-5 pb-4 text-sm text-gray-700">
+                      <span className="text-gray-500">Your proposal:</span>
+                      <div className="mt-1 p-3 rounded bg-base-200 whitespace-pre-wrap">
+                        {app.proposalText.length > 280
+                          ? app.proposalText.slice(0, 280) + '…'
+                          : app.proposalText}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </main>
+      </div>
     </div>
   );
-};
-
-export default Applications;
+}

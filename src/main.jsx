@@ -20,6 +20,7 @@ import JobDetails from './routes/JobDetails'; // dynamic job preview
 import WorkerLogin from './Authentication/WorkerLogin';
 import WorkerRegister from './Authentication/WorkerRegister';
 import AuthProvider from './Authentication/AuthProvider';
+import WorkerJobDetails from './routes/WorkerJobDetails';
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: 'job/:jobId', element: <JobDetails /> },
       { path: 'login', element: <WorkerLogin /> },
       { path: 'registration', element: <WorkerRegister /> },
+       { path: 'jobs/:id', element: <WorkerJobDetails /> },
     ],
   },
 ]);
