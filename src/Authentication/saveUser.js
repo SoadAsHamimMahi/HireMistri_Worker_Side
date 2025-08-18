@@ -1,31 +1,40 @@
 // src/Authentication/saveUser.js
 import axios from "axios";
 
+const API_BASE =
+  (import.meta.env?.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
+
 export async function saveUserToApi(user, extra = {}) {
-  const base = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
   const uid = user?.uid;
   if (!uid) throw new Error("saveUserToApi: user.uid is missing");
 
-  const payload = {
-    uid,
-    email: user.email || "",
-    displayName: user.displayName || `${extra.firstName || ""} ${extra.lastName || ""}`.trim(),
-    firstName: extra.firstName || "",
-    lastName: extra.lastName || "",
-    phone: extra.phone || "",
-    role: extra.role || "worker",
+  const email = (user.email || "").toLowerCase();
+  const displayName =
+    (user.displayName || `${extra.firstName || ""} ${extra.lastName || ""}`).trim();
+
+  // 1) Ensure minimal record exists (idempotent)
+  await axios.post(`${API_BASE}/api/auth/sync`, { uid, email });
+
+  // 2) Update allowed fields (non-destructive upsert on server)
+  const body = {
+    email,
+    displayName,
+    firstName: (extra.firstName || "").trim(),
+    lastName: (extra.lastName || "").trim(),
+    phone: (extra.phone || "").trim(),
+    role: (extra.role || "worker").toLowerCase(),
+    // add other allowed fields here if you collect them
   };
+  await axios.patch(`${API_BASE}/api/users/${uid}`, body);
 
-  const url = `${base}/api/users/${uid}`;
-  console.log("[saveUserToApi] PUT", url, payload);   // <-- visible in console
+  // 3) Return a guaranteed user document (prevents 404 races)
+  const { data } = await axios.get(`${API_BASE}/api/users/${uid}?ensure=true`);
+  return data;
+}
 
-  try {
-    return await axios.put(url, payload);
-  } catch (err) {
-    // bubble up a helpful error
-    const status = err?.response?.status;
-    const body = err?.response?.data;
-    console.error("[saveUserToApi] failed", { url, status, body });
-    throw new Error(`HTTP ${status || "?"} calling ${url}`);
-  }
+// If you ever need to fetch a user elsewhere, use this to avoid 404s.
+export async function getUserEnsured(uid) {
+  if (!uid) throw new Error("getUserEnsured: uid is required");
+  const { data } = await axios.get(`${API_BASE}/api/users/${uid}?ensure=true`);
+  return data;
 }

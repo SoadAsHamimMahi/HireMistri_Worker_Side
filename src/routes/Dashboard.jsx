@@ -166,7 +166,7 @@ export default function Dashboard() {
     <div className="p-6 w-5/6 mx-auto">
       {/* Greeting */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Hi, Rakib! 👋</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Hi, Worker! 👋</h2>
         <p className="text-gray-600">Welcome back. Ready to find new jobs today?</p>
       </div>
 

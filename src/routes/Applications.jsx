@@ -40,10 +40,10 @@ export default function Applications() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false); // mobile toggle
 
-  // fetch apps (worker's) and merge job fields
+  // fetch apps for this worker (server already joins basic job fields)
   useEffect(() => {
     if (!authReady) return;
-    if (!user?.uid) { setLoading(false); setApplications([]); return; } // not signed in
+    if (!user?.uid) { setLoading(false); setApplications([]); return; }
 
     let ignore = false;
     (async () => {
@@ -51,45 +51,27 @@ export default function Applications() {
         setLoading(true);
         setErr('');
 
-        // 1) worker's applications
-        const { data: apps } = await axios.get(`${API_BASE}/api/applications/${user.uid}`);
-
-        // 2) fetch jobs for each application (try browse-jobs then jobs)
-        const jobs = await Promise.all(
-          (apps || []).map(async (app) => {
-            const id = app.jobId;
-            try {
-              const { data } = await axios.get(`${API_BASE}/api/browse-jobs/${id}`);
-              return data;
-            } catch {
-              try {
-                const { data } = await axios.get(`${API_BASE}/api/jobs/${id}`);
-                return data;
-              } catch {
-                console.warn('Job not found for', id);
-                return null;
-              }
-            }
-          })
-        );
-
-        // 3) merge shallow job fields into app cards
-        const merged = (apps || []).map((app, i) => {
-          const j = jobs[i] || {};
-          return {
-            ...app,
-            title: j.title ?? app.title,
-            location: j.location ?? app.location,
-            budget: j.budget ?? app.budget,
-            category: j.category ?? app.category,
-            createdAt: app.createdAt || app.updatedAt,
-            jobImages: j.images || [],
-          };
+        // ✅ correct endpoint
+        const { data } = await axios.get(`${API_BASE}/api/my-applications/${user.uid}`, {
+          headers: { Accept: 'application/json' },
         });
 
-        if (!ignore) setApplications(merged);
+        // normalize a bit for UI safety
+        const rows = Array.isArray(data) ? data : [];
+        const normalized = rows.map(a => ({
+          ...a,
+          // ensure fields exist; backend aggregation should already provide these
+          title:     a.title ?? 'Untitled Job',
+          location:  a.location ?? 'N/A',
+          budget:    a.budget ?? null,
+          category:  a.category ?? '',
+          createdAt: a.createdAt || a.updatedAt || null,
+          status:    (a.status || 'pending').toLowerCase(),
+        }));
+
+        if (!ignore) setApplications(normalized);
       } catch (e) {
-        console.error('❌ Failed to load applications:', e);
+        console.error('❌ Failed to load applications:', e?.response?.data || e.message);
         if (!ignore) setErr('Failed to load applications');
       } finally {
         if (!ignore) setLoading(false);
@@ -121,7 +103,7 @@ export default function Applications() {
     });
   }, [applications, statusFilter, categoryFilter, searchTerm]);
 
-  // local handlers
+  // local handlers (UI-only for now)
   const handleCancel = (id) => {
     setApplications(prev => prev.filter(a => a._id !== id));
     toast.success('Application cancelled.');
@@ -155,7 +137,7 @@ export default function Applications() {
         </button>
       </div>
 
-      {/* Responsive layout: 1 col on mobile, 4 cols on lg (1 sidebar + 3 content) */}
+      {/* Responsive layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filters */}
         <aside
@@ -228,7 +210,6 @@ export default function Applications() {
                   key={app._id}
                   className="card bg-white shadow-sm border rounded-xl"
                 >
-                  {/* Card body: stacks on mobile, splits on md+ */}
                   <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     {/* Left: job summary */}
                     <div className="min-w-0">
@@ -262,7 +243,7 @@ export default function Applications() {
                       </div>
                     </div>
 
-                    {/* Right: status + actions (stack on mobile) */}
+                    {/* Right: status + actions */}
                     <div className="flex md:flex-col items-center md:items-end gap-2 md:gap-3">
                       <span className={`badge ${tone} w-auto md:self-end`}>
                         {app.status || 'pending'}
@@ -317,3 +298,5 @@ export default function Applications() {
     </div>
   );
 }
+
+
