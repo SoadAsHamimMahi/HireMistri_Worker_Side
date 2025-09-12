@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
+import Pagination from '@mui/material/Pagination';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -17,6 +19,7 @@ function tokens(s = '') {
 export default function Dashboard() {
   const { user } = useContext(AuthContext) || {};
   const uid = user?.uid || null;
+  const { isDarkMode } = useDarkMode();
 
   const stats = [
     { label: 'Jobs Applied', value: 6, icon: 'fas fa-briefcase' },
@@ -26,6 +29,7 @@ export default function Dashboard() {
 
   const [jobData, setJobData] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [page, setPage] = useState(1);
 
   const [filters, setFilters] = useState({
     category: 'All',
@@ -34,6 +38,8 @@ export default function Dashboard() {
     applicants: 'All',
     search: '',
   });
+
+  const JOBS_PER_PAGE = 6; // Show 6 jobs per page in dashboard
 
   /* Load worker profile (to suggest Address Line 1) */
   useEffect(() => {
@@ -157,8 +163,16 @@ export default function Dashboard() {
       });
   }, [jobData, filters, profile?.address1]);
 
+  // Pagination logic
+  const pageCount = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
+  const paginatedJobs = useMemo(() => {
+    const startIndex = (page - 1) * JOBS_PER_PAGE;
+    return filteredJobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
+  }, [filteredJobs, page, JOBS_PER_PAGE]);
+
   const handleChange = (type, value) => {
     setFilters((prev) => ({ ...prev, [type]: value }));
+    setPage(1); // Reset to first page when filters change
   };
 
   /* ---------- UI ---------- */
@@ -166,8 +180,8 @@ export default function Dashboard() {
     <div className="p-6 w-5/6 mx-auto">
       {/* Greeting */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Hi, Worker! 👋</h2>
-        <p className="text-gray-600">Welcome back. Ready to find new jobs today?</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Hi, Worker! 👋</h2>
+        <p className="text-gray-600 dark:text-gray-300">Welcome back. Ready to find new jobs today?</p>
       </div>
 
       {/* Stats */}
@@ -175,13 +189,13 @@ export default function Dashboard() {
         {stats.map((stat, i) => (
           <div
             key={i}
-            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition"
           >
             <div className="flex items-center gap-4">
               <i className={`${stat.icon} text-green-500 text-2xl`} />
               <div>
-                <h4 className="text-lg font-semibold text-gray-800">{stat.value}</h4>
-                <p className="text-sm text-gray-600">{stat.label}</p>
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-white">{stat.value}</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{stat.label}</p>
               </div>
             </div>
           </div>
@@ -190,16 +204,16 @@ export default function Dashboard() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <Link to="/edit-profile" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">
+        <Link to="/edit-profile" className="btn btn-outline border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
           Edit Profile
         </Link>
         <Link to="/jobs" className="btn bg-green-500 text-white hover:bg-green-600">
           Browse Jobs
         </Link>
-        <Link to="/applications" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">
+        <Link to="/applications" className="btn btn-outline border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
           Applications
         </Link>
-        <Link to="/orders" className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-100">
+        <Link to="/orders" className="btn btn-outline border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
           My Orders
         </Link>
       </div>
@@ -208,18 +222,18 @@ export default function Dashboard() {
       <div className="mb-10">
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" className="toggle toggle-success" />
-          <span className="text-sm text-gray-700 font-medium">Available for work</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Available for work</span>
         </label>
       </div>
 
       {/* Filters */}
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">📢 New Jobs Near You</h3>
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">📢 New Jobs Near You</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Category</label>
             <select
               className="select select-bordered w-full"
               value={filters.category}
@@ -233,7 +247,7 @@ export default function Dashboard() {
 
           {/* Location (defaults to Address Line 1) */}
           <div>
-            <label className="block text-sm font-medium mb-1">Location</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Location</label>
             <select
               className="select select-bordered w-full"
               value={filters.location}
@@ -247,7 +261,7 @@ export default function Dashboard() {
 
           {/* Budget */}
           <div>
-            <label className="block text-sm font-medium mb-1">Budget</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Budget</label>
             <select
               className="select select-bordered w-full"
               value={filters.budget}
@@ -262,7 +276,7 @@ export default function Dashboard() {
 
           {/* Applicants */}
           <div>
-            <label className="block text-sm font-medium mb-1">Applicants</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Applicants</label>
             <select
               className="select select-bordered w-full"
               value={filters.applicants}
@@ -276,7 +290,7 @@ export default function Dashboard() {
 
           {/* Search */}
           <div className="lg:col-span-2">
-            <label className="block text-sm font-medium mb-1">Search by Title</label>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Search by Title</label>
             <input
               type="text"
               placeholder="Search..."
@@ -289,34 +303,34 @@ export default function Dashboard() {
 
         {/* Jobs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredJobs.map((job) => {
+          {paginatedJobs.map((job) => {
             const jobId =
               (typeof job._id === 'string' && job._id) ||
               (job._id && job._id.$oid) ||
               job.id;
 
             return (
-              <div key={jobId} className="bg-white border rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
+              <div key={jobId} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
                 <img
                   src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
                   alt={job.title}
                   className="w-full h-40 object-cover"
                 />
                 <div className="p-4 flex flex-col gap-2">
-                  <h3 className="text-lg font-semibold text-gray-800">{job.title}</h3>
-                  <p className="text-sm text-gray-600">📍 {job.location}</p>
-                  <p className="text-sm text-gray-600">📂 {job.category}</p>
-                  <p className="text-sm text-gray-500">🗓️ Posted on: {job.date}</p>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{job.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">📍 {job.location}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">📂 {job.category}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">🗓️ Posted on: {job.date}</p>
                   <span className="text-green-600 font-semibold text-sm">৳{job.budget}</span>
 
                   {job.applicants?.length > 0 && (
-                    <div className="mt-2 bg-gray-50 p-2 rounded-md border">
-                      <p className="text-sm font-medium text-gray-700">👷 Applicants:</p>
+                    <div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-md border dark:border-gray-600">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">👷 Applicants:</p>
                       <ul className="text-sm space-y-1">
                         {job.applicants.map((a, i) => (
                           <li key={i} className="flex justify-between">
-                            <span>✅ {a.name}</span>
-                            <span>৳{a.price} – ⭐ {a.rating}</span>
+                            <span className="text-gray-700 dark:text-gray-300">✅ {a.name}</span>
+                            <span className="text-gray-600 dark:text-gray-400">৳{a.price} – ⭐ {a.rating}</span>
                           </li>
                         ))}
                       </ul>
@@ -334,6 +348,38 @@ export default function Dashboard() {
             );
           })}
         </div>
+
+        {/* Pagination */}
+        {pageCount > 1 && (
+          <div className="flex justify-center mt-8">
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, value) => setPage(value)}
+              color="primary"
+              siblingCount={1}
+              boundaryCount={1}
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: isDarkMode ? 'white' : 'rgba(0, 0, 0, 0.87)',
+                  '&.Mui-selected': {
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#059669',
+                    },
+                  },
+                  '&:hover': {
+                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)',
+                  },
+                },
+                '& .MuiPaginationItem-icon': {
+                  color: isDarkMode ? 'white' : 'rgba(0, 0, 0, 0.87)',
+                },
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

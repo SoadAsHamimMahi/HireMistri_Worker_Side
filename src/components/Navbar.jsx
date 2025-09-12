@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { AuthContext } from '../Authentication/AuthProvider';
+import DarkModeToggle from './DarkModeToggle';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -48,20 +49,59 @@ export default function WorkerNavbar() {
 
   return (
     <div className="w-full">
-      <div className="navbar bg-black text-white px-4 md:px-6 shadow-sm justify-between items-center">
+      <div className="navbar bg-black dark:bg-gray-900 text-white px-4 md:px-6 shadow-sm justify-between items-center">
         <Link to="/" className="text-3xl font-bold text-white">
           Hire<span className="text-green-500">Mistri</span>
         </Link>
 
         {/* Desktop */}
         <div className="hidden lg:flex items-center gap-4 text-sm">
-          <NavLink to="/jobs" className="hover:text-green-400">Find Jobs</NavLink>
+          <NavLink 
+            to="/jobs" 
+            className={({ isActive }) => 
+              `hover:text-green-400 transition-colors duration-200 ${
+                isActive ? 'text-green-400 font-semibold' : 'text-white'
+              }`
+            }
+          >
+            Find Jobs
+          </NavLink>
+          
+          {/* Dark Mode Toggle */}
+          <DarkModeToggle />
 
           {isAuthed ? (
             <>
-              <NavLink to="/dashboard" className="hover:text-green-400">Dashboard</NavLink>
-              <NavLink to="/applications" className="hover:text-green-400">Applications</NavLink>
-              <NavLink to="/orders" className="hover:text-green-400">Orders</NavLink>
+              <NavLink 
+                to="/dashboard" 
+                className={({ isActive }) => 
+                  `hover:text-green-400 transition-colors duration-200 ${
+                    isActive ? 'text-green-400 font-semibold' : 'text-white'
+                  }`
+                }
+              >
+                Dashboard
+              </NavLink>
+              <NavLink 
+                to="/applications" 
+                className={({ isActive }) => 
+                  `hover:text-green-400 transition-colors duration-200 ${
+                    isActive ? 'text-green-400 font-semibold' : 'text-white'
+                  }`
+                }
+              >
+                Applications
+              </NavLink>
+              <NavLink 
+                to="/orders" 
+                className={({ isActive }) => 
+                  `hover:text-green-400 transition-colors duration-200 ${
+                    isActive ? 'text-green-400 font-semibold' : 'text-white'
+                  }`
+                }
+              >
+                Orders
+              </NavLink>
 
               {/* notifications */}
               <div className="indicator">
@@ -111,7 +151,8 @@ export default function WorkerNavbar() {
         </div>
 
         {/* Mobile hamburger */}
-        <div className="lg:hidden">
+        <div className="lg:hidden flex items-center gap-2">
+          <DarkModeToggle />
           <button className="btn btn-ghost btn-circle" onClick={() => setIsMenuOpen(true)}>
             <i className="fas fa-bars text-white text-xl"></i>
           </button>
@@ -122,7 +163,7 @@ export default function WorkerNavbar() {
       {isMenuOpen && (
         <>
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onClick={() => setIsMenuOpen(false)} />
-          <div className="fixed top-0 right-0 w-4/5 h-full bg-white text-black z-50 px-6 py-6 overflow-y-auto rounded-l-xl shadow-lg">
+          <div className="fixed top-0 right-0 w-4/5 h-full bg-white dark:bg-gray-800 text-black dark:text-white z-50 px-6 py-6 overflow-y-auto rounded-l-xl shadow-lg">
             <div className="flex items-center justify-between mb-6">
               {isAuthed ? (
                 <div className="flex items-center gap-3">
@@ -139,23 +180,83 @@ export default function WorkerNavbar() {
             </div>
 
             <nav className="flex flex-col gap-3 text-sm">
-              <Link to="/jobs" onClick={() => setIsMenuOpen(false)}>Find Jobs</Link>
+              <NavLink 
+                to="/jobs" 
+                onClick={() => setIsMenuOpen(false)}
+                className={({ isActive }) => 
+                  `hover:text-green-500 transition-colors duration-200 ${
+                    isActive ? 'text-green-500 font-semibold' : 'text-gray-700 dark:text-gray-300'
+                  }`
+                }
+              >
+                Find Jobs
+              </NavLink>
 
               {isAuthed ? (
                 <>
-                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-                  <Link to="/applications" onClick={() => setIsMenuOpen(false)}>Applications</Link>
-                  <Link to="/orders" onClick={() => setIsMenuOpen(false)}>My Orders</Link>
-                  <Link to="/edit-profile" onClick={() => setIsMenuOpen(false)}>My Profile</Link>
-                  <Link to="/settings" onClick={() => setIsMenuOpen(false)}>Account Settings</Link>
+                  <NavLink 
+                    to="/dashboard" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) => 
+                      `hover:text-green-500 transition-colors duration-200 ${
+                        isActive ? 'text-green-500 font-semibold' : 'text-gray-700 dark:text-gray-300'
+                      }`
+                    }
+                  >
+                    Dashboard
+                  </NavLink>
+                  <NavLink 
+                    to="/applications" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) => 
+                      `hover:text-green-500 transition-colors duration-200 ${
+                        isActive ? 'text-green-500 font-semibold' : 'text-gray-700 dark:text-gray-300'
+                      }`
+                    }
+                  >
+                    Applications
+                  </NavLink>
+                  <NavLink 
+                    to="/orders" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) => 
+                      `hover:text-green-500 transition-colors duration-200 ${
+                        isActive ? 'text-green-500 font-semibold' : 'text-gray-700 dark:text-gray-300'
+                      }`
+                    }
+                  >
+                    My Orders
+                  </NavLink>
+                  <NavLink 
+                    to="/edit-profile" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) => 
+                      `hover:text-green-500 transition-colors duration-200 ${
+                        isActive ? 'text-green-500 font-semibold' : 'text-gray-700 dark:text-gray-300'
+                      }`
+                    }
+                  >
+                    My Profile
+                  </NavLink>
+                  <NavLink 
+                    to="/settings" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) => 
+                      `hover:text-green-500 transition-colors duration-200 ${
+                        isActive ? 'text-green-500 font-semibold' : 'text-gray-700 dark:text-gray-300'
+                      }`
+                    }
+                  >
+                    Account Settings
+                  </NavLink>
                   <hr className="my-4" />
                   <button onClick={() => { setIsMenuOpen(false); handleLogout(); }} className="text-left">Sign Out</button>
                 </>
               ) : (
                 <>
                   <hr className="my-2" />
-                  <Link to="/login" onClick={() => setIsMenuOpen(false)} className="btn btn-outline">Log in</Link>
-                  <Link to="/register" onClick={() => setIsMenuOpen(false)} className="btn btn-primary">Create account</Link>
+                  <NavLink to="/login" onClick={() => setIsMenuOpen(false)} className="btn btn-outline">Log in</NavLink>
+                  <NavLink to="/register" onClick={() => setIsMenuOpen(false)} className="btn btn-primary">Create account</NavLink>
                 </>
               )}
             </nav>

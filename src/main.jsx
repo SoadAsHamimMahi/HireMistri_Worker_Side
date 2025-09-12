@@ -21,6 +21,7 @@ import WorkerLogin from './Authentication/WorkerLogin';
 import WorkerRegister from './Authentication/WorkerRegister';
 import AuthProvider from './Authentication/AuthProvider';
 import WorkerJobDetails from './routes/WorkerJobDetails';
+import { DarkModeProvider } from './contexts/DarkModeContext';
 
 const router = createBrowserRouter([
   {
@@ -44,8 +45,10 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-       <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <DarkModeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </DarkModeProvider>
   </React.StrictMode>
 );
