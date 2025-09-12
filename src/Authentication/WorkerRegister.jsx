@@ -100,15 +100,26 @@ const WorkerRegister = () => {
       if (!user) throw new Error('Google sign‑in failed.');
 
       await saveUserToApi(user, { role: 'worker' });
-      navigate('/worker/dashboard');
+      navigate('/dashboard');
     } catch (error) {
-      const status = error?.response?.status;
-      const msg =
-        error?.response?.data?.error ||
-        error?.message ||
-        'Google sign‑in failed.';
-      alert(status ? `Error ${status}: ${msg}` : msg);
       console.error('Worker google sign‑in error:', error);
+      let errorMessage = 'Google sign‑in failed.';
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-in was cancelled. Please try again.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked by browser. Please allow popups and try again.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = 'Sign-in was cancelled. Please try again.';
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with this email using a different sign-in method.';
+      } else {
+        const status = error?.response?.status;
+        const msg = error?.response?.data?.error || error?.message || 'Google sign‑in failed.';
+        errorMessage = status ? `Error ${status}: ${msg}` : msg;
+      }
+      
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -139,30 +150,44 @@ const WorkerRegister = () => {
                 type="button"
                 onClick={handleGoogle}
                 disabled={submitting}
-                className="w-full py-2 border mt-3 rounded flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3 px-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl flex items-center justify-center gap-3 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <img src={GoogleImage} alt="Google" className="w-5 h-5" />
-                Continue with Google
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {submitting ? 'Signing up...' : 'Continue with Google'}
+                </span>
               </button>
             </div>
 
-            <div className="mt-6">
-              <h3 className="inline-block px-6 py-2 mt-2 text-green-600 border rounded">
-                Worker
-              </h3>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                  Or create account with email
+                </span>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
+            <div className="mt-6">
+              <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                <i className="fas fa-briefcase text-green-600 dark:text-green-400 mr-2"></i>
+                <span className="text-green-700 dark:text-green-300 font-medium">Worker Account</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {[
-                { name: 'firstName', label: 'First Name', type: 'text' },
-                { name: 'lastName', label: 'Last Name', type: 'text' },
-                { name: 'phone', label: 'Phone', type: 'tel' },
-                { name: 'email', label: 'Email', type: 'email' },
-                { name: 'password', label: 'Password', type: 'password' },
-                { name: 'confirmPassword', label: 'Confirm Password', type: 'password' },
-              ].map(({ name, label, type }) => (
+                { name: 'firstName', label: 'First Name', type: 'text', placeholder: 'Enter your first name' },
+                { name: 'lastName', label: 'Last Name', type: 'text', placeholder: 'Enter your last name' },
+                { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter your phone number' },
+                { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter your email address' },
+                { name: 'password', label: 'Password', type: 'password', placeholder: 'Create a password' },
+                { name: 'confirmPassword', label: 'Confirm Password', type: 'password', placeholder: 'Confirm your password' },
+              ].map(({ name, label, type, placeholder }) => (
                 <div key={name}>
-                  <label className="block mb-2 text-sm text-gray-600 dark:text-gray-200">
+                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {label}
                   </label>
                   <input
@@ -170,8 +195,8 @@ const WorkerRegister = () => {
                     name={name}
                     value={form[name]}
                     onChange={handleChange}
-                    placeholder={label}
-                    className="block w-full px-5 py-3 mt-2 border rounded-lg dark:bg-gray-900 dark:text-gray-300"
+                    placeholder={placeholder}
+                    className="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-colors"
                     required
                   />
                 </div>
@@ -181,9 +206,11 @@ const WorkerRegister = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center justify-center w-full px-6 py-3 text-white bg-blue-500 rounded-lg hover:bg-blue-400 transition disabled:opacity-60"
+                  className="flex items-center justify-center w-full px-6 py-3 text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
-                  <span>{submitting ? 'Signing up…' : 'Sign Up'}</span>
+                  <span className="font-medium">
+                    {submitting ? 'Creating account…' : 'Create Account'}
+                  </span>
                 </button>
               </div>
             </form>

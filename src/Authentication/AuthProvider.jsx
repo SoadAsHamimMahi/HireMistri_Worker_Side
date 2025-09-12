@@ -4,13 +4,25 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  linkWithCredential,
+  EmailAuthProvider,
+  updatePassword,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { app } from './firebaseConfig'; // ✅ import app
 
 export const AuthContext = createContext(null);
 
 const auth = getAuth(app);
+
+// Configure Google Auth Provider
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account' // Force account selection to avoid Cross-Origin-Opener-Policy issues
+});
 
 const AuthProvider = ({ children }) => { // ✅ fixed `children`
   const [user, setUser] = useState(null);
@@ -23,6 +35,35 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
   // Sign in existing user
   const signIn = (email, password) => {
     return signInWithEmailAndPassword(auth, email, password); // ✅ fixed
+  };
+
+  // Sign in with Google
+  const signInWithGoogle = async () => {
+    try {
+      // Use redirect instead of popup to avoid Cross-Origin-Opener-Policy issues
+      const result = await signInWithPopup(auth, googleProvider);
+      return result;
+    } catch (error) {
+      console.error('Google Sign-in Error:', error);
+      throw error;
+    }
+  };
+
+  // Link Google account with existing email/password account
+  const linkGoogleAccount = async (email, password) => {
+    try {
+      const credential = EmailAuthProvider.credential(email, password);
+      const result = await linkWithCredential(auth.currentUser, credential);
+      return result;
+    } catch (error) {
+      console.error('Account Linking Error:', error);
+      throw error;
+    }
+  };
+
+  // Reset password
+  const resetPassword = (email) => {
+    return sendPasswordResetEmail(auth, email);
   };
 
   // Logout
@@ -43,6 +84,9 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
     user,
     createUser,
     signIn,
+    signInWithGoogle,
+    linkGoogleAccount,
+    resetPassword,
     logOut
   };
 
