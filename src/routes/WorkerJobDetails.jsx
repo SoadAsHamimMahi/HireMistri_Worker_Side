@@ -1,10 +1,14 @@
 import { useEffect, useState, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Authentication/AuthProvider';
+import { useDarkMode } from '../contexts/DarkModeContext';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function WorkerJobDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const ctx = useContext(AuthContext) || {};
+  const { isDarkMode } = useDarkMode();
   const base = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
   // auth state (use context first, then fallback to Firebase directly)
@@ -72,12 +76,16 @@ export default function WorkerJobDetails() {
   const submitProposal = async () => {
     if (!authReady) return; // wait until we know
     if (!uid) {
-      alert('Please sign in first.');
+      toast.error('Please sign in first.');
       return;
     }
     const text = proposal.trim();
     if (!text) {
-      alert('Please write a short proposal.');
+      toast.error('Please write a short proposal.');
+      return;
+    }
+    if (text.length < 50) {
+      toast.error('Please write at least 50 characters for your proposal.');
       return;
     }
     try {
@@ -108,30 +116,107 @@ export default function WorkerJobDetails() {
       });
 
       if (res.status === 409) {
-        setAppliedMsg('You already applied to this job.');
+        toast.error('You already applied to this job.');
         return;
       }
       if (!res.ok) throw new Error('Failed to submit');
 
+      toast.success('Proposal submitted successfully!');
       setAppliedMsg('✅ Proposal submitted!');
       setApplyOpen(false);
       setProposal('');
     } catch (e) {
       console.error(e);
+      toast.error('Failed to submit. Please try again.');
       setAppliedMsg('❌ Failed to submit. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="py-16 text-center">Loading…</div>;
-  if (err) return <div className="py-16 text-center text-red-600">❌ {err}</div>;
-  if (!job) return <div className="py-16 text-center">Not found.</div>;
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
 
-  // Images + poster fields (fallbacks so it doesn’t crash if missing)
-  const images = Array.isArray(job.images) && job.images.length ? job.images : [
-    'https://via.placeholder.com/1200x700?text=No+Image',
-  ];
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading job details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (err) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-3xl"></i>
+          </div>
+          <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
+            Error Loading Job
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">{err}</p>
+          <button 
+            onClick={() => navigate('/jobs')} 
+            className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
+          >
+            Back to Jobs
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
+          </div>
+          <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
+            Job Not Found
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">This job may have been removed or doesn't exist.</p>
+          <button 
+            onClick={() => navigate('/jobs')} 
+            className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
+          >
+            Back to Jobs
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Images + poster fields (fallbacks so it doesn't crash if missing)
+  const images = Array.isArray(job.images) && job.images.length ? job.images : [];
   const poster = {
     name: job.postedByName || job.clientName || 'Unknown',
     email: (job.postedByEmail || job.email || '').toString(),
@@ -140,166 +225,327 @@ export default function WorkerJobDetails() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-5 md:p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-primary">{job.title}</h1>
-        <Link to="/jobs" className="btn btn-outline btn-sm">Back</Link>
-      </div>
-
-      {/* Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left: main image */}
-        <div className="lg:col-span-3">
-          <div className="rounded-xl overflow-hidden border bg-white">
-            <div className="aspect-[16/9]">
-              <img
-                src={images[0]}
-                alt={job.title}
-                className="w-full h-full object-cover"
-                loading="eager"
-              />
-            </div>
-          </div>
-
-          {/* Thumbs if multiple images */}
-          {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {images.slice(1).map((src, i) => (
-                <div key={i} className="aspect-[16/10] rounded-lg overflow-hidden border">
-                  <img src={src} alt={`thumb ${i + 1}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Applicants preview (if present on job) */}
-          <div className="mt-8 bg-white border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold">Applicants</h2>
-              <span className="px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                {job.applicants?.length || 0} total
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Toaster />
+      
+      {/* Header Section */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <button 
+              onClick={() => navigate(-1)}
+              className="flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <i className="fas fa-arrow-left mr-2"></i>
+              Back
+            </button>
+            <div className="flex space-x-3">
+              <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
+                {job.status || 'Active'}
+              </span>
+              <span className={`px-4 py-2 rounded-full text-sm font-medium ${getPriorityColor(job.priority || 'medium')}`}>
+                {job.priority || 'Medium'} Priority
               </span>
             </div>
-            {Array.isArray(job.applicants) && job.applicants.length ? (
-              <ul className="space-y-2">
-                {job.applicants.map((a, i) => (
-                  <li key={i} className="border rounded-lg p-3 flex items-center justify-between bg-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-base-200 flex items-center justify-center text-sm font-bold">
-                        {(a.name || '?').slice(0, 1).toUpperCase()}
-                      </div>
-                      <div className="leading-tight">
-                        <p className="font-medium text-gray-800">{a.name || 'Unknown'}</p>
-                        <p className="text-xs text-gray-500">⭐ {a.rating ?? '—'}</p>
-                      </div>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500 mr-1">Bid:</span>
-                      <span className="font-semibold text-green-700">৳{a.price ?? '—'}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="p-4 border rounded-lg text-sm text-gray-600 bg-base-100">
-                No applicants yet.
-              </div>
-            )}
+          </div>
+          
+          <div className="text-center">
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              {job.title || 'Untitled Job'}
+            </h1>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-gray-600 dark:text-gray-300">
+              <span className="flex items-center justify-center lg:justify-start text-lg">
+                <i className="fas fa-tag w-5 h-5 mr-3 text-primary-500"></i>
+                {job.category || 'General'}
+              </span>
+              <span className="flex items-center justify-center lg:justify-start text-lg">
+                <i className="fas fa-map-marker-alt w-5 h-5 mr-3 text-primary-500"></i>
+                {job.location || 'N/A'}
+              </span>
+              <span className="flex items-center justify-center lg:justify-start text-lg">
+                <i className="fas fa-calendar w-5 h-5 mr-3 text-primary-500"></i>
+                {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
+              </span>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Right: details */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Meta */}
-          <div className="bg-white border rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${(job.status || 'active').toLowerCase() === 'active'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-700'
-                }`}>
-                {job.status || 'active'}
-              </span>
-              {Array.isArray(job.skills) && job.skills.map((s, i) => (
-                <span key={i} className="px-2 py-0.5 text-xs bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100">
-                  {s}
-                </span>
-              ))}
-            </div>
-
-            <InfoRow icon="🧰" label="Category" value={job.category || '—'} />
-            <InfoRow icon="📍" label="Location" value={job.location || '—'} />
-            <InfoRow icon="💸" label="Budget" value={`৳${job.budget ?? 0}`} />
-            <InfoRow icon="📅" label="Schedule" value={`${job.date || '—'}${job.time ? ` • ${job.time}` : ''}`} />
-            <InfoRow icon="⏱️" label="Posted"
-              value={timeAgo(job.createdAt || job.date)} />
-          </div>
-
-          {/* Description */}
-          <div className="bg-white border rounded-xl p-5">
-            <p className="text-gray-500 text-sm mb-1">Description</p>
-            <p className="leading-relaxed text-gray-800">
-              {job.description || 'No description provided.'}
-            </p>
-          </div>
-
-          {/* Poster / Client */}
-          <div className="bg-white border rounded-xl p-5">
-            <h3 className="font-semibold mb-3">Job Owner</h3>
-            <div className="space-y-2 text-sm">
-              <InfoRow icon="👤" label="Name" value={poster.name} />
-              {poster.email && <InfoRow icon="✉️" label="Email" value={poster.email} />}
-              {poster.phone && <InfoRow icon="📞" label="Phone" value={poster.phone} />}
-              {poster.clientId && <InfoRow icon="🆔" label="Client ID" value={poster.clientId} />}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <button
-                className="btn btn-primary grow"
-                onClick={() => setApplyOpen(o => !o)}
-                disabled={!authReady} // wait for auth check
-              >
-                {applyOpen ? 'Cancel' : 'Apply for this Job'}
-              </button>
-              <button className="btn grow">Save</button>
-            </div>
-
-            {/* Proposal box */}
-            {applyOpen && (
-              <div className="bg-white border rounded-xl p-4">
-                {!uid && authReady && (
-                  <div className="mb-2 text-sm text-red-600">
-                    You must sign in to submit a proposal.
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Job Image Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+              {images.length > 0 ? (
+                <div className="relative">
+                  <img
+                    src={images[0]}
+                    alt={job.title || 'Job image'}
+                    className="w-full h-64 lg:h-80 object-cover"
+                  />
+                  {images.length > 1 && (
+                    <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                      +{images.length - 1} more
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-64 lg:h-80 bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+                  <div className="text-center">
+                    <i className="fas fa-image text-6xl text-gray-400 dark:text-gray-500 mb-4"></i>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">No image available</p>
                   </div>
-                )}
-                <label className="block text-sm font-medium mb-1">Your Proposal</label>
-                <textarea
-                  className="textarea textarea-bordered w-full min-h-[140px]"
-                  placeholder="Write a short proposal explaining why you're a good fit…"
-                  value={proposal}
-                  onChange={(e) => setProposal(e.target.value)}
-                />
-                <div className="mt-3 flex justify-end">
-                  <button
-                    className="btn btn-success"
-                    onClick={submitProposal}
-                    disabled={saving || !authReady}
-                  >
-                    {saving ? 'Submitting…' : 'Request for the work'}
-                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Job Description */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                Job Description
+              </h2>
+              <div className="prose prose-gray dark:prose-invert max-w-none">
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                  {job.description || 'No description provided.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Additional Job Images */}
+            {images.length > 1 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                  Additional Images
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {images.slice(1).map((image, index) => (
+                    <img
+                      key={index}
+                      src={image}
+                      alt={`Job image ${index + 2}`}
+                      className="w-full h-48 object-cover rounded-xl shadow-md hover:shadow-lg transition-shadow"
+                    />
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Feedback */}
-            {appliedMsg && (
-              <div className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-green-700' : 'text-red-600'}`}>
-                {appliedMsg}
+            {/* Applicants Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white">
+                  Applicants
+                </h2>
+                <span className="text-gray-500 dark:text-gray-400 text-lg">
+                  {job.applicants?.length || 0} total
+                </span>
               </div>
-            )}
+              {Array.isArray(job.applicants) && job.applicants.length ? (
+                <div className="space-y-4">
+                  {job.applicants.map((a, i) => (
+                    <div key={i} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between bg-white dark:bg-gray-800">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-lg font-bold text-primary-600 dark:text-primary-400">
+                          {(a.name || '?').slice(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-white text-lg">{a.name || 'Unknown'}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">⭐ {a.rating ?? '—'}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">Bid:</span>
+                        <span className="font-semibold text-green-700 dark:text-green-400 text-lg ml-2">৳{a.price ?? '—'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <i className="fas fa-users text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">No applicants yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Job Info Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                Job Information
+              </h3>
+              
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 p-4 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Budget</p>
+                      <p className="text-3xl font-heading font-bold text-primary-600 dark:text-primary-400">
+                        ৳{job.budget?.toLocaleString() || 'N/A'}
+                      </p>
+                    </div>
+                    <i className="fas fa-money-bill-wave text-3xl text-primary-500 dark:text-primary-400"></i>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center">
+                      <i className="fas fa-briefcase w-5 h-5 text-gray-400 mr-3"></i>
+                      <span className="text-gray-600 dark:text-gray-400">Category</span>
+                    </div>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {job.category || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center">
+                      <i className="fas fa-map-marker-alt w-5 h-5 text-gray-400 mr-3"></i>
+                      <span className="text-gray-600 dark:text-gray-400">Location</span>
+                    </div>
+                    <span className="text-gray-900 dark:text-white font-medium text-right max-w-32 truncate">
+                      {job.location || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center">
+                      <i className="fas fa-calendar w-5 h-5 text-gray-400 mr-3"></i>
+                      <span className="text-gray-600 dark:text-gray-400">Posted</span>
+                    </div>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {timeAgo(job.createdAt || job.date)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center">
+                      <i className="fas fa-info-circle w-5 h-5 text-gray-400 mr-3"></i>
+                      <span className="text-gray-600 dark:text-gray-400">Status</span>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
+                      {job.status || 'Active'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Client Info Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                Job Owner
+              </h3>
+              
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-blue-100 dark:from-primary-900 dark:to-blue-900 rounded-full flex items-center justify-center">
+                  <i className="fas fa-user text-primary-600 dark:text-primary-400 text-2xl"></i>
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white text-lg">
+                    {poster.name}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Job Poster</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center py-3 border-b border-gray-100 dark:border-gray-700">
+                  <i className="fas fa-envelope w-5 h-5 mr-3 text-gray-400"></i>
+                  <span className="text-gray-600 dark:text-gray-300 text-sm">
+                    {poster.email || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center py-3">
+                  <i className="fas fa-id-card w-5 h-5 mr-3 text-gray-400"></i>
+                  <span className="text-gray-600 dark:text-gray-300 text-sm font-mono">
+                    {poster.clientId || 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Application Form */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                Apply for this Job
+              </h3>
+              
+              <div className="space-y-6">
+                {!uid && authReady && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <p className="text-red-600 dark:text-red-400 text-sm">
+                      You must sign in to submit a proposal.
+                    </p>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Your Proposal
+                  </label>
+                  <textarea
+                    value={proposal}
+                    onChange={(e) => setProposal(e.target.value)}
+                    placeholder="Write your proposal here... Explain why you're the best fit for this job."
+                    className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
+                    rows={5}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Minimum 50 characters required ({proposal.length}/50)
+                  </p>
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setApplyOpen(!applyOpen)}
+                    className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                    disabled={!authReady}
+                  >
+                    {applyOpen ? 'Cancel' : 'Apply for this Job'}
+                  </button>
+                  <button className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl">
+                    <i className="fas fa-bookmark"></i>
+                  </button>
+                </div>
+
+                {/* Proposal submission */}
+                {applyOpen && (
+                  <div className="mt-6">
+                    <button
+                      onClick={submitProposal}
+                      disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                    >
+                      {saving ? (
+                        <span className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                          Submitting...
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center">
+                          <i className="fas fa-paper-plane mr-2"></i>
+                          Submit Proposal
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Feedback */}
+                {appliedMsg && (
+                  <div className={`p-4 rounded-xl ${appliedMsg.startsWith('✅') ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                    <p className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}>
+                      {appliedMsg}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

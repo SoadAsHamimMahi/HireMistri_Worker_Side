@@ -219,60 +219,124 @@ export default function WorkerProfile() {
   if (loading) return <div className="p-10 text-center">Loading…</div>;
 
   return (
-    <div className="min-h-screen bg-base-200 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Toaster />
 
-      {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">My Profile</h1>
-        <nav className="text-sm breadcrumbs mt-1">
-          <ul>
-            <li className="text-gray-600 dark:text-gray-300">Home</li>
-            <li className="font-semibold text-gray-800 dark:text-white">Profile</li>
-          </ul>
-        </nav>
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-gray-900 dark:text-white mb-4">
+              My Profile
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Manage your professional information and showcase your skills to potential employers.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT: Avatar card */}
-          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 flex flex-col items-center">
-            <div
-              {...getRootProps()}
-              className={`relative w-40 h-40 rounded-full overflow-hidden ring-4 ring-blue-100 cursor-pointer group`}
-              title="Click or drag to upload photo"
-            >
-              <input {...getInputProps()} />
-              <img
-                src={profile.profileCover || "/default-profile.png"}
-                alt="profile"
-                className="w-full h-full object-cover"
-                onError={(e)=> (e.currentTarget.src="/default-profile.png")}
-              />
-              <div className={`absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs`}>
-                {isDragActive ? "Drop to upload" : "Click or drag to upload"}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Enhanced Profile Card */}
+          <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-3xl p-8 flex flex-col items-center border border-gray-100 dark:border-gray-700">
+            <div className="relative mb-6">
+              <div
+                {...getRootProps()}
+                className={`relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary-200 dark:ring-primary-800 cursor-pointer group transition-all duration-300 hover:ring-primary-400 dark:hover:ring-primary-600`}
+                title="Click or drag to upload photo"
+              >
+                <input {...getInputProps()} />
+                <img
+                  src={profile.profileCover || "/default-profile.png"}
+                  alt="profile"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e)=> (e.currentTarget.src="/default-profile.png")}
+                />
+                <div className={`absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white`}>
+                  <div className="text-center">
+                    <i className="fas fa-camera text-2xl mb-2"></i>
+                    <p className="text-sm font-medium">
+                      {isDragActive ? "Drop to upload" : "Click to upload"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Status Indicator */}
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center">
+                <i className="fas fa-check text-white text-sm"></i>
               </div>
             </div>
 
-            <div className="mt-6 text-center">
-              <h2 className="text-xl sm:text-2xl font-bold text-primary dark:text-blue-400">{fullName}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{secondaryLine}</p>
-              <div className="mt-3">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-500 dark:text-blue-400">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4"><path fill="currentColor" d="M12 4C7.03 4 3 8.03 3 13c0 2.83 1.45 5.33 3.67 6.86.29.21.67.18.92-.08l1.82-1.86a.75.75 0 0 0-.01-1.06l-1.35-1.28a5.5 5.5 0 1 1 8.3-6.86l1.27 1.35c.29.3.77.3 1.07.01l1.85-1.82c.26-.25.28-.63.07-.92A9.97 9.97 0 0 0 12 4Z"/></svg>
-                </span>
+            <div className="text-center">
+              <h2 className="text-2xl font-heading font-bold text-gray-900 dark:text-white mb-2">{fullName}</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">{secondaryLine}</p>
+              
+              {/* Profile Stats */}
+              <div className="grid grid-cols-2 gap-4 w-full mb-6">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">4.8</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Rating</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">12</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Jobs Done</div>
+                </div>
+              </div>
+              
+              {/* Availability Status */}
+              <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+                profile.isAvailable 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+              }`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  profile.isAvailable ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                {profile.isAvailable ? 'Available for work' : 'Not available'}
               </div>
             </div>
           </div>
 
-          {/* RIGHT: Tabs + content */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow-xl rounded-2xl">
-            {/* Tabs */}
-            <div className="border-b dark:border-gray-600 px-4 sm:px-6">
-              <div className="tabs tabs-lifted -mb-px">
-                <button className={`tab tab-bordered text-gray-700 dark:text-gray-300 ${tab === "overview" ? "tab-active font-semibold" : ""}`} onClick={() => setTab("overview")}>Overview</button>
-                <button className={`tab tab-bordered text-gray-700 dark:text-gray-300 ${tab === "edit" ? "tab-active font-semibold" : ""}`} onClick={() => setTab("edit")}>Edit Profile</button>
-                <button className={`tab tab-bordered text-gray-700 dark:text-gray-300 ${tab === "password" ? "tab-active font-semibold" : ""}`} onClick={() => setTab("password")}>Change Password</button>
+          {/* Enhanced Tabs + Content */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow-2xl rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+            {/* Enhanced Tabs */}
+            <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4">
+              <div className="flex space-x-1">
+                <button 
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    tab === "overview" 
+                      ? "bg-primary-500 text-white shadow-lg" 
+                      : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                  }`} 
+                  onClick={() => setTab("overview")}
+                >
+                  <i className="fas fa-eye mr-2"></i>
+                  Overview
+                </button>
+                <button 
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    tab === "edit" 
+                      ? "bg-primary-500 text-white shadow-lg" 
+                      : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                  }`} 
+                  onClick={() => setTab("edit")}
+                >
+                  <i className="fas fa-edit mr-2"></i>
+                  Edit Profile
+                </button>
+                <button 
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    tab === "password" 
+                      ? "bg-primary-500 text-white shadow-lg" 
+                      : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                  }`} 
+                  onClick={() => setTab("password")}
+                >
+                  <i className="fas fa-key mr-2"></i>
+                  Change Password
+                </button>
               </div>
             </div>
 

@@ -177,46 +177,88 @@ export default function Dashboard() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="p-6 w-5/6 mx-auto">
-      {/* Greeting */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Hi, Worker! 👋</h2>
-        <p className="text-gray-600 dark:text-gray-300">Welcome back. Ready to find new jobs today?</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition"
-          >
-            <div className="flex items-center gap-4">
-              <i className={`${stat.icon} text-green-500 text-2xl`} />
-              <div>
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-white">{stat.value}</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{stat.label}</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Welcome Card */}
+          <div className="text-center mb-12 animate-fade-in">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-gray-900 dark:text-white mb-4">
+              Welcome back, Worker! 👋
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Ready to find your next job opportunity? Discover amazing local jobs that match your skills.
+            </p>
           </div>
-        ))}
+
+          {/* Enhanced Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {stats.map((stat, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-primary-500 animate-slide-up"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
+                    <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                  </div>
+                  <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
+                    <i className={`${stat.icon} text-primary-600 dark:text-primary-400 text-xl`} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <Link to="/edit-profile" className="btn btn-outline border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-          Edit Profile
-        </Link>
-        <Link to="/jobs" className="btn bg-green-500 text-white hover:bg-green-600">
-          Browse Jobs
-        </Link>
-        <Link to="/applications" className="btn btn-outline border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-          Applications
-        </Link>
-        <Link to="/orders" className="btn btn-outline border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-          My Orders
-        </Link>
-      </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Quick Action Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+          <Link to="/edit-profile" className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i className="fas fa-user-edit text-blue-600 dark:text-blue-400 text-xl"></i>
+              </div>
+              <h3 className="font-heading font-semibold text-gray-900 dark:text-white mb-1">Edit Profile</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Update your info</p>
+            </div>
+          </Link>
+          
+          <Link to="/jobs" className="group bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i className="fas fa-search text-white text-xl"></i>
+              </div>
+              <h3 className="font-heading font-semibold text-white mb-1">Browse Jobs</h3>
+              <p className="text-sm text-white/80">Find opportunities</p>
+            </div>
+          </Link>
+          
+          <Link to="/applications" className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i className="fas fa-file-alt text-orange-600 dark:text-orange-400 text-xl"></i>
+              </div>
+              <h3 className="font-heading font-semibold text-gray-900 dark:text-white mb-1">Applications</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Track your apps</p>
+            </div>
+          </Link>
+          
+          <Link to="/orders" className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i className="fas fa-shopping-bag text-purple-600 dark:text-purple-400 text-xl"></i>
+              </div>
+              <h3 className="font-heading font-semibold text-gray-900 dark:text-white mb-1">My Orders</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">View your work</p>
+            </div>
+          </Link>
+        </div>
 
       {/* Availability Toggle */}
       <div className="mb-10">
@@ -301,47 +343,94 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Jobs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedJobs.map((job) => {
+        {/* Enhanced Jobs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {paginatedJobs.map((job, index) => {
             const jobId =
               (typeof job._id === 'string' && job._id) ||
               (job._id && job._id.$oid) ||
               job.id;
 
             return (
-              <div key={jobId} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
-                <img
-                  src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
-                  alt={job.title}
-                  className="w-full h-40 object-cover"
-                />
-                <div className="p-4 flex flex-col gap-2">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{job.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">📍 {job.location}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">📂 {job.category}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">🗓️ Posted on: {job.date}</p>
-                  <span className="text-green-600 font-semibold text-sm">৳{job.budget}</span>
+              <div 
+                key={jobId} 
+                className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {/* Image with Overlay */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
+                    alt={job.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-primary-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                      {job.category}
+                    </span>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
+                
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-xl font-heading font-bold text-gray-900 dark:text-white mb-3 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                    {job.title}
+                  </h3>
+                  
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <i className="fas fa-map-marker-alt w-4 h-4 mr-3 text-primary-500"></i>
+                      <span className="text-sm">{job.location}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <i className="fas fa-tag w-4 h-4 mr-3 text-primary-500"></i>
+                      <span className="text-sm">{job.category}</span>
+                    </div>
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                      <i className="fas fa-calendar w-4 h-4 mr-3 text-primary-500"></i>
+                      <span className="text-sm">Posted: {job.date}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-heading font-bold text-primary-600 dark:text-primary-400">৳{job.budget}</span>
+                      {job.applicants?.length > 0 && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {job.applicants.length} applicants
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
                   {job.applicants?.length > 0 && (
-                    <div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-md border dark:border-gray-600">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">👷 Applicants:</p>
-                      <ul className="text-sm space-y-1">
-                        {job.applicants.map((a, i) => (
-                          <li key={i} className="flex justify-between">
-                            <span className="text-gray-700 dark:text-gray-300">✅ {a.name}</span>
-                            <span className="text-gray-600 dark:text-gray-400">৳{a.price} – ⭐ {a.rating}</span>
+                    <div className="mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                        <i className="fas fa-users w-4 h-4 mr-2 text-primary-500"></i>
+                        Recent Applicants:
+                      </p>
+                      <ul className="space-y-2">
+                        {job.applicants.slice(0, 2).map((a, i) => (
+                          <li key={i} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">✅ {a.name}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-primary-600 dark:text-primary-400 font-semibold">৳{a.price}</span>
+                              <div className="flex items-center">
+                                <i className="fas fa-star text-yellow-400 w-3 h-3 mr-1"></i>
+                                <span className="text-gray-600 dark:text-gray-400">{a.rating}</span>
+                              </div>
+                            </div>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
-                  <Link
-                    to={`/jobs/${jobId}`}
-                    className="btn btn-sm bg-green-500 text-white hover:bg-green-600 mt-3 w-full text-center"
+                  {/* Action Button */}
+                  <Link 
+                    to={`/jobs/${jobId}`} 
+                    className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-heading font-semibold py-3 px-6 rounded-xl transition-all duration-200 group-hover:shadow-lg flex items-center justify-center space-x-2"
                   >
-                    Apply
+                    <span>View Details</span>
+                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                   </Link>
                 </div>
               </div>
@@ -380,6 +469,7 @@ export default function Dashboard() {
             />
           </div>
         )}
+        </div>
       </div>
     </div>
   );
