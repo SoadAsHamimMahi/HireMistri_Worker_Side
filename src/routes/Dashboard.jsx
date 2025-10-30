@@ -28,8 +28,10 @@ export default function Dashboard() {
   ];
 
   const [jobData, setJobData] = useState([]);
+  const [myApps, setMyApps] = useState([]); // worker-specific applications
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(1);
+  const [reportRange, setReportRange] = useState('weekly'); // 'weekly' | 'monthly'
 
   const [filters, setFilters] = useState({
     category: 'All',
@@ -72,6 +74,166 @@ export default function Dashboard() {
       }
     })();
   }, []);
+
+  /* Load my applications (per-user metrics) */
+  useEffect(() => {
+    if (!uid) { setMyApps([]); return; }
+    let ignore = false;
+    (async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE}/api/my-applications/${uid}`, {
+          headers: { Accept: 'application/json' },
+        });
+        if (!ignore) setMyApps(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error('❌ Failed to load my applications:', e?.response?.data || e.message);
+        if (!ignore) setMyApps([]);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [uid]);
+
+  /* ---------- Metrics & Reports ---------- */
+  // Normalize date from job object
+  const parseJobDate = (job) => {
+    // prefer createdAt; fallback to date string
+    const createdAt = job?.createdAt;
+    if (createdAt) return new Date(createdAt);
+    if (job?.date) return new Date(job.date);
+    return null;
+  };
+
+  // Derive KPIs from available data
+  const kpis = useMemo(() => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    const normalized = (myApps || []).map(a => ({
+      status: (a.status || 'pending').toLowerCase(),
+      createdAt: a.createdAt || a.updatedAt || a.appliedAt || a.acceptedAt || a.completedAt || null,
+      payout: a.payout ?? a.earning ?? a.price ?? a.budget ?? 0,
+    }));
+
+    const completed = normalized.filter(a => a.status === 'completed');
+    const active = normalized.filter(a => a.status === 'accepted' || a.status === 'active');
+
+    const totalEarnings = completed.reduce((sum, a) => sum + (Number(a.payout) || 0), 0);
+    const completedThisWeek = completed.filter(a => a.createdAt && new Date(a.createdAt) >= startOfWeek).length;
+
+    // Response Rate = accepted / total applications (simple approximation)
+    const accepted = normalized.filter(a => a.status === 'accepted').length;
+    const applied = Math.max(1, normalized.length);
+    const responseRate = Math.min(100, Math.round((accepted / applied) * 100));
+
+    return {
+      activeCount: active.length,
+      completedCount: completed.length,
+      totalEarnings,
+      completedThisWeek,
+      responseRate,
+    };
+  }, [myApps]);
+
+  // Build data series for charts: jobs completed and earnings by week/month
+  function groupByKey(items, keyFn) {
+    const map = new Map();
+    for (const item of items) {
+      const key = keyFn(item);
+      if (!key) continue;
+      map.set(key, (map.get(key) || []).concat(item));
+    }
+    return map;
+  }
+
+  const report = useMemo(() => {
+    const completed = (myApps || [])
+      .filter(a => (a.status || '').toLowerCase() === 'completed')
+      .map(a => ({
+        createdAt: a.createdAt || a.updatedAt || a.completedAt || a.acceptedAt || null,
+        payout: a.payout ?? a.earning ?? a.price ?? a.budget ?? 0,
+      }));
+
+    if (reportRange === 'monthly') {
+      // last 6 months
+      const now = new Date();
+      const months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      });
+
+      const groups = groupByKey(completed, j => {
+        const d = j.createdAt ? new Date(j.createdAt) : null;
+        if (!d) return null;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      });
+
+      const series = months.map(m => {
+        const list = groups.get(m) || [];
+        const jobs = list.length;
+        const earnings = list.reduce((s, j) => s + Number(j.payout || 0), 0);
+        return { label: m, jobs, earnings };
+      });
+      return series;
+    }
+
+    // weekly: last 8 weeks
+    const now = new Date();
+    const startOfWeek = (d) => {
+      const c = new Date(d);
+      c.setDate(c.getDate() - c.getDay());
+      c.setHours(0, 0, 0, 0);
+      return c;
+    };
+    const weeks = Array.from({ length: 8 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (7 * (7 - i)));
+      const s = startOfWeek(d);
+      const iso = s.toISOString().slice(0, 10);
+      return iso;
+    });
+
+    const groups = groupByKey(completed, j => {
+      const d = j.createdAt ? new Date(j.createdAt) : null;
+      if (!d) return null;
+      return startOfWeek(d).toISOString().slice(0, 10);
+    });
+
+    const series = weeks.map(w => {
+      const list = groups.get(w) || [];
+      const jobs = list.length;
+      const earnings = list.reduce((s, j) => s + Number(j.payout || 0), 0);
+      return { label: w, jobs, earnings };
+    });
+    return series;
+  }, [myApps, reportRange]);
+
+  // Mini bar chart without external deps
+  const MiniBar = ({ data, metric }) => {
+    const max = Math.max(1, ...data.map(d => d[metric] || 0));
+    return (
+      <div className="w-full">
+        <div className="flex items-end gap-2 h-32">
+          {data.map((d, i) => {
+            const value = d[metric] || 0;
+            const height = Math.max(4, Math.round((value / max) * 112)); // 28 * 4px
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center">
+                <div
+                  className="w-full bg-primary-500/80 dark:bg-primary-400/80 rounded-t"
+                  style={{ height }}
+                  title={`${d.label}: ${value}`}
+                />
+                <div className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 truncate w-full text-center">
+                  {reportRange === 'weekly' ? d.label.slice(5) : d.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   /* Dropdown options */
   const categories = useMemo(() => {
@@ -192,24 +354,87 @@ export default function Dashboard() {
           </div>
 
           {/* Enhanced Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {stats.map((stat, i) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-primary-500 animate-slide-up"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
-                    <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                  </div>
-                  <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
-                    <i className={`${stat.icon} text-primary-600 dark:text-primary-400 text-xl`} />
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Active Jobs</p>
+                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{kpis.activeCount}</p>
+                </div>
+                <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
+                  <i className="fas fa-briefcase text-primary-600 dark:text-primary-400 text-xl" />
                 </div>
               </div>
-            ))}
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Completed (Total)</p>
+                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{kpis.completedCount}</p>
+                </div>
+                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+                  <i className="fas fa-check-circle text-green-600 dark:text-green-400 text-xl" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Earnings</p>
+                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">৳{kpis.totalEarnings}</p>
+                </div>
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
+                  <i className="fas fa-coins text-yellow-600 dark:text-yellow-400 text-xl" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Response Rate</p>
+                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{kpis.responseRate}%</p>
+                </div>
+                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+                  <i className="fas fa-reply text-blue-600 dark:text-blue-400 text-xl" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Reports */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-heading font-semibold text-gray-900 dark:text-white">Performance Report</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Overview of completed jobs and earnings</p>
+              </div>
+              <div className="join">
+                <button className={`join-item btn btn-sm ${reportRange === 'weekly' ? 'btn-primary text-white' : ''}`} onClick={() => setReportRange('weekly')}>Weekly</button>
+                <button className={`join-item btn btn-sm ${reportRange === 'monthly' ? 'btn-primary text-white' : ''}`} onClick={() => setReportRange('monthly')}>Monthly</button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jobs Completed</p>
+                {report.length === 0 ? (
+                  <div className="h-32 flex items-center justify-center text-gray-500">No data</div>
+                ) : (
+                  <MiniBar data={report} metric="jobs" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Earnings</p>
+                {report.length === 0 ? (
+                  <div className="h-32 flex items-center justify-center text-gray-500">No data</div>
+                ) : (
+                  <MiniBar data={report} metric="earnings" />
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

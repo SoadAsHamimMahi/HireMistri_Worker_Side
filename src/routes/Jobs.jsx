@@ -4,84 +4,75 @@ import axios from 'axios';
 import Pagination from '@mui/material/Pagination';
 import { useDarkMode } from '../contexts/DarkModeContext';
 
-const JOBS_PER_PAGE = 9;
-
 const Jobs = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useDarkMode();
 
   const [jobData, setJobData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     category: 'All',
     location: 'All',
     budget: 'All',
     applicants: 'All',
     search: '',
+    status: 'active', // Do not add sort control
   });
-
   const [page, setPage] = useState(1);
 
-  // Fetch jobs
+  // Filters to params helper
+  const buildQueryParams = () => {
+    const params = {};
+    if (filters.category && filters.category !== 'All') params.category = filters.category;
+    if (filters.location && filters.location !== 'All') params.location = filters.location;
+    if (filters.budget && filters.budget !== 'All') params.budget = filters.budget;
+    if (filters.applicants && filters.applicants !== 'All') params.applicants = filters.applicants;
+    if (filters.search && filters.search.trim() !== '') params.search = filters.search.trim();
+    if (filters.status) params.status = filters.status;
+    params.sort = 'newest';
+    return params;
+  };
+
+  // Fetch jobs when filters change
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
-        const res = await axios.get('http://localhost:5000/api/browse-jobs');
+        const params = buildQueryParams();
+        const query = new URLSearchParams(params).toString();
+        const res = await axios.get(`http://localhost:5000/api/browse-jobs${query ? '?' + query : ''}`);
         setJobData(res.data || []);
       } catch (err) {
         console.error('❌ Failed to fetch jobs:', err);
+        setJobData([]);
+      } finally {
+        setLoading(false);
       }
     })();
-  }, []);
+  }, [filters]);
 
-  // Dynamic filter options
+  // Dynamic options from server data
   const categories = useMemo(
     () => ['All', ...Array.from(new Set(jobData.map(j => j.category).filter(Boolean)))],
     [jobData]
   );
-
   const locations = useMemo(
     () => ['All', ...Array.from(new Set(jobData.map(j => j.location).filter(Boolean)))],
     [jobData]
   );
-
-  // Apply filters
-  const filteredJobs = useMemo(() => {
-    const out = (jobData || [])
-      .filter(j => (j.status || 'active').toLowerCase() === 'active')
-      .filter(j => {
-        const matchCategory = filters.category === 'All' || j.category === filters.category;
-        const matchLocation = filters.location === 'All' || j.location === filters.location;
-        const matchBudget =
-          filters.budget === 'All' ||
-          (filters.budget === '0-500' && Number(j.budget) <= 500) ||
-          (filters.budget === '501-1000' && Number(j.budget) > 500 && Number(j.budget) <= 1000) ||
-          (filters.budget === '1001+' && Number(j.budget) > 1000);
-        const matchApplicants =
-          filters.applicants === 'All' ||
-          (filters.applicants === 'With' && (j.applicants?.length || 0) > 0) ||
-          (filters.applicants === 'None' && (!j.applicants || j.applicants.length === 0));
-        const q = filters.search.trim().toLowerCase();
-        const matchSearch = !q || (j.title || '').toLowerCase().includes(q);
-
-        return matchCategory && matchLocation && matchBudget && matchApplicants && matchSearch;
-      });
-
-    return out;
-  }, [jobData, filters]);
-
-  // Reset to page 1 whenever filters change
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
-  // Slice for current page
-  const pageCount = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
+  // Jobs paginate in UI as before
+  const JOBS_PER_PAGE = 9;
+  const pageCount = Math.max(1, Math.ceil(jobData.length / JOBS_PER_PAGE));
   const start = (page - 1) * JOBS_PER_PAGE;
-  const currentJobs = filteredJobs.slice(start, start + JOBS_PER_PAGE);
+  const currentJobs = jobData.slice(start, start + JOBS_PER_PAGE);
 
   const handleChange = (type, value) => {
     setFilters(prev => ({ ...prev, [type]: value }));
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -97,28 +88,29 @@ const Jobs = () => {
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
           <select
             className="select select-bordered w-full"
             value={filters.category}
-            onChange={(e) => handleChange('category', e.target.value)}
+            onChange={e => handleChange('category', e.target.value)}
           >
             {categories.map(cat => <option key={cat}>{cat}</option>)}
           </select>
         </div>
-
+        {/* Location */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
           <select
             className="select select-bordered w-full"
             value={filters.location}
-            onChange={(e) => handleChange('location', e.target.value)}
+            onChange={e => handleChange('location', e.target.value)}
           >
             {locations.map(loc => <option key={loc}>{loc}</option>)}
           </select>
         </div>
-
+        {/* Budget */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget</label>
           <select
@@ -132,20 +124,20 @@ const Jobs = () => {
             <option value="1001+">৳1001+</option>
           </select>
         </div>
-
+        {/* Applicants */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Applicants</label>
           <select
             className="select select-bordered w-full"
             value={filters.applicants}
-            onChange={(e) => handleChange('applicants', e.target.value)}
+            onChange={e => handleChange('applicants', e.target.value)}
           >
             <option value="All">All Jobs</option>
             <option value="With">With Applicants</option>
             <option value="None">No Applicants</option>
           </select>
         </div>
-
+        {/* Search by title */}
         <div className="lg:col-span-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Search by Title</label>
           <input
@@ -153,13 +145,15 @@ const Jobs = () => {
             placeholder="Search..."
             className="input input-bordered w-full"
             value={filters.search}
-            onChange={(e) => handleChange('search', e.target.value)}
+            onChange={e => handleChange('search', e.target.value)}
           />
         </div>
       </div>
 
       {/* Job Cards */}
-      {currentJobs.length === 0 ? (
+      {loading ? (
+        <div className="py-10 text-center text-gray-500">Loading jobs...</div>
+      ) : currentJobs.length === 0 ? (
         <div className="py-10 text-center text-gray-500">
           No jobs match your filters.
         </div>
