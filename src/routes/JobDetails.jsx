@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -19,6 +21,58 @@ const JobDetails = () => {
   const [applying, setApplying] = useState(false);
   const [proposalText, setProposalText] = useState('');
   const [hasApplied, setHasApplied] = useState(false);
+  const [workerLocation, setWorkerLocation] = useState(null); // { lat, lng }
+
+  // fix default marker icons for Vite
+  const DefaultIcon = useMemo(() => new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  }), []);
+
+  const JobIcon = useMemo(() => new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    className: 'job-marker',
+  }), []);
+
+  const WorkerIcon = useMemo(() => new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    className: 'worker-marker',
+  }), []);
+
+  const getJobLatLng = (j) => {
+    if (!j) return null;
+    const lat = j.lat ?? j.latitude ?? j?.locationLat ?? j?.location?.lat ?? j?.coordinates?.lat;
+    const lng = j.lng ?? j.longitude ?? j?.locationLng ?? j?.location?.lng ?? j?.coordinates?.lng;
+    if (typeof lat === 'number' && typeof lng === 'number') return [lat, lng]; // Return array for Leaflet
+    return null;
+  };
+
+  // simple haversine in km (accepts arrays [lat, lng])
+  const getDistanceKm = (a, b) => {
+    if (!a || !b) return null;
+    // Handle both array [lat, lng] and object {lat, lng} formats
+    const latA = Array.isArray(a) ? a[0] : a.lat;
+    const lngA = Array.isArray(a) ? a[1] : a.lng;
+    const latB = Array.isArray(b) ? b[0] : b.lat;
+    const lngB = Array.isArray(b) ? b[1] : b.lng;
+    if (typeof latA !== 'number' || typeof lngA !== 'number' || typeof latB !== 'number' || typeof lngB !== 'number') return null;
+    const R = 6371; // km
+    const dLat = (latB - latA) * Math.PI / 180;
+    const dLng = (lngB - lngA) * Math.PI / 180;
+    const s1 = Math.sin(dLat / 2) ** 2 + Math.cos(latA * Math.PI / 180) * Math.cos(latB * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
+    return Math.round(R * c * 10) / 10;
+  };
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -52,6 +106,19 @@ const JobDetails = () => {
         }
 
         setJob(jobData);
+        
+        // Debug: Log job data to check coordinates
+        console.log('📋 Job Data:', jobData);
+        console.log('📍 Available coordinate fields:', {
+          lat: jobData?.lat,
+          lng: jobData?.lng,
+          latitude: jobData?.latitude,
+          longitude: jobData?.longitude,
+          locationLat: jobData?.locationLat,
+          locationLng: jobData?.locationLng,
+          location: jobData?.location,
+          coordinates: jobData?.coordinates
+        });
       } catch (err) {
         console.error('Failed to load job details:', err?.response?.data || err.message);
         setError('Failed to load job details');
@@ -62,6 +129,18 @@ const JobDetails = () => {
 
     fetchJobDetails();
   }, [jobId, user?.uid]);
+
+  // get worker geolocation (optional)
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setWorkerLocation([pos.coords.latitude, pos.coords.longitude]); // Array format for Leaflet
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+  }, []);
 
   const handleApply = async () => {
     if (!user?.uid) {
@@ -99,13 +178,13 @@ const JobDetails = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'badge-success';
       case 'completed':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
     }
   };
 
@@ -116,9 +195,9 @@ const JobDetails = () => {
       case 'medium':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
       case 'low':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'badge-success';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
     }
   };
 
@@ -140,7 +219,7 @@ const JobDetails = () => {
           <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-3xl"></i>
           </div>
-          <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Error Loading Job
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
@@ -162,7 +241,7 @@ const JobDetails = () => {
           <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
           </div>
-          <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Job Not Found
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">This job may have been removed or doesn't exist.</p>
@@ -203,7 +282,7 @@ const JobDetails = () => {
           </div>
           
           <div className="text-center">
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-base-content mb-6">
               {job.title || 'Untitled Job'}
             </h1>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-gray-600 dark:text-gray-300">
@@ -255,11 +334,11 @@ const JobDetails = () => {
 
             {/* Job Description */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                 Job Description
               </h2>
               <div className="prose prose-gray dark:prose-invert max-w-none">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                <p className="text-base-content opacity-80 leading-relaxed text-lg">
                   {job.description || 'No description provided.'}
                 </p>
               </div>
@@ -268,7 +347,7 @@ const JobDetails = () => {
             {/* Job Requirements */}
             {job.requirements && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                   Requirements
                 </h2>
                 <ul className="space-y-4">
@@ -277,7 +356,7 @@ const JobDetails = () => {
                       <div className="flex-shrink-0 w-6 h-6 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mr-4 mt-1">
                         <i className="fas fa-check text-primary-600 dark:text-primary-400 text-sm"></i>
                       </div>
-                      <span className="text-gray-700 dark:text-gray-300 text-lg">{req}</span>
+                      <span className="text-base-content opacity-80 text-lg">{req}</span>
                     </li>
                   ))}
                 </ul>
@@ -287,7 +366,7 @@ const JobDetails = () => {
             {/* Additional Job Images */}
             {job.images && job.images.length > 1 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                   Additional Images
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -303,10 +382,91 @@ const JobDetails = () => {
               </div>
             )}
 
+            {/* Location Map - Client's Location */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-0 overflow-hidden">
+              <div className="flex items-center justify-between px-6 pt-6">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">Client's Location</h2>
+              </div>
+              <div className="p-4">
+                {(() => {
+                  const jobLL = getJobLatLng(job);
+                  const center = jobLL || workerLocation || [23.8103, 90.4125]; // Default to Dhaka if no coordinates
+                  const distanceKm = jobLL && workerLocation ? getDistanceKm(workerLocation, jobLL) : null;
+                  
+                  if (!jobLL) {
+                    // Show message if coordinates are missing
+                    return (
+                      <div className="w-full h-72 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <div className="text-center p-6">
+                          <i className="fas fa-map-marked-alt text-4xl text-gray-400 dark:text-gray-500 mb-4"></i>
+                          <p className="text-base-content opacity-70 mb-2">Location coordinates not available</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-500">{job.location || 'Address not specified'}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      {distanceKm != null && (
+                        <div className="mb-3">
+                          <span className="px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                            {distanceKm} km away
+                          </span>
+                        </div>
+                      )}
+                      <div className="w-full h-72 rounded-xl overflow-hidden">
+                        <MapContainer key={`job-details-map-${jobId}`} center={center} zoom={jobLL ? 13 : 10} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url={isDarkMode ? 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png' : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
+                          />
+                          <Marker position={jobLL} icon={JobIcon}>
+                            <Popup>
+                              <div className="text-sm">
+                                <div className="font-semibold mb-1">{job.title || 'Job Location'}</div>
+                                <div className="text-gray-600">{job.location || ''}</div>
+                                {job.clientName && (
+                                  <div className="text-gray-500 mt-1">Client: {job.clientName}</div>
+                                )}
+                              </div>
+                            </Popup>
+                          </Marker>
+                          {workerLocation && (
+                            <Marker position={workerLocation} icon={WorkerIcon}>
+                              <Popup>
+                                <div className="text-sm">
+                                  <div className="font-semibold">📍 Your Location</div>
+                                  {distanceKm != null && (
+                                    <div className="text-blue-600 mt-1">{distanceKm} km to job</div>
+                                  )}
+                                </div>
+                              </Popup>
+                            </Marker>
+                          )}
+                        </MapContainer>
+                      </div>
+                      <div className="mt-4 flex gap-3">
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(jobLL[0] + ',' + jobLL[1])}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
+                        >
+                          <i className="fas fa-directions mr-2"></i>
+                          Get Directions
+                        </a>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
             {/* Applicants Section */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">
                   Applicants
                 </h2>
                 <span className="text-gray-500 dark:text-gray-400 text-lg">
@@ -324,7 +484,7 @@ const JobDetails = () => {
           <div className="space-y-6">
             {/* Job Info Card */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Information
               </h3>
               
@@ -332,7 +492,7 @@ const JobDetails = () => {
                 <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 p-4 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Budget</p>
+                      <p className="text-sm text-base-content opacity-70 mb-1">Budget</p>
                       <p className="text-3xl font-heading font-bold text-primary-600 dark:text-primary-400">
                         ৳{job.budget?.toLocaleString() || 'N/A'}
                       </p>
@@ -345,9 +505,9 @@ const JobDetails = () => {
                   <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center">
                       <i className="fas fa-briefcase w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Category</span>
+                      <span className="text-base-content opacity-70">Category</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-base-content font-medium">
                       {job.category || 'N/A'}
                     </span>
                   </div>
@@ -356,8 +516,8 @@ const JobDetails = () => {
                     <div className="flex items-start">
                       <i className="fas fa-map-marker-alt w-5 h-5 text-gray-400 mr-3 flex-shrink-0 mt-0.5"></i>
                       <div className="flex-1 min-w-0">
-                        <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">Location</div>
-                        <div className="text-gray-900 dark:text-white font-medium break-words">
+                        <div className="text-base-content opacity-70 text-sm mb-1">Location</div>
+                        <div className="text-base-content font-medium break-words">
                           {job.location || 'N/A'}
                         </div>
                       </div>
@@ -367,9 +527,9 @@ const JobDetails = () => {
                   <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center">
                       <i className="fas fa-calendar w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Posted</span>
+                      <span className="text-base-content opacity-70">Posted</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-base-content font-medium">
                       {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
@@ -377,7 +537,7 @@ const JobDetails = () => {
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center">
                       <i className="fas fa-info-circle w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Status</span>
+                      <span className="text-base-content opacity-70">Status</span>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
                       {job.status || 'Active'}
@@ -389,7 +549,7 @@ const JobDetails = () => {
 
             {/* Client Info Card */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Owner
               </h3>
               
@@ -398,7 +558,7 @@ const JobDetails = () => {
                   <i className="fas fa-user text-primary-600 dark:text-primary-400 text-2xl"></i>
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 dark:text-white text-lg">
+                  <p className="font-bold text-base-content text-lg">
                     {job.clientName || 'Unknown'}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-300">Job Poster</p>
@@ -424,13 +584,13 @@ const JobDetails = () => {
             {/* Application Form */}
             {!hasApplied ? (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-                <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                   Apply for this Job
                 </h3>
                 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
                       Your Proposal
                     </label>
                     <textarea
@@ -467,14 +627,14 @@ const JobDetails = () => {
             ) : (
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-800 p-6 lg:p-8">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mr-4">
-                    <i className="fas fa-check-circle text-green-500 text-xl"></i>
+                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mr-4">
+                    <i className="fas fa-check-circle text-primary text-xl"></i>
                   </div>
                   <div>
-                    <h3 className="text-lg font-heading font-bold text-green-800 dark:text-green-300">
+                    <h3 className="text-lg font-heading font-bold text-primary">
                       Application Submitted
                     </h3>
-                    <p className="text-green-600 dark:text-green-400 text-sm">
+                    <p className="text-primary opacity-80 text-sm">
                       Your application has been submitted successfully.
                     </p>
                   </div>

@@ -2,12 +2,13 @@ import React from 'react';
 import { useDarkMode } from '../contexts/DarkModeContext';
 
 const DarkModeToggle = () => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { isDarkMode, toggleDarkMode, toggleTheme } = useDarkMode();
+  const handleToggle = toggleDarkMode || toggleTheme;
 
   return (
     <button
-      onClick={toggleDarkMode}
-      className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
+      onClick={handleToggle}
+      className="btn btn-ghost btn-circle text-base-content hover:bg-base-200 transition-colors"
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >

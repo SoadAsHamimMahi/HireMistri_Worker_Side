@@ -8,10 +8,10 @@ const JobCardList = () => {
 
   const statusTone = (s) => {
     const k = String(s || "active").toLowerCase();
-    if (k === "active") return "bg-green-100 text-green-700";
+    if (k === "active") return "badge-success";
     if (k === "in-progress") return "bg-yellow-100 text-yellow-700";
     if (k === "completed") return "bg-blue-100 text-blue-700";
-    return "bg-gray-100 text-gray-700";
+    return "bg-gray-100 text-base-content";
   };
 
   const FallbackImg =
@@ -52,7 +52,7 @@ const JobCardList = () => {
             <div className="p-4 flex flex-col gap-3">
               {/* Title + status */}
               <div className="flex items-start justify-between gap-3">
-                <h3 className="font-semibold text-gray-900 leading-snug line-clamp-2">
+                <h3 className="font-semibold text-base-content leading-snug line-clamp-2">
                   {job.title}
                 </h3>
                 <span
@@ -92,7 +92,7 @@ const JobCardList = () => {
 
               {/* Applicants preview */}
               <div className="rounded-lg bg-base-100 border p-2">
-                <div className="flex items-center justify-between text-xs text-gray-700">
+                <div className="flex items-center justify-between text-xs text-base-content opacity-70">
                   <span className="font-medium">Applicants</span>
                   <span className="text-gray-500">
                     {applicants.length} total
@@ -110,7 +110,7 @@ const JobCardList = () => {
                           <div className="w-6 h-6 rounded-full bg-base-200 grid place-items-center text-[10px] font-bold">
                             {(a.name || "?").slice(0, 1).toUpperCase()}
                           </div>
-                          <span className="text-gray-800">
+                          <span className="text-base-content">
                             {a.name || "Unknown"}
                           </span>
                         </div>

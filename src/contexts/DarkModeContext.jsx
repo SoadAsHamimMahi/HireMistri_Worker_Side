@@ -12,34 +12,57 @@ export const useDarkMode = () => {
 
 export const DarkModeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage first, then system preference
-    const saved = localStorage.getItem('darkMode');
-    if (saved !== null) {
-      return JSON.parse(saved);
+    // Check localStorage first, then default to dark (dark-first approach)
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+      return saved === 'dark';
     }
-    // Check system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Default to dark mode (dark-first)
+    return true;
   });
 
   useEffect(() => {
-    // Save to localStorage
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    // Update localStorage when theme changes
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     
-    // Apply dark mode class to document
+    // Update document class for Tailwind dark mode
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Update data-theme attribute for DaisyUI
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
+
+  // Set initial theme on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    const themeToApply = saved || 'dark'; // Default to dark mode (dark-first)
+    
+    if (themeToApply === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Set data-theme attribute for DaisyUI
+    document.documentElement.setAttribute('data-theme', themeToApply);
+  }, []);
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => !prev);
   };
 
+  // Also provide toggleTheme for consistency
+  const toggleTheme = toggleDarkMode;
+
   const value = {
     isDarkMode,
     toggleDarkMode,
+    toggleTheme, // Alias for consistency
+    theme: isDarkMode ? 'dark' : 'light'
   };
 
   return (

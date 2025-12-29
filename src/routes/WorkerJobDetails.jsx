@@ -137,13 +137,13 @@ export default function WorkerJobDetails() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'badge-success';
       case 'completed':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
     }
   };
 
@@ -154,9 +154,9 @@ export default function WorkerJobDetails() {
       case 'medium':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
       case 'low':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'badge-success';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
     }
   };
 
@@ -178,7 +178,7 @@ export default function WorkerJobDetails() {
           <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-3xl"></i>
           </div>
-          <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Error Loading Job
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">{err}</p>
@@ -200,7 +200,7 @@ export default function WorkerJobDetails() {
           <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
           </div>
-          <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Job Not Found
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">This job may have been removed or doesn't exist.</p>
@@ -250,7 +250,7 @@ export default function WorkerJobDetails() {
           </div>
           
           <div className="text-center">
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-base-content mb-6">
               {job.title || 'Untitled Job'}
             </h1>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-gray-600 dark:text-gray-300">
@@ -302,11 +302,11 @@ export default function WorkerJobDetails() {
 
             {/* Job Description */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                 Job Description
               </h2>
               <div className="prose prose-gray dark:prose-invert max-w-none">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                <p className="text-base-content opacity-80 leading-relaxed text-lg">
                   {job.description || 'No description provided.'}
                 </p>
               </div>
@@ -315,7 +315,7 @@ export default function WorkerJobDetails() {
             {/* Additional Job Images */}
             {images.length > 1 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                   Additional Images
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -334,7 +334,7 @@ export default function WorkerJobDetails() {
             {/* Applicants Section */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-gray-900 dark:text-white">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">
                   Applicants
                 </h2>
                 <span className="text-gray-500 dark:text-gray-400 text-lg">
@@ -350,13 +350,13 @@ export default function WorkerJobDetails() {
                           {(a.name || '?').slice(0, 1).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800 dark:text-white text-lg">{a.name || 'Unknown'}</p>
+                          <p className="font-medium text-base-content text-lg">{a.name || 'Unknown'}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">⭐ {a.rating ?? '—'}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <span className="text-gray-500 dark:text-gray-400 text-sm">Bid:</span>
-                        <span className="font-semibold text-green-700 dark:text-green-400 text-lg ml-2">৳{a.price ?? '—'}</span>
+                        <span className="font-semibold text-primary text-lg ml-2">৳{a.price ?? '—'}</span>
                       </div>
                     </div>
                   ))}
@@ -374,7 +374,7 @@ export default function WorkerJobDetails() {
           <div className="space-y-6">
             {/* Job Info Card */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Information
               </h3>
               
@@ -382,7 +382,7 @@ export default function WorkerJobDetails() {
                 <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 p-4 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Budget</p>
+                      <p className="text-sm text-base-content opacity-70 mb-1">Budget</p>
                       <p className="text-3xl font-heading font-bold text-primary-600 dark:text-primary-400">
                         ৳{job.budget?.toLocaleString() || 'N/A'}
                       </p>
@@ -395,9 +395,9 @@ export default function WorkerJobDetails() {
                   <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center">
                       <i className="fas fa-briefcase w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Category</span>
+                      <span className="text-base-content opacity-70">Category</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-base-content font-medium">
                       {job.category || 'N/A'}
                     </span>
                   </div>
@@ -405,9 +405,9 @@ export default function WorkerJobDetails() {
                   <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center">
                       <i className="fas fa-map-marker-alt w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Location</span>
+                      <span className="text-base-content opacity-70">Location</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-medium text-right max-w-32 truncate">
+                    <span className="text-base-content font-medium text-right max-w-32 truncate">
                       {job.location || 'N/A'}
                     </span>
                   </div>
@@ -415,9 +415,9 @@ export default function WorkerJobDetails() {
                   <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center">
                       <i className="fas fa-calendar w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Posted</span>
+                      <span className="text-base-content opacity-70">Posted</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-medium">
+                    <span className="text-base-content font-medium">
                       {timeAgo(job.createdAt || job.date)}
                     </span>
                   </div>
@@ -425,7 +425,7 @@ export default function WorkerJobDetails() {
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center">
                       <i className="fas fa-info-circle w-5 h-5 text-gray-400 mr-3"></i>
-                      <span className="text-gray-600 dark:text-gray-400">Status</span>
+                      <span className="text-base-content opacity-70">Status</span>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
                       {job.status || 'Active'}
@@ -437,7 +437,7 @@ export default function WorkerJobDetails() {
 
             {/* Client Info Card */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Owner
               </h3>
               
@@ -446,7 +446,7 @@ export default function WorkerJobDetails() {
                   <i className="fas fa-user text-primary-600 dark:text-primary-400 text-2xl"></i>
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 dark:text-white text-lg">
+                  <p className="font-bold text-base-content text-lg">
                     {poster.name}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-300">Job Poster</p>
@@ -471,7 +471,7 @@ export default function WorkerJobDetails() {
 
             {/* Application Form */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
+              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Apply for this Job
               </h3>
               
@@ -485,7 +485,7 @@ export default function WorkerJobDetails() {
                 )}
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
                     Your Proposal
                   </label>
                   <textarea
@@ -519,7 +519,7 @@ export default function WorkerJobDetails() {
                     <button
                       onClick={submitProposal}
                       disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                      className="btn btn-primary w-full font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
                     >
                       {saving ? (
                         <span className="flex items-center justify-center">
@@ -538,8 +538,8 @@ export default function WorkerJobDetails() {
 
                 {/* Feedback */}
                 {appliedMsg && (
-                  <div className={`p-4 rounded-xl ${appliedMsg.startsWith('✅') ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
-                    <p className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}>
+                  <div className={`p-4 rounded-xl ${appliedMsg.startsWith('✅') ? 'bg-success/20 border border-success' : 'bg-error/20 border border-error'}`}>
+                    <p className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-success' : 'text-error'}`}>
                       {appliedMsg}
                     </p>
                   </div>
@@ -560,7 +560,7 @@ function InfoRow({ icon, label, value }) {
       <span className="text-xl leading-6">{icon}</span>
       <div className="text-sm">
         <p className="text-gray-500">{label}</p>
-        <p className="font-medium text-gray-800 break-words">{value}</p>
+        <p className="font-medium text-base-content break-words">{value}</p>
       </div>
     </div>
   );

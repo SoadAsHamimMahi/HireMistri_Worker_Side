@@ -13,12 +13,13 @@ import {
 import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
+import Messages from './Messages';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 const STATUS_TONES = {
   pending:  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-  accepted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  accepted: 'badge-success',
   completed:'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
 };
@@ -51,6 +52,80 @@ export default function Applications() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false); // mobile toggle
+  const [clientDetails, setClientDetails] = useState({}); // Cache for client names
+
+  // Fetch client details for messaging
+  const fetchClientDetails = async (clientId) => {
+    if (!clientId) return 'Client';
+    if (clientDetails[clientId]) return clientDetails[clientId];
+    
+    try {
+      const response = await axios.get(`${API_BASE}/api/users/${clientId}`, {
+        headers: { Accept: 'application/json' }
+      });
+      
+      if (response.data) {
+        const clientData = response.data;
+        const clientName = clientData.displayName || 
+                          clientData.name || 
+                          [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') ||
+                          clientData.email ||
+                          'Client';
+        
+        setClientDetails(prev => ({
+          ...prev,
+          [clientId]: clientName
+        }));
+        return clientName;
+      }
+    } catch (err) {
+      console.error('Failed to fetch client details:', err);
+    }
+    return 'Client';
+  };
+
+  // Message Button Component
+  const MessageButton = ({ jobId, clientId }) => {
+    const [showMessages, setShowMessages] = useState(false);
+    const [clientName, setClientName] = useState('Client');
+
+    useEffect(() => {
+      if (!clientId) return;
+      
+      // Check cache first
+      if (clientDetails[clientId]) {
+        setClientName(clientDetails[clientId]);
+      } else {
+        // Fetch if not cached
+        fetchClientDetails(clientId).then(name => setClientName(name));
+      }
+    }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return (
+      <>
+        <button 
+          className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors"
+          onClick={() => setShowMessages(true)}
+        >
+          <i className="fas fa-comments mr-2"></i>
+          Message
+        </button>
+        {showMessages && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowMessages(false)} />
+            <div className="relative bg-base-200 rounded-xl shadow-2xl w-full max-w-2xl">
+              <Messages
+                jobId={jobId}
+                clientId={clientId}
+                clientName={clientName}
+                onClose={() => setShowMessages(false)}
+              />
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
 
   // fetch apps for this worker (server already joins basic job fields)
   useEffect(() => {
@@ -139,7 +214,7 @@ export default function Applications() {
                 <BriefcaseIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl lg:text-4xl font-heading font-bold text-gray-900 dark:text-white">
+                <h1 className="text-3xl lg:text-4xl font-heading font-bold text-base-content">
                   My Applications
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300 mt-1">
@@ -185,12 +260,12 @@ export default function Applications() {
             <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">Accepted</p>
-                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  <p className="text-sm text-primary font-medium">Accepted</p>
+                  <p className="text-2xl font-bold text-primary">
                     {applications.filter(a => a.status === 'accepted').length}
                   </p>
                 </div>
-                <i className="fas fa-check-circle text-2xl text-green-500"></i>
+                <i className="fas fa-check-circle text-2xl text-primary"></i>
               </div>
             </div>
             <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-4 rounded-xl">
@@ -220,7 +295,7 @@ export default function Applications() {
             `}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-heading font-bold text-gray-900 dark:text-white">
+              <h3 className="text-xl font-heading font-bold text-base-content">
                 🔍 Filters
               </h3>
               <button
@@ -233,7 +308,7 @@ export default function Applications() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
                   Status
                 </label>
                 <select
@@ -246,7 +321,7 @@ export default function Applications() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
                   Category
                 </label>
                 <select
@@ -259,7 +334,7 @@ export default function Applications() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
                   Search by Title
                 </label>
                 <div className="relative">
@@ -297,7 +372,7 @@ export default function Applications() {
             ) : filteredApps.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-12 text-center">
                 <i className="fas fa-inbox text-6xl text-gray-300 dark:text-gray-600 mb-6"></i>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Applications Found</h3>
+                <h3 className="text-xl font-semibold text-base-content mb-2">No Applications Found</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
                   {searchTerm || statusFilter !== 'All' || categoryFilter !== 'All'
                     ? 'No applications match your current filters.'
@@ -327,7 +402,7 @@ export default function Applications() {
                         {/* Left: Job Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between mb-4">
-                            <h3 className="text-xl lg:text-2xl font-heading font-bold text-gray-900 dark:text-white break-words">
+                            <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content break-words">
                               {app.title || 'Untitled Job'}
                             </h3>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center ${tone}`}>
@@ -375,6 +450,13 @@ export default function Applications() {
                               View Job
                             </Link>
 
+                            {app.status?.toLowerCase() === 'accepted' && app.clientId && (
+                              <MessageButton
+                                jobId={app.jobId}
+                                clientId={app.clientId}
+                              />
+                            )}
+
                             {app.status?.toLowerCase() === 'pending' && (
                               <button
                                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
@@ -401,9 +483,9 @@ export default function Applications() {
                       {/* Proposal */}
                       {app.proposalText && (
                         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Your Proposal:</h4>
+                          <h4 className="text-sm font-medium text-base-content opacity-80 mb-3">Your Proposal:</h4>
                           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl">
-                            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                            <p className="text-base-content opacity-80 whitespace-pre-wrap">
                               {app.proposalText.length > 300
                                 ? app.proposalText.slice(0, 300) + '…'
                                 : app.proposalText}

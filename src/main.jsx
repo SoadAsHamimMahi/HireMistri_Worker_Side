@@ -3,6 +3,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
+// Leaflet CSS - imported globally for map components
+import 'leaflet/dist/leaflet.css';
 
 // Font Awesome (optional)
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -22,6 +24,7 @@ import WorkerRegister from './Authentication/WorkerRegister';
 import AuthProvider from './Authentication/AuthProvider';
 import WorkerJobDetails from './routes/WorkerJobDetails';
 import { DarkModeProvider } from './contexts/DarkModeContext';
+import { MessagesProvider } from './contexts/MessagesContext';
 
 const router = createBrowserRouter([
   {
@@ -47,7 +50,9 @@ createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <DarkModeProvider>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <MessagesProvider>
+          <RouterProvider router={router} />
+        </MessagesProvider>
       </AuthProvider>
     </DarkModeProvider>
   </React.StrictMode>

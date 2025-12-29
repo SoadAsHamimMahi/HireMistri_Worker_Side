@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
-import Pagination from '@mui/material/Pagination';
 import { useDarkMode } from '../contexts/DarkModeContext';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
@@ -224,7 +223,7 @@ export default function Dashboard() {
                   style={{ height }}
                   title={`${d.label}: ${value}`}
                 />
-                <div className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 truncate w-full text-center">
+                <div className="mt-2 text-[10px] text-base-content opacity-60 truncate w-full text-center">
                   {reportRange === 'weekly' ? d.label.slice(5) : d.label}
                 </div>
               </div>
@@ -345,10 +344,10 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Welcome Card */}
           <div className="text-center mb-12 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
               Welcome back, Worker! 👋
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-base-content opacity-80 max-w-2xl mx-auto">
               Ready to find your next job opportunity? Discover amazing local jobs that match your skills.
             </p>
           </div>
@@ -358,8 +357,8 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Active Jobs</p>
-                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{kpis.activeCount}</p>
+                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Active Jobs</p>
+                  <p className="text-3xl font-heading font-bold text-base-content">{kpis.activeCount}</p>
                 </div>
                 <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
                   <i className="fas fa-briefcase text-primary-600 dark:text-primary-400 text-xl" />
@@ -370,11 +369,11 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.05s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Completed (Total)</p>
-                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{kpis.completedCount}</p>
+                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Completed (Total)</p>
+                  <p className="text-3xl font-heading font-bold text-base-content">{kpis.completedCount}</p>
                 </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                  <i className="fas fa-check-circle text-green-600 dark:text-green-400 text-xl" />
+                <div className="p-3 bg-primary/20 rounded-full">
+                  <i className="fas fa-check-circle text-primary text-xl" />
                 </div>
               </div>
             </div>
@@ -382,8 +381,8 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Earnings</p>
-                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">৳{kpis.totalEarnings}</p>
+                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Earnings</p>
+                  <p className="text-3xl font-heading font-bold text-base-content">৳{kpis.totalEarnings}</p>
                 </div>
                 <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
                   <i className="fas fa-coins text-yellow-600 dark:text-yellow-400 text-xl" />
@@ -394,8 +393,8 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.15s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Response Rate</p>
-                  <p className="text-3xl font-heading font-bold text-gray-900 dark:text-white">{kpis.responseRate}%</p>
+                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Response Rate</p>
+                  <p className="text-3xl font-heading font-bold text-base-content">{kpis.responseRate}%</p>
                 </div>
                 <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
                   <i className="fas fa-reply text-blue-600 dark:text-blue-400 text-xl" />
@@ -408,8 +407,8 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-heading font-semibold text-gray-900 dark:text-white">Performance Report</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Overview of completed jobs and earnings</p>
+                <h3 className="text-lg font-heading font-semibold text-base-content">Performance Report</h3>
+                <p className="text-sm text-base-content opacity-70">Overview of completed jobs and earnings</p>
               </div>
               <div className="join">
                 <button className={`join-item btn btn-sm ${reportRange === 'weekly' ? 'btn-primary text-white' : ''}`} onClick={() => setReportRange('weekly')}>Weekly</button>
@@ -419,17 +418,17 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jobs Completed</p>
+                <p className="text-sm font-medium text-base-content opacity-80 mb-2">Jobs Completed</p>
                 {report.length === 0 ? (
-                  <div className="h-32 flex items-center justify-center text-gray-500">No data</div>
+                  <div className="h-32 flex items-center justify-center text-base-content opacity-60">No data</div>
                 ) : (
                   <MiniBar data={report} metric="jobs" />
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Earnings</p>
+                <p className="text-sm font-medium text-base-content opacity-80 mb-2">Earnings</p>
                 {report.length === 0 ? (
-                  <div className="h-32 flex items-center justify-center text-gray-500">No data</div>
+                  <div className="h-32 flex items-center justify-center text-base-content opacity-60">No data</div>
                 ) : (
                   <MiniBar data={report} metric="earnings" />
                 )}
@@ -449,8 +448,8 @@ export default function Dashboard() {
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <i className="fas fa-user-edit text-blue-600 dark:text-blue-400 text-xl"></i>
               </div>
-              <h3 className="font-heading font-semibold text-gray-900 dark:text-white mb-1">Edit Profile</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Update your info</p>
+              <h3 className="font-heading font-semibold text-base-content mb-1">Edit Profile</h3>
+              <p className="text-sm text-base-content opacity-70">Update your info</p>
             </div>
           </Link>
           
@@ -469,8 +468,8 @@ export default function Dashboard() {
               <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <i className="fas fa-file-alt text-orange-600 dark:text-orange-400 text-xl"></i>
               </div>
-              <h3 className="font-heading font-semibold text-gray-900 dark:text-white mb-1">Applications</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Track your apps</p>
+              <h3 className="font-heading font-semibold text-base-content mb-1">Applications</h3>
+              <p className="text-sm text-base-content opacity-70">Track your apps</p>
             </div>
           </Link>
           
@@ -479,8 +478,8 @@ export default function Dashboard() {
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <i className="fas fa-shopping-bag text-purple-600 dark:text-purple-400 text-xl"></i>
               </div>
-              <h3 className="font-heading font-semibold text-gray-900 dark:text-white mb-1">My Orders</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">View your work</p>
+              <h3 className="font-heading font-semibold text-base-content mb-1">My Orders</h3>
+              <p className="text-sm text-base-content opacity-70">View your work</p>
             </div>
           </Link>
         </div>
@@ -489,18 +488,18 @@ export default function Dashboard() {
       <div className="mb-10">
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" className="toggle toggle-success" />
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Available for work</span>
+          <span className="text-sm text-base-content opacity-80 font-medium">Available for work</span>
         </label>
       </div>
 
       {/* Filters */}
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">📢 New Jobs Near You</h3>
+        <h3 className="text-xl font-semibold text-base-content mb-4">📢 New Jobs Near You</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Category</label>
+            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Category</label>
             <select
               className="select select-bordered w-full"
               value={filters.category}
@@ -514,7 +513,7 @@ export default function Dashboard() {
 
           {/* Location (defaults to Address Line 1) */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Location</label>
+            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Location</label>
             <select
               className="select select-bordered w-full"
               value={filters.location}
@@ -528,7 +527,7 @@ export default function Dashboard() {
 
           {/* Budget */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Budget</label>
+            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Budget</label>
             <select
               className="select select-bordered w-full"
               value={filters.budget}
@@ -543,7 +542,7 @@ export default function Dashboard() {
 
           {/* Applicants */}
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Applicants</label>
+            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Applicants</label>
             <select
               className="select select-bordered w-full"
               value={filters.applicants}
@@ -557,7 +556,7 @@ export default function Dashboard() {
 
           {/* Search */}
           <div className="lg:col-span-2">
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Search by Title</label>
+            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Search by Title</label>
             <input
               type="text"
               placeholder="Search..."
@@ -599,27 +598,27 @@ export default function Dashboard() {
                 
                 {/* Content */}
                 <div className="p-6">
-                  <h3 className="text-xl font-heading font-bold text-gray-900 dark:text-white mb-3 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                  <h3 className="text-xl font-heading font-bold text-base-content mb-3 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                     {job.title}
                   </h3>
                   
                   <div className="space-y-3 mb-6">
-                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center text-base-content opacity-80">
                       <i className="fas fa-map-marker-alt w-4 h-4 mr-3 text-primary-500"></i>
                       <span className="text-sm">{job.location}</span>
                     </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center text-base-content opacity-80">
                       <i className="fas fa-tag w-4 h-4 mr-3 text-primary-500"></i>
                       <span className="text-sm">{job.category}</span>
                     </div>
-                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center text-base-content opacity-60">
                       <i className="fas fa-calendar w-4 h-4 mr-3 text-primary-500"></i>
                       <span className="text-sm">Posted: {job.date}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-heading font-bold text-primary-600 dark:text-primary-400">৳{job.budget}</span>
                       {job.applicants?.length > 0 && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="text-sm text-base-content opacity-60">
                           {job.applicants.length} applicants
                         </span>
                       )}
@@ -628,19 +627,19 @@ export default function Dashboard() {
 
                   {job.applicants?.length > 0 && (
                     <div className="mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <p className="text-sm font-semibold text-base-content opacity-80 mb-3 flex items-center">
                         <i className="fas fa-users w-4 h-4 mr-2 text-primary-500"></i>
                         Recent Applicants:
                       </p>
                       <ul className="space-y-2">
                         {job.applicants.slice(0, 2).map((a, i) => (
                           <li key={i} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-700 dark:text-gray-300 font-medium">✅ {a.name}</span>
+                            <span className="text-base-content opacity-80 font-medium">✅ {a.name}</span>
                             <div className="flex items-center space-x-2">
                               <span className="text-primary-600 dark:text-primary-400 font-semibold">৳{a.price}</span>
                               <div className="flex items-center">
                                 <i className="fas fa-star text-yellow-400 w-3 h-3 mr-1"></i>
-                                <span className="text-gray-600 dark:text-gray-400">{a.rating}</span>
+                                <span className="text-base-content opacity-70">{a.rating}</span>
                               </div>
                             </div>
                           </li>
@@ -666,32 +665,47 @@ export default function Dashboard() {
         {/* Pagination */}
         {pageCount > 1 && (
           <div className="flex justify-center mt-8">
-            <Pagination
-              count={pageCount}
-              page={page}
-              onChange={(_, value) => setPage(value)}
-              color="primary"
-              siblingCount={1}
-              boundaryCount={1}
-              sx={{
-                '& .MuiPaginationItem-root': {
-                  color: isDarkMode ? 'white' : 'rgba(0, 0, 0, 0.87)',
-                  '&.Mui-selected': {
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: '#059669',
-                    },
-                  },
-                  '&:hover': {
-                    backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)',
-                  },
-                },
-                '& .MuiPaginationItem-icon': {
-                  color: isDarkMode ? 'white' : 'rgba(0, 0, 0, 0.87)',
-                },
-              }}
-            />
+            <div className="join">
+              <button
+                className="join-item btn"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                «
+              </button>
+              {Array.from({ length: pageCount }, (_, i) => i + 1)
+                .filter(p => {
+                  // Show first, last, current, and neighbors
+                  return p === 1 || p === pageCount || (p >= page - 1 && p <= page + 1);
+                })
+                .map((p, idx, arr) => {
+                  // Add ellipsis if there's a gap
+                  const prev = arr[idx - 1];
+                  const showEllipsis = prev && p - prev > 1;
+                  return (
+                    <React.Fragment key={p}>
+                      {showEllipsis && (
+                        <button className="join-item btn btn-disabled" disabled>
+                          ...
+                        </button>
+                      )}
+                      <button
+                        className={`join-item btn ${page === p ? 'btn-active' : ''}`}
+                        onClick={() => setPage(p)}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              <button
+                className="join-item btn"
+                onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                disabled={page === pageCount}
+              >
+                »
+              </button>
+            </div>
           </div>
         )}
         </div>

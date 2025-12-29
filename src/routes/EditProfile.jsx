@@ -18,7 +18,7 @@ function TagInput({ value = [], onChange, label, placeholder = "Type and press E
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">{label}</label>
+      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">{label}</label>
       <div className="flex gap-2 mb-2">
         <input
           className="input input-bordered w-full"
@@ -226,7 +226,7 @@ export default function WorkerProfile() {
       <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
               My Profile
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
@@ -270,29 +270,29 @@ export default function WorkerProfile() {
             </div>
 
             <div className="text-center">
-              <h2 className="text-2xl font-heading font-bold text-gray-900 dark:text-white mb-2">{fullName}</h2>
+              <h2 className="text-2xl font-heading font-bold text-base-content mb-2">{fullName}</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">{secondaryLine}</p>
               
               {/* Profile Stats */}
               <div className="grid grid-cols-2 gap-4 w-full mb-6">
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
                   <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">4.8</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Rating</div>
+                  <div className="text-xs text-base-content opacity-70">Rating</div>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
                   <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">12</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Jobs Done</div>
+                  <div className="text-xs text-base-content opacity-70">Jobs Done</div>
                 </div>
               </div>
               
               {/* Availability Status */}
               <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
                 profile.isAvailable 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+                  ? 'badge-success' 
                   : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
               }`}>
                 <div className={`w-2 h-2 rounded-full mr-2 ${
-                  profile.isAvailable ? 'bg-green-500' : 'bg-red-500'
+                  profile.isAvailable ? 'bg-primary' : 'bg-error'
                 }`}></div>
                 {profile.isAvailable ? 'Available for work' : 'Not available'}
               </div>
@@ -347,13 +347,13 @@ export default function WorkerProfile() {
                 <div className="space-y-8">
                   {/* About */}
                   <section>
-                    <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">About</h3>
-                    <p className="leading-relaxed text-gray-700 dark:text-gray-300">{aboutText}</p>
+                    <h3 className="text-lg font-semibold mb-2 text-base-content">About</h3>
+                    <p className="leading-relaxed text-base-content opacity-80">{aboutText}</p>
                   </section>
 
                   {/* Profile details */}
                   <section>
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">Profile Details</h3>
+                    <h3 className="text-lg font-semibold mb-3 text-base-content">Profile Details</h3>
                     <div className="rounded-xl border dark:border-gray-600 bg-base-100 dark:bg-gray-700 overflow-hidden">
                       {[
                         ["Full Name", fullName],
@@ -379,7 +379,7 @@ export default function WorkerProfile() {
                       ].map(([label, value], i) => (
                         <div key={i} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 py-3 px-4 ${i ? "border-t dark:border-gray-600" : ""}`}>
                           <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                          <span className="sm:col-span-2 font-medium text-gray-800 dark:text-white break-words">
+                          <span className="sm:col-span-2 font-medium text-base-content break-words">
                             {typeof value === "string" || typeof value === "number" ? value : value}
                           </span>
                         </div>
@@ -393,9 +393,9 @@ export default function WorkerProfile() {
               {tab === "edit" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Account</h3>
+                    <h3 className="text-lg font-semibold text-base-content">Account</h3>
                     <label className="label cursor-pointer gap-3">
-                      <span className="label-text text-gray-700 dark:text-gray-300">Available for work</span>
+                      <span className="label-text text-base-content opacity-80">Available for work</span>
                       <input
                         type="checkbox"
                         className="toggle toggle-success"
@@ -415,7 +415,7 @@ export default function WorkerProfile() {
                       { label: "Email", name: "email", type: "email" },
                     ].map(({ label, name, type = "text" }) => (
                       <div key={name}>
-                        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">{label}</label>
+                        <label className="block text-sm font-medium mb-1 text-base-content opacity-80">{label}</label>
                         <input
                           type={type}
                           name={name}
@@ -428,7 +428,7 @@ export default function WorkerProfile() {
                     ))}
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Headline (optional)</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Headline (optional)</label>
                       <input
                         type="text"
                         name="headline"
@@ -440,7 +440,7 @@ export default function WorkerProfile() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Bio (optional)</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Bio (optional)</label>
                       <textarea
                         name="bio"
                         value={profile.bio}
@@ -460,23 +460,23 @@ export default function WorkerProfile() {
                     </div>
                   </div>
 
-                  <div className="divider my-1 text-gray-700 dark:text-gray-300">Address</div>
+                  <div className="divider my-1 text-base-content opacity-80">Address</div>
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address Line 1</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Address Line 1</label>
                       <input type="text" name="address1" value={profile.address1} onChange={handleChange} className="input input-bordered w-full" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Address Line 2</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Address Line 2</label>
                       <input type="text" name="address2" value={profile.address2} onChange={handleChange} className="input input-bordered w-full" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">City</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">City</label>
                       <input type="text" name="city" value={profile.city} onChange={handleChange} className="input input-bordered w-full" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Country/Region</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Country/Region</label>
                       <select name="country" value={profile.country} onChange={handleChange} className="select select-bordered w-full">
                         <option>Bangladesh</option>
                         <option>India</option>
@@ -484,7 +484,7 @@ export default function WorkerProfile() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Zip/Postal Code</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Zip/Postal Code</label>
                       <input type="text" name="zip" value={profile.zip} onChange={handleChange} className="input input-bordered w-full" />
                     </div>
                   </div>
@@ -501,18 +501,18 @@ export default function WorkerProfile() {
               {/* ========================= CHANGE PASSWORD ========================= */}
               {tab === "password" && (
                 <div className="space-y-6 max-w-lg">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Change Password</h3>
+                  <h3 className="text-lg font-semibold text-base-content">Change Password</h3>
                   <div className="grid gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Current Password</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Current Password</label>
                       <input type="password" className="input input-bordered w-full" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">New Password</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">New Password</label>
                       <input type="password" className="input input-bordered w-full" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Confirm New Password</label>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Confirm New Password</label>
                       <input type="password" className="input input-bordered w-full" />
                     </div>
                   </div>
