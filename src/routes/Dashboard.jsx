@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
+import JobRecommendations from '../components/JobRecommendations';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -490,6 +491,11 @@ export default function Dashboard() {
           <input type="checkbox" className="toggle toggle-success" />
           <span className="text-sm text-base-content opacity-80 font-medium">Available for work</span>
         </label>
+      </div>
+
+      {/* Job Recommendations */}
+      <div className="mb-10">
+        <JobRecommendations limit={5} />
       </div>
 
       {/* Filters */}

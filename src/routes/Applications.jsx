@@ -14,6 +14,7 @@ import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import Messages from './Messages';
+import ApplicationNotes from '../components/ApplicationNotes';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -46,6 +47,14 @@ export default function Applications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellingApplicationId, setCancellingApplicationId] = useState(null);
+  const [cancellingApplicationTitle, setCancellingApplicationTitle] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingApplication, setEditingApplication] = useState(null);
+  const [editProposalText, setEditProposalText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // filters
   const [statusFilter, setStatusFilter] = useState('All');
@@ -190,11 +199,114 @@ export default function Applications() {
     });
   }, [applications, statusFilter, categoryFilter, searchTerm]);
 
-  // local handlers (UI-only for now)
-  const handleCancel = (id) => {
-    setApplications(prev => prev.filter(a => a._id !== id));
-    toast.success('Application cancelled.');
+  // Open cancel confirmation modal
+  const handleCancelClick = (application) => {
+    setCancellingApplicationId(application._id);
+    setCancellingApplicationTitle(application.title || 'this job');
+    setShowCancelModal(true);
   };
+
+  // Confirm and delete application
+  const handleCancelConfirm = async () => {
+    if (!cancellingApplicationId || !user?.uid) {
+      toast.error('Unable to cancel application. Please try again.');
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      
+      const response = await axios.delete(`${API_BASE}/api/applications/${cancellingApplicationId}`, {
+        data: { workerId: user.uid },
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.status === 200 || response.status === 204) {
+        // Remove from local state
+        setApplications(prev => prev.filter(a => a._id !== cancellingApplicationId));
+        toast.success('Application withdrawn successfully.');
+        setShowCancelModal(false);
+        setCancellingApplicationId(null);
+        setCancellingApplicationTitle('');
+      }
+    } catch (error) {
+      console.error('Failed to withdraw application:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to withdraw application. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleCancelCancel = () => {
+    setShowCancelModal(false);
+    setCancellingApplicationId(null);
+    setCancellingApplicationTitle('');
+  };
+
+  // Open edit proposal modal
+  const handleEditClick = (application) => {
+    setEditingApplication(application);
+    setEditProposalText(application.proposalText || '');
+    setShowEditModal(true);
+  };
+
+  // Save edited proposal
+  const handleSaveProposal = async () => {
+    if (!editingApplication || !user?.uid) {
+      toast.error('Unable to save proposal. Please try again.');
+      return;
+    }
+
+    if (!editProposalText.trim()) {
+      toast.error('Proposal text cannot be empty');
+      return;
+    }
+
+    if (editProposalText.trim().length < 50) {
+      toast.error('Proposal must be at least 50 characters long');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      const response = await axios.post(`${API_BASE}/api/applications`, {
+        jobId: editingApplication.jobId,
+        workerId: user.uid,
+        proposalText: editProposalText.trim(),
+        status: 'pending'
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        // Update local state
+        setApplications(prev =>
+          prev.map(app =>
+            app._id === editingApplication._id
+              ? { ...app, proposalText: editProposalText.trim(), updatedAt: new Date().toISOString() }
+              : app
+          )
+        );
+        toast.success('Proposal updated successfully!');
+        setShowEditModal(false);
+        setEditingApplication(null);
+        setEditProposalText('');
+      }
+    } catch (error) {
+      console.error('Failed to update proposal:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to update proposal. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setShowEditModal(false);
+    setEditingApplication(null);
+    setEditProposalText('');
+  };
+
   const handleReapply = (job) => {
     toast(`Re-applied to: ${job.title || 'Job'}`, { icon: '🔄' });
   };
@@ -458,13 +570,33 @@ export default function Applications() {
                             )}
 
                             {app.status?.toLowerCase() === 'pending' && (
-                              <button
-                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
-                                onClick={() => handleCancel(app._id)}
-                              >
-                                <i className="fas fa-times mr-2"></i>
-                                Cancel
-                              </button>
+                              <>
+                                <button
+                                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+                                  onClick={() => handleEditClick(app)}
+                                  disabled={isSaving}
+                                >
+                                  <i className="fas fa-edit mr-2"></i>
+                                  Edit Proposal
+                                </button>
+                                <button
+                                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  onClick={() => handleCancelClick(app)}
+                                  disabled={isCancelling}
+                                >
+                                  {isCancelling && cancellingApplicationId === app._id ? (
+                                    <>
+                                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                                      Withdrawing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <i className="fas fa-times mr-2"></i>
+                                      Withdraw
+                                    </>
+                                  )}
+                                </button>
+                              </>
                             )}
 
                             {app.status?.toLowerCase() === 'rejected' && (
@@ -493,6 +625,15 @@ export default function Applications() {
                           </div>
                         </div>
                       )}
+
+                      {/* Application Notes */}
+                      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <ApplicationNotes
+                          applicationId={app._id}
+                          userId={user?.uid}
+                          userName={user?.displayName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User'}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
@@ -501,6 +642,98 @@ export default function Applications() {
           </main>
         </div>
       </div>
+
+      {/* Edit Proposal Modal */}
+      {showEditModal && editingApplication && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={handleEditCancel}></div>
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full p-6">
+            <h3 className="text-xl font-bold mb-4 text-base-content">Edit Proposal</h3>
+            <p className="text-sm text-base-content opacity-70 mb-4">
+              Job: <strong>{editingApplication.title || 'Untitled Job'}</strong>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-base-content mb-2">
+                Your Proposal <span className="text-error">*</span>
+              </label>
+              <textarea
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base-content resize-none"
+                rows={8}
+                value={editProposalText}
+                onChange={(e) => setEditProposalText(e.target.value)}
+                placeholder="Describe your skills, experience, and why you're the right fit for this job..."
+                disabled={isSaving}
+              />
+              <div className="mt-2 text-xs text-base-content opacity-60">
+                {editProposalText.length} characters (minimum 50)
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-base-content font-medium rounded-lg transition-colors"
+                onClick={handleEditCancel}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSaveProposal}
+                disabled={isSaving || editProposalText.trim().length < 50}
+              >
+                {isSaving ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-save mr-2"></i>
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={handleCancelCancel}></div>
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold mb-4 text-base-content">Withdraw Application</h3>
+            <p className="text-base-content opacity-70 mb-6">
+              Are you sure you want to withdraw your application for <strong>"{cancellingApplicationTitle}"</strong>? 
+              This action cannot be undone, and the client will be notified.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-base-content font-medium rounded-lg transition-colors"
+                onClick={handleCancelCancel}
+                disabled={isCancelling}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleCancelConfirm}
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Withdrawing...
+                  </>
+                ) : (
+                  'Yes, Withdraw'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

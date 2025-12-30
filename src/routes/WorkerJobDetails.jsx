@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import toast, { Toaster } from 'react-hot-toast';
+import BookmarkButton from '../components/BookmarkButton';
+import ShareButton from '../components/ShareButton';
 
 export default function WorkerJobDetails() {
   const { id } = useParams();
@@ -25,6 +27,13 @@ export default function WorkerJobDetails() {
   const [proposal, setProposal] = useState('');
   const [saving, setSaving] = useState(false);
   const [appliedMsg, setAppliedMsg] = useState('');
+  
+  // application state
+  const [hasApplied, setHasApplied] = useState(false);
+  const [application, setApplication] = useState(null);
+  const [isEditingProposal, setIsEditingProposal] = useState(false);
+  const [editedProposalText, setEditedProposalText] = useState('');
+  const [fetchingApplication, setFetchingApplication] = useState(false);
 
   // keep uid in sync with AuthContext
   useEffect(() => {
@@ -72,6 +81,61 @@ export default function WorkerJobDetails() {
     return () => { ignore = true; };
   }, [id, base]);
 
+  // fetch application for current user and job
+  const fetchApplication = async () => {
+    if (!uid || !id) {
+      setHasApplied(false);
+      setApplication(null);
+      return;
+    }
+    
+    setFetchingApplication(true);
+    try {
+      const res = await fetch(`${base}/api/applications/${id}/${uid}`, {
+        headers: { Accept: 'application/json' }
+      });
+      
+      if (res.status === 404) {
+        // No application found - this is normal if user hasn't applied
+        setHasApplied(false);
+        setApplication(null);
+        return;
+      }
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      setApplication(data);
+      setHasApplied(true);
+    } catch (e) {
+      // If error is 404, user hasn't applied - this is fine
+      if (e.message.includes('404')) {
+        setHasApplied(false);
+        setApplication(null);
+      } else {
+        console.error('Failed to fetch application:', e);
+        // Don't show error to user - just assume no application
+        setHasApplied(false);
+        setApplication(null);
+      }
+    } finally {
+      setFetchingApplication(false);
+    }
+  };
+
+  // Fetch application when component mounts or uid/id changes
+  useEffect(() => {
+    if (authReady && uid && id) {
+      fetchApplication();
+    } else {
+      setHasApplied(false);
+      setApplication(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, id, authReady, base]);
+
   // submit proposal → POST /api/applications
   const submitProposal = async () => {
     if (!authReady) return; // wait until we know
@@ -114,21 +178,63 @@ export default function WorkerJobDetails() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+      
+      // Read response text once for error handling
+      const responseText = await res.text();
 
       if (res.status === 409) {
         toast.error('You already applied to this job.');
+        setAppliedMsg('❌ You already applied to this job.');
         return;
       }
-      if (!res.ok) throw new Error('Failed to submit');
+      if (!res.ok) {
+        // Try to parse error message from response
+        let errorMessage = 'Failed to submit. Please try again.';
+        try {
+          const errorData = JSON.parse(responseText);
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If parsing fails, use default message
+        }
+        toast.error(errorMessage);
+        setAppliedMsg(`❌ ${errorMessage}`);
+        return;
+      }
 
-      toast.success('Proposal submitted successfully!');
-      setAppliedMsg('✅ Proposal submitted!');
-      setApplyOpen(false);
-      setProposal('');
+      // Parse successful response
+      try {
+        const data = JSON.parse(responseText);
+        if (data.ok || data.application) {
+          toast.success('Proposal submitted successfully!');
+          setAppliedMsg('✅ Proposal submitted!');
+          setApplyOpen(false);
+          setProposal('');
+          // Use the application data from the response directly
+          if (data.application) {
+            setApplication(data.application);
+            setHasApplied(true);
+          } else {
+            // Fallback: fetch application data
+            await fetchApplication();
+          }
+        } else {
+          toast.error('Unexpected response from server.');
+          setAppliedMsg('❌ Unexpected response from server.');
+        }
+      } catch (parseError) {
+        // If response parsing fails, treat as error
+        toast.error('Failed to parse server response.');
+        setAppliedMsg('❌ Failed to parse server response.');
+      }
     } catch (e) {
       console.error(e);
-      toast.error('Failed to submit. Please try again.');
-      setAppliedMsg('❌ Failed to submit. Please try again.');
+      // Only show generic error if we haven't already set a specific error message
+      if (!appliedMsg || !appliedMsg.startsWith('❌')) {
+        toast.error('Failed to submit. Please try again.');
+        setAppliedMsg('❌ Failed to submit. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -144,6 +250,76 @@ export default function WorkerJobDetails() {
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
         return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+    }
+  };
+
+  const getApplicationStatusColor = (status) => {
+    const statusLower = (status || 'pending').toLowerCase();
+    switch (statusLower) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'accepted':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+    }
+  };
+
+  // Edit proposal functions
+  const handleEditProposal = () => {
+    if (application && application.proposalText) {
+      setEditedProposalText(application.proposalText);
+      setIsEditingProposal(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedProposalText('');
+    setIsEditingProposal(false);
+  };
+
+  const handleSaveProposal = async () => {
+    if (!application || !application._id) {
+      toast.error('Application not found.');
+      return;
+    }
+
+    const text = editedProposalText.trim();
+    if (!text) {
+      toast.error('Proposal text cannot be empty.');
+      return;
+    }
+
+    if (text.length < 50) {
+      toast.error('Proposal must be at least 50 characters long.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await fetch(`${base}/api/applications/${application._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposalText: text })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update proposal');
+      }
+
+      toast.success('Proposal updated successfully!');
+      setIsEditingProposal(false);
+      setEditedProposalText('');
+      // Refresh application data
+      await fetchApplication();
+    } catch (e) {
+      console.error('Failed to update proposal:', e);
+      toast.error(e.message || 'Failed to update proposal. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -239,7 +415,13 @@ export default function WorkerJobDetails() {
               <i className="fas fa-arrow-left mr-2"></i>
               Back
             </button>
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 items-center">
+              <BookmarkButton jobId={id} className="!btn-lg" />
+              <ShareButton
+                jobId={id}
+                jobTitle={job.title}
+                jobDescription={job.description}
+              />
               <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
                 {job.status || 'Active'}
               </span>
@@ -469,83 +651,196 @@ export default function WorkerJobDetails() {
               </div>
             </div>
 
-            {/* Application Form */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
-                Apply for this Job
-              </h3>
-              
-              <div className="space-y-6">
-                {!uid && authReady && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                    <p className="text-red-600 dark:text-red-400 text-sm">
-                      You must sign in to submit a proposal.
-                    </p>
-                  </div>
-                )}
+            {/* Application Form or Status */}
+            {hasApplied && application ? (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+                <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
+                  Application Status
+                </h3>
                 
-                <div>
-                  <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
-                    Your Proposal
-                  </label>
-                  <textarea
-                    value={proposal}
-                    onChange={(e) => setProposal(e.target.value)}
-                    placeholder="Write your proposal here... Explain why you're the best fit for this job."
-                    className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
-                    rows={5}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Minimum 50 characters required ({proposal.length}/50)
-                  </p>
-                </div>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setApplyOpen(!applyOpen)}
-                    className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
-                    disabled={!authReady}
-                  >
-                    {applyOpen ? 'Cancel' : 'Apply for this Job'}
-                  </button>
-                  <button className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl">
-                    <i className="fas fa-bookmark"></i>
-                  </button>
-                </div>
-
-                {/* Proposal submission */}
-                {applyOpen && (
-                  <div className="mt-6">
-                    <button
-                      onClick={submitProposal}
-                      disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50}
-                      className="btn btn-primary w-full font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
-                    >
-                      {saving ? (
-                        <span className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                          Submitting...
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center">
-                          <i className="fas fa-paper-plane mr-2"></i>
-                          Submit Proposal
-                        </span>
-                      )}
-                    </button>
+                <div className="space-y-6">
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-base-content opacity-70 mb-2">Status</p>
+                      <span className={`px-4 py-2 rounded-full text-sm font-medium ${getApplicationStatusColor(application.status)}`}>
+                        {application.status ? application.status.charAt(0).toUpperCase() + application.status.slice(1) : 'Pending'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-base-content opacity-70 mb-2">Submitted</p>
+                      <p className="text-sm text-base-content font-medium">
+                        {application.createdAt 
+                          ? new Date(application.createdAt).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : 'N/A'}
+                      </p>
+                    </div>
                   </div>
-                )}
 
-                {/* Feedback */}
-                {appliedMsg && (
-                  <div className={`p-4 rounded-xl ${appliedMsg.startsWith('✅') ? 'bg-success/20 border border-success' : 'bg-error/20 border border-error'}`}>
-                    <p className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-success' : 'text-error'}`}>
-                      {appliedMsg}
-                    </p>
+                  {/* Proposal Text */}
+                  <div>
+                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
+                      Your Proposal
+                    </label>
+                    {isEditingProposal ? (
+                      <>
+                        <textarea
+                          value={editedProposalText}
+                          onChange={(e) => setEditedProposalText(e.target.value)}
+                          className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
+                          rows={5}
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          Minimum 50 characters required ({editedProposalText.length}/50)
+                        </p>
+                        <div className="flex gap-3 mt-4">
+                          <button
+                            onClick={handleSaveProposal}
+                            disabled={saving || !editedProposalText.trim() || editedProposalText.trim().length < 50}
+                            className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                          >
+                            {saving ? (
+                              <span className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Saving...
+                              </span>
+                            ) : (
+                              <span className="flex items-center justify-center">
+                                <i className="fas fa-save mr-2"></i>
+                                Save Changes
+                              </span>
+                            )}
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={saving}
+                            className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-full px-4 py-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-base-content text-lg min-h-[120px] whitespace-pre-wrap">
+                          {application.proposalText || 'No proposal text available'}
+                        </div>
+                        {application.status === 'pending' && (
+                          <div className="flex gap-3 mt-4">
+                            <button
+                              onClick={handleEditProposal}
+                              className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                              <i className="fas fa-edit mr-2"></i>
+                              Edit Proposal
+                            </button>
+                            <Link
+                              to="/applications"
+                              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl flex items-center justify-center"
+                            >
+                              <i className="fas fa-eye mr-2"></i>
+                              View All Applications
+                            </Link>
+                          </div>
+                        )}
+                        {application.status !== 'pending' && (
+                          <div className="mt-4">
+                            <Link
+                              to="/applications"
+                              className="w-full block text-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
+                            >
+                              <i className="fas fa-eye mr-2"></i>
+                              View All Applications
+                            </Link>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+                <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
+                  Apply for this Job
+                </h3>
+                
+                <div className="space-y-6">
+                  {!uid && authReady && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                      <p className="text-red-600 dark:text-red-400 text-sm">
+                        You must sign in to submit a proposal.
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
+                      Your Proposal
+                    </label>
+                    <textarea
+                      value={proposal}
+                      onChange={(e) => setProposal(e.target.value)}
+                      placeholder="Write your proposal here... Explain why you're the best fit for this job."
+                      className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
+                      rows={5}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Minimum 50 characters required ({proposal.length}/50)
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setApplyOpen(!applyOpen)}
+                      className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                      disabled={!authReady}
+                    >
+                      {applyOpen ? 'Cancel' : 'Apply for this Job'}
+                    </button>
+                    <BookmarkButton jobId={id} />
+                  </div>
+
+                  {/* Proposal submission */}
+                  {applyOpen && (
+                    <div className="mt-6">
+                      <button
+                        onClick={submitProposal}
+                        disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50}
+                        className="btn btn-primary w-full font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                      >
+                        {saving ? (
+                          <span className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                            Submitting...
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center">
+                            <i className="fas fa-paper-plane mr-2"></i>
+                            Submit Proposal
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Feedback */}
+                  {appliedMsg && (
+                    <div className={`p-4 rounded-xl ${appliedMsg.startsWith('✅') ? 'bg-success/20 border border-success' : 'bg-error/20 border border-error'}`}>
+                      <p className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-success' : 'text-error'}`}>
+                        {appliedMsg}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

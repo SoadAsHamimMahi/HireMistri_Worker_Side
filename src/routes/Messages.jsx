@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useMessages } from '../contexts/MessagesContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
 import { FaPaperPlane, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 
@@ -9,8 +10,10 @@ const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').repla
 export default function Messages({ jobId, clientId, clientName, conversationId: providedConversationId, onClose }) {
   const { user } = useContext(AuthContext);
   const { getCachedMessages, updateMessages, addMessage } = useMessages();
+  const { socket, connected, sendMessage, sendTyping, markMessagesRead } = useWebSocket();
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   
   // Use provided conversationId or generate one - matches backend format
@@ -55,10 +58,48 @@ export default function Messages({ jobId, clientId, clientName, conversationId: 
       setTimeout(loadMessages, 100);
     }
 
-    // Poll for new messages every 3 seconds (silent updates)
-    const interval = setInterval(loadMessages, 3000);
-    return () => clearInterval(interval);
-  }, [conversationId, user?.uid]);
+    // Poll for new messages every 3 seconds (silent updates) - fallback if WebSocket not connected
+    const interval = connected ? null : setInterval(loadMessages, 3000);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [conversationId, user?.uid, clientId, connected]);
+
+  // WebSocket: Listen for new messages and typing indicators
+  useEffect(() => {
+    if (!socket || !conversationId) return;
+
+    const handleNewMessage = (message) => {
+      if (message.conversationId === conversationId) {
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m._id === message._id || (m.id === message.id && m.createdAt === message.createdAt))) {
+            return prev;
+          }
+          return [...prev, message];
+        });
+        addMessage(conversationId, message);
+        // Mark as read if this user is the recipient and the message is from the other user
+        if (message.recipientId === user?.uid && message.senderId === clientId) {
+          markMessagesRead(conversationId, clientId);
+        }
+      }
+    };
+
+    const handleTyping = (data) => {
+      if (data.userId === clientId) { // Check if the typing user is the other participant
+        setIsTyping(data.typing);
+      }
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('user_typing', handleTyping);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('user_typing', handleTyping);
+    };
+  }, [socket, conversationId, clientId, addMessage, user?.uid, markMessagesRead]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -82,27 +123,43 @@ export default function Messages({ jobId, clientId, clientName, conversationId: 
       return;
     }
 
+    setSending(true);
     try {
-      setSending(true);
-      const response = await axios.post(`${API_BASE}/api/messages`, {
+      const messageData = {
         senderId: user.uid, // Worker's ID
         recipientId: recipientId, // Client's ID
         jobId: jobId || null,
         message: newMessage.trim(),
         senderName: user.displayName || user.email || 'Worker',
         recipientName: clientName || 'Client',
-      });
+      };
 
-      // Optimistically add message (instant UI update)
-      const newMsg = response.data;
-      setMessages(prev => [...prev, newMsg]);
-      addMessage(conversationId, newMsg);
+      if (connected) {
+        // Send via WebSocket
+        sendMessage(messageData);
+        // Optimistically add message (WebSocket server will also emit, but this is faster)
+        const tempMessage = {
+          _id: `temp-${Date.now()}`, // Temporary ID
+          ...messageData,
+          createdAt: new Date().toISOString(),
+          read: false,
+        };
+        setMessages(prev => [...prev, tempMessage]);
+        addMessage(conversationId, tempMessage);
+      } else {
+        // Fallback to REST API if WebSocket not connected
+        const response = await axios.post(`${API_BASE}/api/messages`, messageData);
+        const newMsg = response.data;
+        setMessages(prev => [...prev, newMsg]);
+        addMessage(conversationId, newMsg);
+      }
       setNewMessage('');
     } catch (err) {
       console.error('Failed to send message:', err);
       alert('Failed to send message. Please try again.');
     } finally {
       setSending(false);
+      sendTyping(recipientId, false); // Stop typing after sending
     }
   };
 
@@ -168,6 +225,7 @@ export default function Messages({ jobId, clientId, clientName, conversationId: 
             );
           })
         )}
+        {isTyping && <div className="text-sm text-base-content opacity-60 mb-2">Client is typing...</div>}
         <div ref={messagesEndRef} />
       </div>
 
@@ -177,7 +235,12 @@ export default function Messages({ jobId, clientId, clientName, conversationId: 
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              if (connected && clientId) {
+                sendTyping(clientId, e.target.value.length > 0);
+              }
+            }}
             placeholder="Type a message..."
             className="input input-bordered flex-1"
             disabled={sending}

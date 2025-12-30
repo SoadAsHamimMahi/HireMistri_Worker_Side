@@ -46,10 +46,12 @@ const Orders = () => {
           headers: { Accept: 'application/json' },
         });
 
-        // Filter for accepted applications (these become orders)
-        const acceptedApplications = Array.isArray(data) ? data.filter(app => 
-          app.status && app.status.toLowerCase() === 'accepted'
-        ) : [];
+        // Filter for accepted and completed applications (these become orders)
+        // Accepted = active orders, Completed = completed orders
+        const acceptedApplications = Array.isArray(data) ? data.filter(app => {
+          const status = app.status ? app.status.toLowerCase() : '';
+          return status === 'accepted' || status === 'completed';
+        }) : [];
 
         // Transform applications to order format
         const transformedOrders = acceptedApplications.map((app, index) => ({
@@ -59,7 +61,7 @@ const Orders = () => {
           clientName: app.clientName || 'Client', // This might need to be fetched separately
           clientAvatar: `https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face&ixid=${index}`, // Placeholder avatar
           category: app.category || 'General',
-          status: 'active', // All accepted applications are considered active orders
+          status: app.status && app.status.toLowerCase() === 'completed' ? 'completed' : 'active', // Preserve completed status, others are active
           budget: typeof app.budget === 'number' ? app.budget : parseInt(app.budget) || 0,
           location: app.location || 'N/A',
           startDate: app.createdAt ? new Date(app.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],

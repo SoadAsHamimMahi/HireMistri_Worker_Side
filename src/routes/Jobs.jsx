@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import BookmarkButton from '../components/BookmarkButton';
+import ShareButton from '../components/ShareButton';
+import SearchHistory from '../components/SearchHistory';
+import { useSearchHistory } from '../hooks/useSearchHistory';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -25,24 +29,75 @@ const Jobs = () => {
   const [workerLocation, setWorkerLocation] = useState(null);
   const [filters, setFilters] = useState({
     category: 'All',
+    categories: [], // Multiple categories
     location: 'All',
     budget: 'All',
+    budgetMin: '',
+    budgetMax: '',
     applicants: 'All',
     search: '',
-    status: 'active', // Do not add sort control
+    status: 'all', // Changed from 'active' to 'all' to show all jobs
+    skills: [], // Skills array
+    dateFrom: '',
+    dateTo: '',
+    sortBy: 'newest',
+    // Location radius
+    useRadius: false,
+    radius: 10,
+    radiusLat: null,
+    radiusLng: null,
   });
   const [page, setPage] = useState(1);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Get all unique skills from job data
+  const allSkills = useMemo(() => {
+    const skillSet = new Set();
+    jobData.forEach(job => {
+      if (Array.isArray(job.skills)) {
+        job.skills.forEach(skill => skillSet.add(skill));
+      }
+    });
+    return Array.from(skillSet).sort();
+  }, [jobData]);
 
   // Filters to params helper
   const buildQueryParams = () => {
     const params = {};
     if (filters.category && filters.category !== 'All') params.category = filters.category;
+    if (filters.categories && filters.categories.length > 0) {
+      params.categories = filters.categories.join(',');
+    }
     if (filters.location && filters.location !== 'All') params.location = filters.location;
     if (filters.budget && filters.budget !== 'All') params.budget = filters.budget;
+    // Budget range
+    if (filters.budgetMin) params.budgetMin = filters.budgetMin;
+    if (filters.budgetMax) params.budgetMax = filters.budgetMax;
     if (filters.applicants && filters.applicants !== 'All') params.applicants = filters.applicants;
     if (filters.search && filters.search.trim() !== '') params.search = filters.search.trim();
-    if (filters.status) params.status = filters.status;
-    params.sort = 'newest';
+    // Only send status if it's not 'all' (to show all jobs)
+    if (filters.status && filters.status !== 'All' && filters.status !== 'all') {
+      params.status = filters.status;
+    } else if (filters.status === 'all' || filters.status === 'All') {
+      params.status = 'all'; // Explicitly request all jobs
+    }
+    // Skills
+    if (filters.skills && filters.skills.length > 0) {
+      params.skills = filters.skills.join(',');
+    }
+    // Date range
+    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+    if (filters.dateTo) params.dateTo = filters.dateTo;
+    // Location radius
+    if (filters.useRadius && filters.radiusLat && filters.radiusLng) {
+      params.lat = filters.radiusLat;
+      params.lng = filters.radiusLng;
+      params.radius = filters.radius;
+      if (filters.sortBy === 'distance') {
+        params.sortBy = 'distance';
+      }
+    }
+    params.sort = filters.sortBy || 'newest';
     return params;
   };
 
@@ -91,8 +146,34 @@ const Jobs = () => {
   const start = (page - 1) * JOBS_PER_PAGE;
   const currentJobs = jobData.slice(start, start + JOBS_PER_PAGE);
 
+  const { saveSearch } = useSearchHistory();
+  const saveSearchTimerRef = useRef(null);
+
   const handleChange = (type, value) => {
     setFilters(prev => ({ ...prev, [type]: value }));
+  };
+
+  // Debounced search saving (save after 2 seconds of no changes)
+  useEffect(() => {
+    if (saveSearchTimerRef.current) {
+      clearTimeout(saveSearchTimerRef.current);
+    }
+
+    saveSearchTimerRef.current = setTimeout(() => {
+      saveSearch(filters);
+    }, 2000);
+
+    return () => {
+      if (saveSearchTimerRef.current) {
+        clearTimeout(saveSearchTimerRef.current);
+      }
+    };
+  }, [filters, saveSearch]);
+
+  // Apply saved search
+  const handleSelectSearch = (savedFilters) => {
+    setFilters(savedFilters);
+    setPage(1);
   };
 
   useEffect(() => {
@@ -194,19 +275,30 @@ const Jobs = () => {
             {locations.map(loc => <option key={loc}>{loc}</option>)}
           </select>
         </div>
-        {/* Budget */}
+        {/* Budget Range */}
         <div>
-          <label className="block text-sm font-medium text-base-content opacity-80">Budget</label>
-          <select
-            className="select select-bordered w-full"
-            value={filters.budget}
-            onChange={(e) => handleChange('budget', e.target.value)}
-          >
-            <option value="All">All Budgets</option>
-            <option value="0-500">৳0–500</option>
-            <option value="501-1000">৳501–1000</option>
-            <option value="1001+">৳1001+</option>
-          </select>
+          <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
+            Budget Range (৳)
+          </label>
+          <div className="flex gap-2 items-center">
+            <input
+              type="number"
+              placeholder="Min"
+              className="input input-bordered w-full"
+              value={filters.budgetMin}
+              onChange={(e) => handleChange('budgetMin', e.target.value)}
+              min="0"
+            />
+            <span className="text-base-content opacity-60">-</span>
+            <input
+              type="number"
+              placeholder="Max"
+              className="input input-bordered w-full"
+              value={filters.budgetMax}
+              onChange={(e) => handleChange('budgetMax', e.target.value)}
+              min="0"
+            />
+          </div>
         </div>
         {/* Applicants */}
         <div>
@@ -232,6 +324,149 @@ const Jobs = () => {
             onChange={e => handleChange('search', e.target.value)}
           />
         </div>
+      </div>
+
+      {/* Advanced Filters Toggle */}
+      <div className="mb-4">
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+        >
+          <i className={`fas fa-chevron-${showAdvancedFilters ? 'up' : 'down'} mr-2`}></i>
+          {showAdvancedFilters ? 'Hide' : 'Show'} Advanced Filters
+        </button>
+      </div>
+
+      {/* Advanced Filters */}
+      {showAdvancedFilters && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 p-4 bg-base-200 dark:bg-gray-700 rounded-lg">
+          {/* Multiple Categories */}
+          <div>
+            <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
+              Categories (Multiple)
+            </label>
+            <select
+              multiple
+              className="select select-bordered w-full h-24"
+              value={filters.categories}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                handleChange('categories', selected);
+              }}
+            >
+              {categories.filter(c => c !== 'All').map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+            <p className="text-xs text-base-content opacity-60 mt-1">
+              Hold Ctrl/Cmd to select multiple
+            </p>
+          </div>
+
+          {/* Skills Selector */}
+          <div>
+            <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
+              Skills
+            </label>
+            <select
+              multiple
+              className="select select-bordered w-full h-24"
+              value={filters.skills}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                handleChange('skills', selected);
+              }}
+            >
+              {allSkills.map(skill => (
+                <option key={skill} value={skill}>{skill}</option>
+              ))}
+            </select>
+            <p className="text-xs text-base-content opacity-60 mt-1">
+              Hold Ctrl/Cmd to select multiple
+            </p>
+          </div>
+
+          {/* Date Range */}
+          <div>
+            <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
+              Date Range
+            </label>
+            <div className="flex flex-col gap-2">
+              <input
+                type="date"
+                className="input input-bordered w-full"
+                value={filters.dateFrom}
+                onChange={(e) => handleChange('dateFrom', e.target.value)}
+                placeholder="From"
+              />
+              <input
+                type="date"
+                className="input input-bordered w-full"
+                value={filters.dateTo}
+                onChange={(e) => handleChange('dateTo', e.target.value)}
+                placeholder="To"
+              />
+            </div>
+          </div>
+
+          {/* Location Radius */}
+          <div>
+            <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
+              Location Radius (km)
+            </label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="checkbox"
+                className="checkbox"
+                checked={filters.useRadius}
+                onChange={(e) => {
+                  handleChange('useRadius', e.target.checked);
+                  if (e.target.checked && workerLocation) {
+                    handleChange('radiusLat', workerLocation[0]);
+                    handleChange('radiusLng', workerLocation[1]);
+                  }
+                }}
+              />
+              <span className="text-sm text-base-content opacity-70">Use my location</span>
+            </div>
+            {filters.useRadius && (
+              <div className="mt-2">
+                <input
+                  type="number"
+                  className="input input-bordered w-full"
+                  value={filters.radius}
+                  onChange={(e) => handleChange('radius', e.target.value)}
+                  min="1"
+                  max="100"
+                  placeholder="Radius in km"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
+              Sort By
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={filters.sortBy}
+              onChange={(e) => handleChange('sortBy', e.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              {filters.useRadius && filters.radiusLat && (
+                <option value="distance">Distance (Nearest)</option>
+              )}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Search History */}
+      <div className="mb-6">
+        <SearchHistory onSelectSearch={handleSelectSearch} />
       </div>
 
       {/* Job Cards or Map View */}
@@ -335,7 +570,7 @@ const Jobs = () => {
         /* List View */
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentJobs.map(job => {
+            {currentJobs.map((job, index) => {
               const jobId =
                 (typeof job._id === 'string' && job._id) ||
                 (job._id && job._id.$oid) ||
@@ -344,8 +579,11 @@ const Jobs = () => {
               return (
                 <div
                   key={jobId}
-                  className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
+                  className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative"
                 >
+                  <div className="absolute top-2 right-2 z-10">
+                    <BookmarkButton jobId={jobId} />
+                  </div>
                   <img
                     src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
                     alt={job.title}
@@ -353,7 +591,17 @@ const Jobs = () => {
                   />
 
                   <div className="p-4 flex flex-col gap-2">
-                    <h3 className="text-lg font-semibold text-base-content">{job.title}</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-base-content">{job.title}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        job.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                        job.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                        job.status === 'in-progress' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                      }`}>
+                        {job.status || 'active'}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">📍 {job.location}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-300">📂 {job.category}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">🗓️ Posted on: {job.date}</p>
@@ -373,12 +621,19 @@ const Jobs = () => {
                       </div>
                     )}
 
-                    <Link
-                      to={`/jobs/${jobId}`}
-                      className="btn btn-sm btn-primary mt-3 w-full text-center"
-                    >
-                      Apply
-                    </Link>
+                    <div className="flex gap-2 mt-3">
+                      <Link
+                        to={`/jobs/${jobId}`}
+                        className="btn btn-sm btn-primary flex-1 text-center"
+                      >
+                        Apply
+                      </Link>
+                      <ShareButton
+                        jobId={jobId}
+                        jobTitle={job.title}
+                        jobDescription={job.description}
+                      />
+                    </div>
                   </div>
                 </div>
               );
