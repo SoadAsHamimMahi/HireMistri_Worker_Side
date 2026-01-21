@@ -41,14 +41,50 @@ function TagInput({ value = [], onChange, label, placeholder = "Type and press E
   );
 }
 
+/* ---------------------------- Multi-Select ---------------------------- */
+function MultiSelect({ value = [], onChange, label, options, placeholder = "Select..." }) {
+  const toggle = (option) => {
+    if (value.includes(option)) {
+      onChange(value.filter(v => v !== option));
+    } else {
+      onChange([...value, option]);
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">{label}</label>
+      <div className="flex flex-wrap gap-2">
+        {options.map(opt => (
+          <button
+            key={opt}
+            type="button"
+            className={`btn btn-sm ${value.includes(opt) ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => toggle(opt)}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+      {value.length > 0 && (
+        <div className="mt-2 text-sm text-base-content opacity-70">
+          Selected: {value.join(", ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ----------------------------- Main Component ----------------------------- */
 export default function WorkerProfile() {
-  const { user } = useContext(AuthContext) || {};
+  const { user, sendVerificationEmail, reloadUser } = useContext(AuthContext) || {};
   const uid = user?.uid || null;
+  const [sendingVerification, setSendingVerification] = useState(false);
 
   const [tab, setTab] = useState("overview"); // overview | edit | password
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -56,6 +92,7 @@ export default function WorkerProfile() {
     displayName: "",
     phone: "",
     workExperience: "",
+    experienceYears: "",
     email: "",
     headline: "",
     bio: "",
@@ -67,20 +104,51 @@ export default function WorkerProfile() {
     city: "",
     country: "Bangladesh",
     zip: "",
+    // New trust fields
+    servicesOffered: { categories: [], tags: [] },
+    serviceArea: { cities: [], radiusKm: null },
+    certifications: [],
+    languages: [],
+    pricing: { hourlyRate: null, startingPrice: null, minimumCharge: null, currency: "BDT" },
+    portfolio: [],
+    emailVerified: false,
   });
 
+  const serviceCategories = ["Plumber", "Electrician", "Carpenter", "Painter", "Mechanic", "AC Repair", "Appliance Repair", "Mason", "Welder", "Other"];
+  const languageOptions = ["Bengali", "English", "Hindi", "Urdu", "Arabic"];
+
   const requiredFields = ["firstName", "lastName", "displayName", "email", "phone", "workExperience"];
-  const isValid = useMemo(() => requiredFields.every((f) => String(profile[f] || "").trim() !== ""), [profile]);
+  const isValid = useMemo(() => {
+    const basicValid = requiredFields.every((f) => String(profile[f] || "").trim() !== "");
+    const hasPhoto = !!profile.profileCover;
+    return basicValid && hasPhoto; // Require profile photo
+  }, [profile]);
 
   const update = (k, v) => setProfile((p) => ({ ...p, [k]: v }));
   const handleChange = (e) => update(e.target.name, e.target.value);
 
   /* ------------------------- Avatar upload ------------------------ */
   const uploadAvatar = async (file) => {
+    if (!uid) throw new Error("User ID is required");
+    const fd = new FormData();
+    fd.append("avatar", file);
+    const res = await fetch(`${base}/api/users/${uid}/avatar`, { method: "POST", body: fd });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Avatar upload failed (HTTP ${res.status})`);
+    }
+    const data = await res.json();
+    const url = data?.url;
+    if (!url) throw new Error("No image URL returned");
+    return url;
+  };
+
+  /* ------------------------- Portfolio upload ------------------------ */
+  const uploadPortfolioImage = async (file) => {
     const fd = new FormData();
     fd.append("images", file);
     const res = await fetch(`${base}/api/browse-jobs/upload`, { method: "POST", body: fd });
-    if (!res.ok) throw new Error(`Avatar upload failed (HTTP ${res.status})`);
+    if (!res.ok) throw new Error(`Portfolio upload failed (HTTP ${res.status})`);
     const data = await res.json();
     const url = data?.imageUrls?.[0];
     if (!url) throw new Error("No image URL returned");
@@ -90,14 +158,40 @@ export default function WorkerProfile() {
   const onDrop = async (acceptedFiles) => {
     const file = acceptedFiles?.[0];
     if (!file) return;
+    if (!uid) {
+      toast.error("Please log in to upload profile photo");
+      return;
+    }
     try {
       setSaving(true);
       const url = await uploadAvatar(file);
+      // Update local state
       update("profileCover", url);
-      toast.success("Profile photo updated");
+      // Refresh profile to ensure sync (server already saved it)
+      const res = await fetch(`${base}/api/users/${uid}`);
+      if (res.ok) {
+        const updated = await res.json();
+        setProfile(prev => ({ ...prev, profileCover: updated.profileCover || url }));
+      }
+      toast.success("Profile photo updated and saved!");
     } catch (e) {
       console.error(e);
       toast.error(e.message || "Failed to upload image");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onPortfolioDrop = async (acceptedFiles) => {
+    try {
+      setSaving(true);
+      const uploads = await Promise.all(acceptedFiles.map(uploadPortfolioImage));
+      const newPortfolio = uploads.map(url => ({ url, caption: "", createdAt: new Date() }));
+      update("portfolio", [...(profile.portfolio || []), ...newPortfolio]);
+      toast.success(`${uploads.length} image(s) added to portfolio`);
+    } catch (e) {
+      console.error(e);
+      toast.error(e.message || "Failed to upload portfolio images");
     } finally {
       setSaving(false);
     }
@@ -107,6 +201,12 @@ export default function WorkerProfile() {
     onDrop,
     accept: { "image/*": [] },
     multiple: false,
+  });
+
+  const { getRootProps: getPortfolioRootProps, getInputProps: getPortfolioInputProps } = useDropzone({
+    onDrop: onPortfolioDrop,
+    accept: { "image/*": [] },
+    multiple: true,
   });
 
   /* ------------------------------ Load profile ------------------------------ */
@@ -124,8 +224,17 @@ export default function WorkerProfile() {
                 ...prev,
                 ...data,
                 skills: Array.isArray(data.skills) ? data.skills : [],
+                languages: Array.isArray(data.languages) ? data.languages : [],
+                servicesOffered: data.servicesOffered || { categories: [], tags: [] },
+                serviceArea: data.serviceArea || { cities: [], radiusKm: null },
+                certifications: Array.isArray(data.certifications) ? data.certifications : [],
+                portfolio: Array.isArray(data.portfolio) ? data.portfolio : [],
+                pricing: data.pricing || { hourlyRate: null, startingPrice: null, minimumCharge: null, currency: "BDT" },
+                experienceYears: data.experienceYears || data.workExperience || "",
                 isAvailable: data.isAvailable ?? true,
+                emailVerified: data.emailVerified || false,
               }));
+              setStats(data.stats || null);
             }
           } else {
             const saved = JSON.parse(localStorage.getItem("workerProfile") || "null");
@@ -154,22 +263,36 @@ export default function WorkerProfile() {
       email: String(profile.email || "").toLowerCase(),
       isAvailable: !!profile.isAvailable,
       skills: Array.isArray(profile.skills) ? profile.skills : [],
+      languages: Array.isArray(profile.languages) ? profile.languages : [],
+      experienceYears: Number(profile.experienceYears || profile.workExperience || 0) || null,
       updatedAt: new Date(),
     };
     const res = await fetch(`${base}/api/users/${uid}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Save failed (HTTP ${res.status})`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Save failed (HTTP ${res.status})`);
+    }
+    return await res.json();
   };
 
   const handleSave = async () => {
+    if (!profile.profileCover) {
+      return toast.error("Profile photo is required. Please upload a photo first.");
+    }
     if (!isValid) return toast.error("Please fill in all required fields.");
     try {
       setSaving(true);
-      if (uid) await saveToServer();
-      else localStorage.setItem("workerProfile", JSON.stringify(profile));
+      if (uid) {
+        const updated = await saveToServer();
+        setProfile(prev => ({ ...prev, ...updated }));
+        setStats(updated.stats || null);
+      } else {
+        localStorage.setItem("workerProfile", JSON.stringify(profile));
+      }
       toast.success("Profile saved successfully!");
       setTab("overview");
     } catch (e) {
@@ -187,6 +310,7 @@ export default function WorkerProfile() {
       displayName: "",
       phone: "",
       workExperience: "",
+      experienceYears: "",
       email: "",
       headline: "",
       bio: "",
@@ -198,8 +322,73 @@ export default function WorkerProfile() {
       city: "",
       country: "Bangladesh",
       zip: "",
+      servicesOffered: { categories: [], tags: [] },
+      serviceArea: { cities: [], radiusKm: null },
+      certifications: [],
+      languages: [],
+      pricing: { hourlyRate: null, startingPrice: null, minimumCharge: null, currency: "BDT" },
+      portfolio: [],
+      emailVerified: false,
     });
     toast("Profile cleared.", { icon: "🧹" });
+  };
+
+  const addCertification = () => {
+    update("certifications", [...(profile.certifications || []), { title: "", issuer: "", year: null, proofUrl: "" }]);
+  };
+
+  const updateCertification = (index, field, value) => {
+    const certs = [...(profile.certifications || [])];
+    certs[index] = { ...certs[index], [field]: value };
+    update("certifications", certs);
+  };
+
+  const removeCertification = (index) => {
+    update("certifications", (profile.certifications || []).filter((_, i) => i !== index));
+  };
+
+  const removePortfolioItem = (index) => {
+    update("portfolio", (profile.portfolio || []).filter((_, i) => i !== index));
+  };
+
+  const updatePortfolioCaption = (index, caption) => {
+    const portfolio = [...(profile.portfolio || [])];
+    portfolio[index] = { ...portfolio[index], caption };
+    update("portfolio", portfolio);
+  };
+
+  const handleSendVerificationEmail = async () => {
+    try {
+      setSendingVerification(true);
+      await sendVerificationEmail();
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (e) {
+      console.error(e);
+      toast.error(e.message || "Failed to send verification email");
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
+  const handleCheckVerification = async () => {
+    try {
+      await reloadUser();
+      if (user?.emailVerified) {
+        // Sync to server
+        await fetch(`${base}/api/users/${uid}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ emailVerified: true }),
+        });
+        update("emailVerified", true);
+        toast.success("Email verified!");
+      } else {
+        toast("Email not verified yet. Please check your inbox and click the verification link.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to check verification status");
+    }
   };
 
   /* ------------------------------ Derived fields ----------------------------- */
@@ -208,11 +397,10 @@ export default function WorkerProfile() {
   const addressPretty = [profile.address1, profile.address2, profile.city, profile.country, profile.zip]
     .filter(Boolean).join(", ");
 
-  // About prefers bio; falls back to headline; then placeholder
   const aboutText =
     (profile.bio && profile.bio.trim()) ||
     (profile.headline && profile.headline.trim()) ||
-    "This worker hasn’t written an about section yet. Add a short intro in Edit Profile.";
+    "This worker hasn't written an about section yet. Add a short intro in Edit Profile.";
 
   const fieldOfInterest = profile.skills?.[0] || "—";
 
@@ -243,7 +431,7 @@ export default function WorkerProfile() {
             <div className="relative mb-6">
               <div
                 {...getRootProps()}
-                className={`relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary-200 dark:ring-primary-800 cursor-pointer group transition-all duration-300 hover:ring-primary-400 dark:hover:ring-primary-600`}
+                className={`relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary-200 dark:ring-primary-800 cursor-pointer group transition-all duration-300 hover:ring-primary-400 dark:hover:ring-primary-600 ${!profile.profileCover ? 'ring-red-300 dark:ring-red-700' : ''}`}
                 title="Click or drag to upload photo"
               >
                 <input {...getInputProps()} />
@@ -264,25 +452,76 @@ export default function WorkerProfile() {
               </div>
               
               {/* Status Indicator */}
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center">
-                <i className="fas fa-check text-white text-sm"></i>
-              </div>
+              {profile.profileCover && (
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center">
+                  <i className="fas fa-check text-white text-sm"></i>
+                </div>
+              )}
             </div>
 
             <div className="text-center">
               <h2 className="text-2xl font-heading font-bold text-base-content mb-2">{fullName}</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">{secondaryLine}</p>
               
+              {/* Trust Badges */}
+              <div className="flex flex-wrap gap-2 justify-center mb-4">
+                {user?.emailVerified || profile.emailVerified ? (
+                  <span className="badge badge-success gap-1">
+                    <i className="fas fa-check-circle"></i>Email Verified
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="badge badge-warning gap-1">
+                      <i className="fas fa-exclamation-triangle"></i>Email Not Verified
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-primary"
+                      onClick={handleSendVerificationEmail}
+                      disabled={sendingVerification}
+                      title="Send verification email"
+                    >
+                      {sendingVerification ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin"></i> Sending...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-envelope"></i> Verify
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+                {profile.createdAt && (
+                  <span className="badge badge-outline gap-1 text-xs">
+                    <i className="fas fa-calendar"></i>Member since {new Date(profile.createdAt).getFullYear()}
+                  </span>
+                )}
+              </div>
+              
               {/* Profile Stats */}
               <div className="grid grid-cols-2 gap-4 w-full mb-6">
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
-                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">4.8</div>
+                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
+                    {stats?.averageRating?.toFixed(1) || "0.0"}
+                  </div>
                   <div className="text-xs text-base-content opacity-70">Rating</div>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
-                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">12</div>
+                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
+                    {stats?.workerCompletedJobs || 0}
+                  </div>
                   <div className="text-xs text-base-content opacity-70">Jobs Done</div>
                 </div>
+                {stats?.workerResponseRate !== undefined && (
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center col-span-2">
+                    <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
+                      {stats.workerResponseRate}%
+                    </div>
+                    <div className="text-xs text-base-content opacity-70">Response Rate</div>
+                  </div>
+                )}
               </div>
               
               {/* Availability Status */}
@@ -342,14 +581,141 @@ export default function WorkerProfile() {
 
             {/* Tab bodies */}
             <div className="p-5 sm:p-6">
-              {/* =============== OVERVIEW (now shows all edit data) =============== */}
+              {/* =============== OVERVIEW =============== */}
               {tab === "overview" && (
                 <div className="space-y-8">
+                  {/* Performance Signals */}
+                  {stats && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-3 text-base-content">Performance Metrics</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerCompletedJobs || 0}</div>
+                          <div className="text-sm text-base-content opacity-70">Completed Jobs</div>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerActiveOrders || 0}</div>
+                          <div className="text-sm text-base-content opacity-70">Active Orders</div>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerResponseRate || 0}%</div>
+                          <div className="text-sm text-base-content opacity-70">Response Rate</div>
+                        </div>
+                        {stats.workerResponseTimeHours && (
+                          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerResponseTimeHours}h</div>
+                            <div className="text-sm text-base-content opacity-70">Avg Response</div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
                   {/* About */}
                   <section>
                     <h3 className="text-lg font-semibold mb-2 text-base-content">About</h3>
                     <p className="leading-relaxed text-base-content opacity-80">{aboutText}</p>
                   </section>
+
+                  {/* Services Offered */}
+                  {(profile.servicesOffered?.categories?.length > 0 || profile.servicesOffered?.tags?.length > 0) && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-2 text-base-content">Services Offered</h3>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {profile.servicesOffered.categories.map((cat, i) => (
+                          <span key={i} className="badge badge-primary">{cat}</span>
+                        ))}
+                        {profile.servicesOffered.tags.map((tag, i) => (
+                          <span key={i} className="badge badge-outline">{tag}</span>
+                        ))}
+                      </div>
+                      {profile.serviceArea?.cities?.length > 0 && (
+                        <p className="text-sm text-base-content opacity-70">
+                          <i className="fas fa-map-marker-alt mr-2"></i>
+                          Service Area: {profile.serviceArea.cities.join(", ")}
+                          {profile.serviceArea.radiusKm && ` (within ${profile.serviceArea.radiusKm} km)`}
+                        </p>
+                      )}
+                    </section>
+                  )}
+
+                  {/* Pricing */}
+                  {(profile.pricing?.hourlyRate || profile.pricing?.startingPrice || profile.pricing?.minimumCharge) && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-2 text-base-content">Pricing</h3>
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        {profile.pricing.hourlyRate && (
+                          <div className="mb-2">
+                            <span className="text-sm text-base-content opacity-70">Hourly Rate: </span>
+                            <span className="font-semibold text-base-content">{profile.pricing.currency} {profile.pricing.hourlyRate}</span>
+                          </div>
+                        )}
+                        {profile.pricing.startingPrice && (
+                          <div className="mb-2">
+                            <span className="text-sm text-base-content opacity-70">Starting Price: </span>
+                            <span className="font-semibold text-base-content">{profile.pricing.currency} {profile.pricing.startingPrice}</span>
+                          </div>
+                        )}
+                        {profile.pricing.minimumCharge && (
+                          <div>
+                            <span className="text-sm text-base-content opacity-70">Minimum Charge: </span>
+                            <span className="font-semibold text-base-content">{profile.pricing.currency} {profile.pricing.minimumCharge}</span>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Portfolio */}
+                  {profile.portfolio?.length > 0 && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-3 text-base-content">Portfolio</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {profile.portfolio.map((item, i) => (
+                          <div key={i} className="relative group">
+                            <img
+                              src={item.url}
+                              alt={item.caption || `Portfolio ${i + 1}`}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            {item.caption && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 rounded-b-lg">
+                                {item.caption}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Certifications */}
+                  {profile.certifications?.length > 0 && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-2 text-base-content">Certifications</h3>
+                      <div className="space-y-2">
+                        {profile.certifications.map((cert, i) => (
+                          <div key={i} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                            <div className="font-semibold text-base-content">{cert.title}</div>
+                            {cert.issuer && <div className="text-sm text-base-content opacity-70">Issued by: {cert.issuer}</div>}
+                            {cert.year && <div className="text-sm text-base-content opacity-70">Year: {cert.year}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Languages */}
+                  {profile.languages?.length > 0 && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-2 text-base-content">Languages</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.languages.map((lang, i) => (
+                          <span key={i} className="badge badge-outline">{lang}</span>
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
                   {/* Profile details */}
                   <section>
@@ -360,7 +726,7 @@ export default function WorkerProfile() {
                         ["Phone", profile.phone || "—"],
                         ["Email", profile.email || "—"],
                         ["Address", addressPretty || "—"],
-                        ["Work Experience", profile.workExperience ? `${profile.workExperience} year${Number(profile.workExperience) > 1 ? "s" : ""}` : "—"],
+                        ["Work Experience", (profile.experienceYears || profile.workExperience) ? `${profile.experienceYears || profile.workExperience} year${Number(profile.experienceYears || profile.workExperience) > 1 ? "s" : ""}` : "—"],
                         ["Availability", profile.isAvailable ? "Available for work" : "Not available"],
                         ["Headline", profile.headline || "—"],
                         [
@@ -392,6 +758,42 @@ export default function WorkerProfile() {
               {/* ========================= EDIT PROFILE ========================= */}
               {tab === "edit" && (
                 <div className="space-y-6">
+                  {/* Email Verification Warning */}
+                  {!(user?.emailVerified || profile.emailVerified) && (
+                    <div className="alert alert-warning mb-4">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      <div className="flex-1">
+                        <span className="font-semibold">Email not verified.</span>
+                        <p className="text-sm mt-1">Please verify your email to unlock all features.</p>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={handleSendVerificationEmail}
+                            disabled={sendingVerification}
+                          >
+                            {sendingVerification ? "Sending..." : "Send Verification Email"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline"
+                            onClick={handleCheckVerification}
+                          >
+                            Check Status
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Profile Photo Requirement Warning */}
+                  {!profile.profileCover && (
+                    <div className="alert alert-warning">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      <span>Profile photo is required. Please upload a photo to save your profile.</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-base-content">Account</h3>
                     <label className="label cursor-pointer gap-3">
@@ -458,6 +860,189 @@ export default function WorkerProfile() {
                         placeholder="e.g., Wiring, Installation, Troubleshooting"
                       />
                     </div>
+                  </div>
+
+                  <div className="divider my-1 text-base-content opacity-80">Services Offered</div>
+
+                  <div className="space-y-4">
+                    <MultiSelect
+                      label="Service Categories"
+                      value={profile.servicesOffered?.categories || []}
+                      onChange={(cats) => update("servicesOffered", { ...profile.servicesOffered, categories: cats })}
+                      options={serviceCategories}
+                    />
+                    <TagInput
+                      label="Service Tags (optional)"
+                      value={profile.servicesOffered?.tags || []}
+                      onChange={(tags) => update("servicesOffered", { ...profile.servicesOffered, tags })}
+                      placeholder="e.g., Emergency, 24/7, Commercial"
+                    />
+                  </div>
+
+                  <div className="divider my-1 text-base-content opacity-80">Service Area</div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <TagInput
+                      label="Cities (add cities you serve)"
+                      value={profile.serviceArea?.cities || []}
+                      onChange={(cities) => update("serviceArea", { ...profile.serviceArea, cities })}
+                      placeholder="e.g., Dhaka, Chittagong"
+                    />
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Service Radius (km, optional)</label>
+                      <input
+                        type="number"
+                        value={profile.serviceArea?.radiusKm || ""}
+                        onChange={(e) => update("serviceArea", { ...profile.serviceArea, radiusKm: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="e.g., 10"
+                        className="input input-bordered w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="divider my-1 text-base-content opacity-80">Experience & Credentials</div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Years of Experience</label>
+                      <input
+                        type="number"
+                        value={profile.experienceYears || profile.workExperience || ""}
+                        onChange={(e) => {
+                          update("experienceYears", e.target.value);
+                          update("workExperience", e.target.value);
+                        }}
+                        className="input input-bordered w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-base-content opacity-80">Certifications</label>
+                        <button type="button" className="btn btn-sm btn-outline" onClick={addCertification}>
+                          <i className="fas fa-plus mr-1"></i>Add Certification
+                        </button>
+                      </div>
+                      {profile.certifications?.map((cert, i) => (
+                        <div key={i} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-2">
+                          <div className="grid md:grid-cols-2 gap-4 mb-2">
+                            <input
+                              type="text"
+                              placeholder="Certification Title"
+                              value={cert.title || ""}
+                              onChange={(e) => updateCertification(i, "title", e.target.value)}
+                              className="input input-bordered input-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Issuer"
+                              value={cert.issuer || ""}
+                              onChange={(e) => updateCertification(i, "issuer", e.target.value)}
+                              className="input input-bordered input-sm"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Year"
+                              value={cert.year || ""}
+                              onChange={(e) => updateCertification(i, "year", e.target.value ? Number(e.target.value) : null)}
+                              className="input input-bordered input-sm"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Proof URL (optional)"
+                                value={cert.proofUrl || ""}
+                                onChange={(e) => updateCertification(i, "proofUrl", e.target.value)}
+                                className="input input-bordered input-sm flex-1"
+                              />
+                              <button type="button" className="btn btn-sm btn-error" onClick={() => removeCertification(i)}>
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <MultiSelect
+                      label="Languages Spoken"
+                      value={profile.languages || []}
+                      onChange={(langs) => update("languages", langs)}
+                      options={languageOptions}
+                    />
+                  </div>
+
+                  <div className="divider my-1 text-base-content opacity-80">Pricing</div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Hourly Rate ({profile.pricing?.currency || "BDT"})</label>
+                      <input
+                        type="number"
+                        value={profile.pricing?.hourlyRate || ""}
+                        onChange={(e) => update("pricing", { ...profile.pricing, hourlyRate: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="e.g., 500"
+                        className="input input-bordered w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Starting Price ({profile.pricing?.currency || "BDT"})</label>
+                      <input
+                        type="number"
+                        value={profile.pricing?.startingPrice || ""}
+                        onChange={(e) => update("pricing", { ...profile.pricing, startingPrice: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="e.g., 1000"
+                        className="input input-bordered w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Minimum Charge ({profile.pricing?.currency || "BDT"})</label>
+                      <input
+                        type="number"
+                        value={profile.pricing?.minimumCharge || ""}
+                        onChange={(e) => update("pricing", { ...profile.pricing, minimumCharge: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="e.g., 500"
+                        className="input input-bordered w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="divider my-1 text-base-content opacity-80">Portfolio</div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-base-content opacity-80">Portfolio Images</label>
+                    <div
+                      {...getPortfolioRootProps()}
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-primary-500 transition-colors"
+                    >
+                      <input {...getPortfolioInputProps()} />
+                      <i className="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                      <p className="text-base-content opacity-70">Drag & drop images here, or click to select</p>
+                      <p className="text-sm text-base-content opacity-50 mt-1">Multiple images supported</p>
+                    </div>
+                    {profile.portfolio?.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        {profile.portfolio.map((item, i) => (
+                          <div key={i} className="relative group">
+                            <img src={item.url} alt={`Portfolio ${i + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                            <button
+                              type="button"
+                              className="absolute top-1 right-1 btn btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removePortfolioItem(i)}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                            <input
+                              type="text"
+                              placeholder="Caption (optional)"
+                              value={item.caption || ""}
+                              onChange={(e) => updatePortfolioCaption(i, e.target.value)}
+                              className="input input-xs input-bordered w-full mt-1"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="divider my-1 text-base-content opacity-80">Address</div>

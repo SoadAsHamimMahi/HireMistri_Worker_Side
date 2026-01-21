@@ -578,6 +578,16 @@ const JobDetails = () => {
                     {job.clientId || 'N/A'}
                   </span>
                 </div>
+                {job.clientId && (
+                  <div className="pt-3">
+                    <button
+                      onClick={() => navigate(`/client/${job.clientId}`)}
+                      className="btn btn-primary btn-sm w-full"
+                    >
+                      <i className="fas fa-user mr-2"></i>View Client Profile
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

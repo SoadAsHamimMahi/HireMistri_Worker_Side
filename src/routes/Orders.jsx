@@ -59,6 +59,7 @@ const Orders = () => {
           jobId: app.jobId,
           jobTitle: app.title || 'Untitled Job',
           clientName: app.clientName || 'Client', // This might need to be fetched separately
+          clientId: app.clientId || null, // Add clientId for profile navigation
           clientAvatar: `https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face&ixid=${index}`, // Placeholder avatar
           category: app.category || 'General',
           status: app.status && app.status.toLowerCase() === 'completed' ? 'completed' : 'active', // Preserve completed status, others are active
@@ -470,17 +471,34 @@ const Orders = () => {
                       </div>
 
                       {/* Client Info - Mobile Optimized */}
-                      <div className="flex items-center space-x-3 lg:space-x-4 mb-4">
-                        <img 
-                          src={order.clientAvatar} 
-                          alt={order.clientName}
-                          className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover ring-2 ring-primary-200 dark:ring-primary-800 flex-shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-base-content truncate">{order.clientName}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">Client</p>
+                      {order.clientId ? (
+                        <Link 
+                          to={`/client/${order.clientId}`}
+                          className="flex items-center space-x-3 lg:space-x-4 mb-4 hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          <img 
+                            src={order.clientAvatar} 
+                            alt={order.clientName}
+                            className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover ring-2 ring-primary-200 dark:ring-primary-800 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-base-content truncate">{order.clientName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">Client • Click to view profile</p>
+                          </div>
+                        </Link>
+                      ) : (
+                        <div className="flex items-center space-x-3 lg:space-x-4 mb-4">
+                          <img 
+                            src={order.clientAvatar} 
+                            alt={order.clientName}
+                            className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover ring-2 ring-primary-200 dark:ring-primary-800 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-base-content truncate">{order.clientName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">Client</p>
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
                         {order.proposalText || order.description || 'No description provided.'}

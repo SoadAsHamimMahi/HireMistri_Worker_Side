@@ -563,10 +563,19 @@ export default function Applications() {
                             </Link>
 
                             {app.status?.toLowerCase() === 'accepted' && app.clientId && (
-                              <MessageButton
-                                jobId={app.jobId}
-                                clientId={app.clientId}
-                              />
+                              <>
+                                <button
+                                  onClick={() => navigate(`/client/${app.clientId}`)}
+                                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors"
+                                >
+                                  <i className="fas fa-user mr-2"></i>
+                                  View Client Profile
+                                </button>
+                                <MessageButton
+                                  jobId={app.jobId}
+                                  clientId={app.clientId}
+                                />
+                              </>
                             )}
 
                             {app.status?.toLowerCase() === 'pending' && (

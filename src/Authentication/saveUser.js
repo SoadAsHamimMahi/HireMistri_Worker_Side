@@ -13,7 +13,7 @@ export async function saveUserToApi(user, extra = {}) {
     (user.displayName || `${extra.firstName || ""} ${extra.lastName || ""}`).trim();
 
   // 1) Ensure minimal record exists (idempotent)
-  await axios.post(`${API_BASE}/api/auth/sync`, { uid, email });
+  await axios.post(`${API_BASE}/api/auth/sync`, { uid, email, role: 'worker' });
 
   // 2) Update allowed fields (non-destructive upsert on server)
   const body = {

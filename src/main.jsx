@@ -25,6 +25,7 @@ import WorkerRegister from './Authentication/WorkerRegister';
 import AuthProvider from './Authentication/AuthProvider';
 import WorkerJobDetails from './routes/WorkerJobDetails';
 import SavedJobs from './routes/SavedJobs';
+import ClientProfile from './routes/ClientProfile';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { MessagesProvider } from './contexts/MessagesContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { path: 'login', element: <WorkerLogin /> },
       { path: 'registration', element: <WorkerRegister /> },
       { path: 'jobs/:id', element: <WorkerJobDetails /> },
+      { path: 'client/:clientId', element: <ClientProfile /> },
     ],
   },
 ]);

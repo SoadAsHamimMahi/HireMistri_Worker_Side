@@ -10,7 +10,8 @@ import {
   linkWithCredential,
   EmailAuthProvider,
   updatePassword,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendEmailVerification
 } from "firebase/auth";
 import { app } from './firebaseConfig'; // ✅ import app
 
@@ -66,6 +67,19 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
     return sendPasswordResetEmail(auth, email);
   };
 
+  // Send email verification
+  const sendVerificationEmail = async () => {
+    if (!auth.currentUser) throw new Error('No user logged in');
+    return sendEmailVerification(auth.currentUser);
+  };
+
+  // Reload user to get latest emailVerified status
+  const reloadUser = async () => {
+    if (!auth.currentUser) return;
+    await auth.currentUser.reload();
+    setUser({ ...auth.currentUser }); // Trigger state update
+  };
+
   // Logout
   const logOut = () => {
     return signOut(auth);
@@ -87,6 +101,8 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
     signInWithGoogle,
     linkGoogleAccount,
     resetPassword,
+    sendVerificationEmail,
+    reloadUser,
     logOut
   };
 
