@@ -37,7 +37,26 @@
   color-scheme: dark;
 }
 
-/* Body color transitions */
+/* Global body background - theme-aware */
 body {
-  @apply bg-base-100 text-base-content transition-colors duration-300;
+  background-color: #1A202C;
+  @apply text-base-content transition-colors duration-300;
+}
+[data-theme="light"] body {
+  background-color: #F9FAFB;
+}
+[data-theme="light"] .app-root {
+  background-color: #F9FAFB;
+}
+[data-theme="dark"] .app-root {
+  background-color: #1A202C;
+}
+.page-bg {
+  background-color: #1A202C;
+}
+[data-theme="light"] .page-bg {
+  background-color: #F9FAFB;
+}
+[data-theme="dark"] .page-bg {
+  background-color: #1A202C;
 }

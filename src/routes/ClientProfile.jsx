@@ -16,6 +16,7 @@ export default function ClientProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
+  
 
   useEffect(() => {
     let ignore = false;
@@ -78,7 +79,7 @@ export default function ClientProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-100">
+      <div className="min-h-screen page-bg">
         <div className="max-w-5xl mx-auto p-6">
           <div className="flex items-center gap-3 mb-6">
             <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
@@ -98,7 +99,7 @@ export default function ClientProfile() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-base-100">
+      <div className="min-h-screen page-bg">
         <div className="max-w-5xl mx-auto p-6">
           <button className="btn btn-ghost btn-sm mb-6" onClick={() => navigate(-1)}>
             <i className="fas fa-arrow-left mr-2"></i>Back
@@ -117,7 +118,7 @@ export default function ClientProfile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-base-100">
+      <div className="min-h-screen page-bg">
         <div className="max-w-5xl mx-auto p-6">
           <button className="btn btn-ghost btn-sm mb-6" onClick={() => navigate(-1)}>
             <i className="fas fa-arrow-left mr-2"></i>Back
@@ -132,7 +133,7 @@ export default function ClientProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen page-bg">
       <div className="max-w-5xl mx-auto p-6">
         <div className="flex items-center justify-between gap-3 mb-6">
           <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
@@ -195,9 +196,26 @@ export default function ClientProfile() {
               </div>
 
               <div className="flex flex-col gap-2 min-w-[180px]">
-                <button className="btn btn-primary btn-sm">
-                  <i className="fas fa-comments mr-2"></i>Message
-                </button>
+                {(profile.phone || profile.email) && (
+                  <div className="flex flex-col gap-2">
+                    {profile.phone && (
+                      <a
+                        href={`tel:${profile.phone.replace(/\s/g, '')}`}
+                        className="btn btn-success btn-sm"
+                      >
+                        <i className="fas fa-phone mr-2"></i>Call
+                      </a>
+                    )}
+                    {profile.email && (
+                      <a
+                        href={`mailto:${profile.email}`}
+                        className="btn btn-outline btn-sm"
+                      >
+                        <i className="fas fa-envelope mr-2"></i>Email
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -321,6 +339,7 @@ export default function ClientProfile() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

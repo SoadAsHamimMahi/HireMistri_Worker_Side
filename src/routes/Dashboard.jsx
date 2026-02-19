@@ -5,6 +5,7 @@ import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import JobRecommendations from '../components/JobRecommendations';
+import PageContainer from '../components/layout/PageContainer';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -339,7 +340,7 @@ export default function Dashboard() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen page-bg">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -440,7 +441,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <PageContainer>
 
         {/* Quick Action Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
@@ -715,7 +716,7 @@ export default function Dashboard() {
           </div>
         )}
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }

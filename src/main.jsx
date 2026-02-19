@@ -26,7 +26,10 @@ import AuthProvider from './Authentication/AuthProvider';
 import WorkerJobDetails from './routes/WorkerJobDetails';
 import SavedJobs from './routes/SavedJobs';
 import ClientProfile from './routes/ClientProfile';
+import BrowseClients from './routes/BrowseClients';
+import MessagesPaused from './routes/MessagesPaused';
 import { DarkModeProvider } from './contexts/DarkModeContext';
+import { ProfileProvider } from './contexts/ProfileContext';
 import { MessagesProvider } from './contexts/MessagesContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 
@@ -48,6 +51,9 @@ const router = createBrowserRouter([
       { path: 'registration', element: <WorkerRegister /> },
       { path: 'jobs/:id', element: <WorkerJobDetails /> },
       { path: 'client/:clientId', element: <ClientProfile /> },
+      { path: 'browse-clients', element: <BrowseClients /> },
+      { path: 'messages', element: <MessagesPaused /> },
+      { path: 'messages/:conversationId', element: <MessagesPaused /> },
     ],
   },
 ]);
@@ -56,12 +62,14 @@ createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <DarkModeProvider>
       <AuthProvider>
-        <WebSocketProvider>
-          <MessagesProvider>
-            <RouterProvider router={router} />
+        <ProfileProvider>
+          <WebSocketProvider>
+            <MessagesProvider>
+              <RouterProvider router={router} />
             <Toaster position="top-right" />
-          </MessagesProvider>
-        </WebSocketProvider>
+            </MessagesProvider>
+          </WebSocketProvider>
+        </ProfileProvider>
       </AuthProvider>
     </DarkModeProvider>
   </React.StrictMode>

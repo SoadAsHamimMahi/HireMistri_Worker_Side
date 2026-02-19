@@ -10,6 +10,7 @@ import {
   linkWithCredential,
   EmailAuthProvider,
   updatePassword,
+  updateProfile,
   sendPasswordResetEmail,
   sendEmailVerification
 } from "firebase/auth";
@@ -80,6 +81,15 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
     setUser({ ...auth.currentUser }); // Trigger state update
   };
 
+  // Update Firebase Auth displayName (keeps Auth in sync with MongoDB profile)
+  const updateProfileDisplayName = async (displayName) => {
+    if (!auth.currentUser || !displayName || typeof displayName !== 'string') return;
+    const trimmed = displayName.trim();
+    if (!trimmed) return;
+    await updateProfile(auth.currentUser, { displayName: trimmed });
+    setUser({ ...auth.currentUser }); // Trigger state update
+  };
+
   // Logout
   const logOut = () => {
     return signOut(auth);
@@ -103,6 +113,7 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
     resetPassword,
     sendVerificationEmail,
     reloadUser,
+    updateProfileDisplayName,
     logOut
   };
 

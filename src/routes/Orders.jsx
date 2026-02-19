@@ -269,7 +269,7 @@ const Orders = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Loading orders...</p>
@@ -280,7 +280,7 @@ const Orders = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-3xl"></i>
@@ -301,7 +301,7 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen page-bg">
       <Toaster position="top-right" />
       {/* Header Section - Mobile Optimized */}
       <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-8 lg:py-12">

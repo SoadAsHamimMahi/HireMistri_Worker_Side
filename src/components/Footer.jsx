@@ -30,7 +30,7 @@ export default function Footer() {
     <footer className="mt-16 text-base-content">
       {/* Worker CTA strip */}
       <div className="bg-gradient-to-r from-base-200 via-base-100 to-base-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h3 className="text-xl md:text-2xl font-semibold text-base-content">
             Find work faster with <span className="text-primary">Hire</span>Mistri
           </h3>
@@ -50,8 +50,8 @@ export default function Footer() {
 
       {/* Main footer */}
       <div className="bg-base-200 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand + contact */}
             <div>
               <Link to="/" className="inline-flex items-baseline gap-1 font-extrabold text-2xl">
@@ -100,7 +100,7 @@ export default function Footer() {
 
             {/* For Workers */}
             <div>
-              <h4 className="text-base-content font-semibold mb-3">For Workers</h4>
+              <h4 className="text-base-content font-semibold mb-4">For Workers</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/jobs" className="text-base-content opacity-70 hover:opacity-100">Find Jobs</Link></li>
                 <li><Link to="/applications" className="text-base-content opacity-70 hover:opacity-100">My Applications</Link></li>
@@ -114,7 +114,7 @@ export default function Footer() {
 
             {/* Top Categories */}
             <div>
-              <h4 className="text-base-content font-semibold mb-3">Top Job Categories</h4>
+              <h4 className="text-base-content font-semibold mb-4">Top Job Categories</h4>
               <ul className="space-y-2 text-sm">
                 {cats.map((c) => (
                   <li key={c}>
@@ -128,7 +128,7 @@ export default function Footer() {
 
             {/* Job Alerts / Upsell */}
             <div>
-              <h4 className="text-base-content font-semibold mb-3">Get job alerts</h4>
+              <h4 className="text-base-content font-semibold mb-4">Get job alerts</h4>
               <p className="text-sm text-base-content opacity-70">
                 Be first to know when new jobs match your skills.
               </p>
@@ -171,7 +171,7 @@ export default function Footer() {
           </div>
 
           {/* Bottom bar */}
-          <div className="mt-10 pt-6 border-t border-base-300 flex flex-col md:flex-row gap-3 md:items-center md:justify-between text-xs text-base-content opacity-70">
+          <div className="pt-6 mt-8 border-t border-base-300 flex flex-col md:flex-row gap-3 md:items-center md:justify-between text-xs text-base-content opacity-70">
             <p>
               © {year} <span className="text-base-content">Hire</span>
               <span className="text-primary">Mistri</span>. All rights reserved.

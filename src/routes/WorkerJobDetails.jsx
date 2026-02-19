@@ -338,7 +338,7 @@ export default function WorkerJobDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Loading job details...</p>
@@ -349,7 +349,7 @@ export default function WorkerJobDetails() {
 
   if (err) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-3xl"></i>
@@ -371,7 +371,7 @@ export default function WorkerJobDetails() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
@@ -401,7 +401,7 @@ export default function WorkerJobDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen page-bg">
       <Toaster />
       
       {/* Header Section */}

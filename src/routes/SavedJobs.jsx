@@ -42,7 +42,7 @@ export default function SavedJobs() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <span className="loading loading-spinner loading-lg text-primary"></span>
           <p className="mt-4 text-base-content opacity-70">Loading saved jobs...</p>
@@ -53,7 +53,7 @@ export default function SavedJobs() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <p className="text-error">{error}</p>
         </div>
@@ -62,7 +62,7 @@ export default function SavedJobs() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen page-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import { AuthContext } from "../Authentication/AuthProvider";
+import { useProfile } from "../contexts/ProfileContext";
+import PageContainer from "../components/layout/PageContainer";
 
 const base = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
 
@@ -77,7 +79,8 @@ function MultiSelect({ value = [], onChange, label, options, placeholder = "Sele
 
 /* ----------------------------- Main Component ----------------------------- */
 export default function WorkerProfile() {
-  const { user, sendVerificationEmail, reloadUser } = useContext(AuthContext) || {};
+  const { user, sendVerificationEmail, reloadUser, updateProfileDisplayName } = useContext(AuthContext) || {};
+  const { setProfile: setSharedProfile } = useProfile();
   const uid = user?.uid || null;
   const [sendingVerification, setSendingVerification] = useState(false);
 
@@ -290,6 +293,20 @@ export default function WorkerProfile() {
         const updated = await saveToServer();
         setProfile(prev => ({ ...prev, ...updated }));
         setStats(updated.stats || null);
+        // Update shared profile context immediately so Navbar shows new name
+        setSharedProfile(prev => (prev ? { ...prev, ...updated } : updated));
+        // Sync name to Firebase Auth so it updates everywhere (Navbar, etc.)
+        const newName = updated.displayName || [updated.firstName, updated.lastName].filter(Boolean).join(' ').trim();
+        if (newName && updateProfileDisplayName) {
+          try {
+            await updateProfileDisplayName(newName);
+            await reloadUser();
+          } catch (e) {
+            console.warn('Could not sync name to Firebase Auth:', e);
+          }
+        }
+        // Notify other listeners (e.g. Navbar event fallback)
+        window.dispatchEvent(new CustomEvent('profileUpdated', { detail: { ...updated, stats: updated.stats } }));
       } else {
         localStorage.setItem("workerProfile", JSON.stringify(profile));
       }
@@ -407,7 +424,7 @@ export default function WorkerProfile() {
   if (loading) return <div className="p-10 text-center">Loading…</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen page-bg">
       <Toaster />
 
       {/* Enhanced Header */}
@@ -424,11 +441,11 @@ export default function WorkerProfile() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <PageContainer className="py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Enhanced Profile Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-3xl p-8 flex flex-col items-center border border-gray-100 dark:border-gray-700">
-            <div className="relative mb-6">
+          <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-3xl p-6 flex flex-col items-center border border-gray-100 dark:border-gray-700">
+            <div className="relative mb-4">
               <div
                 {...getRootProps()}
                 className={`relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary-200 dark:ring-primary-800 cursor-pointer group transition-all duration-300 hover:ring-primary-400 dark:hover:ring-primary-600 ${!profile.profileCover ? 'ring-red-300 dark:ring-red-700' : ''}`}
@@ -501,21 +518,21 @@ export default function WorkerProfile() {
               </div>
               
               {/* Profile Stats */}
-              <div className="grid grid-cols-2 gap-4 w-full mb-6">
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
                   <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
                     {stats?.averageRating?.toFixed(1) || "0.0"}
                   </div>
                   <div className="text-xs text-base-content opacity-70">Rating</div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
                   <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
                     {stats?.workerCompletedJobs || 0}
                   </div>
                   <div className="text-xs text-base-content opacity-70">Jobs Done</div>
                 </div>
                 {stats?.workerResponseRate !== undefined && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center col-span-2">
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center col-span-2">
                     <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
                       {stats.workerResponseRate}%
                     </div>
@@ -580,14 +597,14 @@ export default function WorkerProfile() {
             </div>
 
             {/* Tab bodies */}
-            <div className="p-5 sm:p-6">
+            <div className="px-6 py-6">
               {/* =============== OVERVIEW =============== */}
               {tab === "overview" && (
                 <div className="space-y-8">
                   {/* Performance Signals */}
                   {stats && (
                     <section>
-                      <h3 className="text-lg font-semibold mb-3 text-base-content">Performance Metrics</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-base-content">Performance Metrics</h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerCompletedJobs || 0}</div>
@@ -613,14 +630,14 @@ export default function WorkerProfile() {
 
                   {/* About */}
                   <section>
-                    <h3 className="text-lg font-semibold mb-2 text-base-content">About</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-base-content">About</h3>
                     <p className="leading-relaxed text-base-content opacity-80">{aboutText}</p>
                   </section>
 
                   {/* Services Offered */}
                   {(profile.servicesOffered?.categories?.length > 0 || profile.servicesOffered?.tags?.length > 0) && (
                     <section>
-                      <h3 className="text-lg font-semibold mb-2 text-base-content">Services Offered</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-base-content">Services Offered</h3>
                       <div className="flex flex-wrap gap-2 mb-2">
                         {profile.servicesOffered.categories.map((cat, i) => (
                           <span key={i} className="badge badge-primary">{cat}</span>
@@ -642,7 +659,7 @@ export default function WorkerProfile() {
                   {/* Pricing */}
                   {(profile.pricing?.hourlyRate || profile.pricing?.startingPrice || profile.pricing?.minimumCharge) && (
                     <section>
-                      <h3 className="text-lg font-semibold mb-2 text-base-content">Pricing</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-base-content">Pricing</h3>
                       <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                         {profile.pricing.hourlyRate && (
                           <div className="mb-2">
@@ -669,7 +686,7 @@ export default function WorkerProfile() {
                   {/* Portfolio */}
                   {profile.portfolio?.length > 0 && (
                     <section>
-                      <h3 className="text-lg font-semibold mb-3 text-base-content">Portfolio</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-base-content">Portfolio</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {profile.portfolio.map((item, i) => (
                           <div key={i} className="relative group">
@@ -692,7 +709,7 @@ export default function WorkerProfile() {
                   {/* Certifications */}
                   {profile.certifications?.length > 0 && (
                     <section>
-                      <h3 className="text-lg font-semibold mb-2 text-base-content">Certifications</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-base-content">Certifications</h3>
                       <div className="space-y-2">
                         {profile.certifications.map((cert, i) => (
                           <div key={i} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
@@ -708,7 +725,7 @@ export default function WorkerProfile() {
                   {/* Languages */}
                   {profile.languages?.length > 0 && (
                     <section>
-                      <h3 className="text-lg font-semibold mb-2 text-base-content">Languages</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-base-content">Languages</h3>
                       <div className="flex flex-wrap gap-2">
                         {profile.languages.map((lang, i) => (
                           <span key={i} className="badge badge-outline">{lang}</span>
@@ -719,7 +736,7 @@ export default function WorkerProfile() {
 
                   {/* Profile details */}
                   <section>
-                    <h3 className="text-lg font-semibold mb-3 text-base-content">Profile Details</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-base-content">Profile Details</h3>
                     <div className="rounded-xl border dark:border-gray-600 bg-base-100 dark:bg-gray-700 overflow-hidden">
                       {[
                         ["Full Name", fullName],
@@ -757,7 +774,7 @@ export default function WorkerProfile() {
 
               {/* ========================= EDIT PROFILE ========================= */}
               {tab === "edit" && (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {/* Email Verification Warning */}
                   {!(user?.emailVerified || profile.emailVerified) && (
                     <div className="alert alert-warning mb-4">
@@ -794,20 +811,21 @@ export default function WorkerProfile() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-base-content">Account</h3>
-                    <label className="label cursor-pointer gap-3">
-                      <span className="label-text text-base-content opacity-80">Available for work</span>
-                      <input
-                        type="checkbox"
-                        className="toggle toggle-success"
-                        checked={!!profile.isAvailable}
-                        onChange={(e) => update("isAvailable", e.target.checked)}
-                      />
-                    </label>
-                  </div>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-base-content">Account</h3>
+                      <label className="label cursor-pointer gap-3">
+                        <span className="label-text text-base-content opacity-80">Available for work</span>
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-success"
+                          checked={!!profile.isAvailable}
+                          onChange={(e) => update("isAvailable", e.target.checked)}
+                        />
+                      </label>
+                    </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid md:grid-cols-2 gap-4">
                     {[
                       { label: "First Name", name: "firstName" },
                       { label: "Last Name", name: "lastName" },
@@ -861,10 +879,11 @@ export default function WorkerProfile() {
                       />
                     </div>
                   </div>
+                  </div>
 
-                  <div className="divider my-1 text-base-content opacity-80">Services Offered</div>
+                  <div className="divider text-base-content opacity-80">Services Offered</div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <MultiSelect
                       label="Service Categories"
                       value={profile.servicesOffered?.categories || []}
@@ -879,9 +898,9 @@ export default function WorkerProfile() {
                     />
                   </div>
 
-                  <div className="divider my-1 text-base-content opacity-80">Service Area</div>
+                  <div className="divider text-base-content opacity-80">Service Area</div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-2 gap-4">
                     <TagInput
                       label="Cities (add cities you serve)"
                       value={profile.serviceArea?.cities || []}
@@ -900,9 +919,9 @@ export default function WorkerProfile() {
                     </div>
                   </div>
 
-                  <div className="divider my-1 text-base-content opacity-80">Experience & Credentials</div>
+                  <div className="divider text-base-content opacity-80">Experience & Credentials</div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Years of Experience</label>
                       <input
@@ -1111,7 +1130,7 @@ export default function WorkerProfile() {
             </div>
           </div>
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }
