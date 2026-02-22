@@ -11,7 +11,7 @@ const JobCardList = () => {
     if (k === "active") return "badge-success";
     if (k === "in-progress") return "bg-yellow-100 text-yellow-700";
     if (k === "completed") return "bg-blue-100 text-blue-700";
-    return "bg-gray-100 text-base-content";
+    return "bg-base-300 text-base-content";
   };
 
   const FallbackImg =
@@ -27,7 +27,7 @@ const JobCardList = () => {
         return (
           <div
             key={job.id}
-            className="group bg-white border rounded-xl overflow-hidden hover:shadow-md transition"
+            className="group bg-base-200 border border-base-300 rounded-xl overflow-hidden hover:shadow-md transition"
           >
             {/* Image */}
             <div className="relative">
@@ -65,7 +65,7 @@ const JobCardList = () => {
               </div>
 
               {/* Meta */}
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+              <div className="grid grid-cols-2 gap-2 text-xs text-base-content opacity-70">
                 <div className="flex items-center gap-1.5">
                   <span>📍</span>
                   <span className="truncate">{job.location || "—"}</span>
@@ -94,7 +94,7 @@ const JobCardList = () => {
               <div className="rounded-lg bg-base-100 border p-2">
                 <div className="flex items-center justify-between text-xs text-base-content opacity-70">
                   <span className="font-medium">Applicants</span>
-                  <span className="text-gray-500">
+                  <span className="text-base-content opacity-70">
                     {applicants.length} total
                   </span>
                 </div>
@@ -114,19 +114,19 @@ const JobCardList = () => {
                             {a.name || "Unknown"}
                           </span>
                         </div>
-                        <div className="text-gray-600">
+                        <div className="text-base-content opacity-70">
                           ৳{a.price ?? "—"} <span className="ml-1">⭐ {a.rating ?? "—"}</span>
                         </div>
                       </li>
                     ))}
                     {applicants.length > 2 && (
-                      <li className="text-[11px] text-gray-500">
+                      <li className="text-[11px] text-base-content opacity-70">
                         +{applicants.length - 2} more…
                       </li>
                     )}
                   </ul>
                 ) : (
-                  <div className="text-[11px] text-gray-500 mt-1">
+                  <div className="text-[11px] text-base-content opacity-70 mt-1">
                     No applicants yet.
                   </div>
                 )}

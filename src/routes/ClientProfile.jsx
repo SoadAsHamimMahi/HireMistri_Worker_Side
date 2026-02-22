@@ -1,6 +1,8 @@
 // src/routes/ClientProfile.jsx
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getAuth } from 'firebase/auth';
+import { AuthContext } from '../Authentication/AuthProvider';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
@@ -12,11 +14,12 @@ function safeNum(v) {
 export default function ClientProfile() {
   const { clientId } = useParams();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
-  
+  const [contact, setContact] = useState(null); // { phone, email } when worker has accepted job with client
 
   useEffect(() => {
     let ignore = false;
@@ -48,6 +51,40 @@ export default function ClientProfile() {
       ignore = true;
     };
   }, [clientId]);
+
+  // Fetch contact details only when worker is logged in and has accepted job with this client
+  useEffect(() => {
+    if (!user?.uid || !clientId || user.uid === clientId) {
+      setContact(null);
+      return;
+    }
+    let ignore = false;
+    (async () => {
+      try {
+        const auth = getAuth();
+        const token = await auth.currentUser?.getIdToken?.();
+        if (!token) {
+          if (!ignore) setContact(null);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/api/users/${encodeURIComponent(clientId)}/contact`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok && !ignore) {
+          const data = await res.json();
+          setContact(data);
+        } else {
+          if (!ignore) setContact(null);
+        }
+      } catch {
+        if (!ignore) setContact(null);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [user?.uid, clientId]);
 
   const displayName = useMemo(() => {
     if (!profile) return 'Client';
@@ -196,25 +233,33 @@ export default function ClientProfile() {
               </div>
 
               <div className="flex flex-col gap-2 min-w-[180px]">
-                {(profile.phone || profile.email) && (
+                {(contact?.phone || contact?.email) ? (
                   <div className="flex flex-col gap-2">
-                    {profile.phone && (
+                    {contact.phone && (
                       <a
-                        href={`tel:${profile.phone.replace(/\s/g, '')}`}
+                        href={`tel:${contact.phone.replace(/\s/g, '')}`}
                         className="btn btn-success btn-sm"
                       >
                         <i className="fas fa-phone mr-2"></i>Call
                       </a>
                     )}
-                    {profile.email && (
+                    {contact.email && (
                       <a
-                        href={`mailto:${profile.email}`}
+                        href={`mailto:${contact.email}`}
                         className="btn btn-outline btn-sm"
                       >
                         <i className="fas fa-envelope mr-2"></i>Email
                       </a>
                     )}
                   </div>
+                ) : user ? (
+                  <p className="text-xs text-muted max-w-[180px]">
+                    Contact details are shared after they accept your application.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted max-w-[180px]">
+                    Sign in and get your application accepted to view contact details.
+                  </p>
                 )}
               </div>
             </div>

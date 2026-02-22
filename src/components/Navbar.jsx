@@ -63,7 +63,38 @@ export default function WorkerNavbar() {
 
   return (
     <div className="w-full">
-      <div className="bg-base-200 shadow-lg border-b border-base-300">
+      {/* Sahayak-style green top bar */}
+      <div className="bg-primary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-10 text-primary-content text-sm">
+            <div className="flex items-center gap-4">
+              <Link to="/register" className="flex items-center gap-2 hover:opacity-90">
+                <i className="fas fa-user-plus"></i>
+                <span>Become Provider</span>
+              </Link>
+            </div>
+            <div className="hidden sm:flex items-center gap-4">
+              <span className="opacity-90">English</span>
+              <DarkModeToggle />
+              <Link to="/jobs" className="flex items-center gap-2 hover:opacity-90">
+                <i className="fas fa-shopping-cart"></i>
+              </Link>
+              {isAuthed && (
+                <button
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  className="flex items-center gap-2 font-medium"
+                >
+                  <i className="fas fa-user"></i>
+                  <span>Account</span>
+                  <i className={`fas fa-chevron-up text-xs transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`}></i>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-base-200 shadow-sm border-b border-base-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Enhanced Logo */}
@@ -118,6 +149,18 @@ export default function WorkerNavbar() {
                     Applications
                   </NavLink>
                   <NavLink 
+                    to="/job-offers" 
+                    className={({ isActive }) => 
+                      `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-primary/20 text-primary' 
+                          : 'text-base-content hover:bg-base-300'
+                      }`
+                    }
+                  >
+                    Job Offers
+                  </NavLink>
+                  <NavLink 
                     to="/orders" 
                     className={({ isActive }) => 
                       `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -142,8 +185,8 @@ export default function WorkerNavbar() {
                     </button>
                   </div>
 
-                  {/* Dark Mode Toggle */}
-                  <DarkModeToggle />
+                  {/* Dark Mode Toggle - only in main nav on mobile (green bar has it on desktop) */}
+                  <div className="sm:hidden"><DarkModeToggle /></div>
 
                   {/* Profile Dropdown */}
                   <div className="relative profile-dropdown">
@@ -165,17 +208,17 @@ export default function WorkerNavbar() {
                     
                     {/* Dropdown Menu */}
                     {isProfileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-64 bg-base-200 rounded-xl shadow-lg border border-base-300 p-3 z-50">
+                      <div className="absolute right-0 mt-2 w-64 bg-surface rounded-xl shadow-xl border border-base-300 p-3 z-50">
                         <div className="px-2 py-3 border-b border-base-300 mb-2">
                           <div className="font-semibold text-base-content">{displayName}</div>
-                          {secondaryLine && <div className="text-sm text-base-content opacity-70">{secondaryLine}</div>}
+                          {secondaryLine && <div className="text-sm text-muted">{secondaryLine}</div>}
                         </div>
                         <Link 
                           to="/browse-clients" 
                           onClick={() => setIsProfileDropdownOpen(false)}
                           className="flex items-center px-3 py-2.5 rounded-lg text-base-content hover:bg-primary/10 hover:text-primary text-sm"
                         >
-                          <i className="far fa-users w-4 h-4 mr-3 text-base-content"></i>
+                          <i className="far fa-users w-4 h-4 mr-3 text-primary"></i>
                           Browse Clients
                         </Link>
                         <Link 
@@ -183,7 +226,7 @@ export default function WorkerNavbar() {
                           onClick={() => setIsProfileDropdownOpen(false)}
                           className="flex items-center px-3 py-2.5 rounded-lg text-base-content hover:bg-primary/10 hover:text-primary text-sm"
                         >
-                          <i className="far fa-user w-4 h-4 mr-3 text-base-content"></i>
+                          <i className="far fa-user w-4 h-4 mr-3 text-primary"></i>
                           My Profile
                         </Link>
                         <Link 
@@ -191,7 +234,7 @@ export default function WorkerNavbar() {
                           onClick={() => setIsProfileDropdownOpen(false)}
                           className="flex items-center px-3 py-2.5 rounded-lg text-base-content hover:bg-primary/10 hover:text-primary text-sm"
                         >
-                          <i className="far fa-cog w-4 h-4 mr-3 text-base-content"></i>
+                          <i className="far fa-cog w-4 h-4 mr-3 text-primary"></i>
                           Account Settings
                         </Link>
                         <a 
@@ -199,7 +242,7 @@ export default function WorkerNavbar() {
                           onClick={() => setIsProfileDropdownOpen(false)}
                           className="flex items-center px-3 py-2.5 rounded-lg text-base-content hover:bg-primary/10 hover:text-primary text-sm"
                         >
-                          <i className="far fa-question-circle w-4 h-4 mr-3 text-base-content"></i>
+                          <i className="far fa-question-circle w-4 h-4 mr-3 text-primary"></i>
                           Need Help?
                         </a>
                         <div className="border-t border-base-300 mt-2 pt-2">
@@ -333,6 +376,20 @@ export default function WorkerNavbar() {
                     >
                       <i className="fas fa-file-alt w-5 h-5 text-base-content"></i>
                       <span>Applications</span>
+                    </NavLink>
+                    <NavLink 
+                      to="/job-offers" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className={({ isActive }) => 
+                        `flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary' 
+                            : 'text-base-content hover:bg-base-300'
+                        }`
+                      }
+                    >
+                      <i className="fas fa-briefcase w-5 h-5 text-base-content"></i>
+                      <span>Job Offers</span>
                     </NavLink>
                     <NavLink 
                       to="/orders" 

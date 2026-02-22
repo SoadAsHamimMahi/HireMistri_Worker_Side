@@ -35,7 +35,7 @@ export default function JobRecommendations({ limit = 5 }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+      <div className="bg-base-200 rounded-xl shadow-lg border border-base-300 p-6">
         <div className="flex items-center justify-center py-8">
           <span className="loading loading-spinner loading-md"></span>
         </div>
@@ -48,7 +48,7 @@ export default function JobRecommendations({ limit = 5 }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+    <div className="bg-base-200 rounded-xl shadow-lg border border-base-300 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-heading font-bold text-base-content">
           <i className="fas fa-star text-primary-500 mr-2"></i>
@@ -69,7 +69,7 @@ export default function JobRecommendations({ limit = 5 }) {
             <Link
               key={jobId}
               to={`/jobs/${jobId}`}
-              className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
+              className="block p-4 bg-base-300 rounded-lg hover:bg-base-200 transition-colors border border-base-300"
             >
               <div className="flex items-start justify-between mb-2">
                 <h3 className="font-semibold text-base-content line-clamp-1">
@@ -80,7 +80,7 @@ export default function JobRecommendations({ limit = 5 }) {
                 </span>
               </div>
               
-              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 mb-2">
+              <div className="flex items-center gap-4 text-sm text-base-content opacity-70 mb-2">
                 <span>📍 {job.location || 'N/A'}</span>
                 <span>💸 ৳{job.budget || 0}</span>
               </div>

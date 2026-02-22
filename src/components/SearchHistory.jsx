@@ -40,7 +40,7 @@ export default function SearchHistory({ onSelectSearch }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-base-200 rounded-lg border border-base-300 p-4">
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => setExpanded(!expanded)}
@@ -66,7 +66,7 @@ export default function SearchHistory({ onSelectSearch }) {
           {history.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group"
+              className="flex items-center justify-between p-2 bg-base-300 rounded-lg hover:bg-base-200 transition-colors group"
             >
               <button
                 onClick={() => onSelectSearch && onSelectSearch(item.filters)}
@@ -75,7 +75,7 @@ export default function SearchHistory({ onSelectSearch }) {
                 <div className="text-sm font-medium text-base-content">
                   {getSearchSummary(item.filters)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-base-content opacity-60">
                   {formatDate(item.timestamp)}
                 </div>
               </button>

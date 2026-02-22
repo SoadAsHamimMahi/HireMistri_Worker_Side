@@ -37,26 +37,46 @@
   color-scheme: dark;
 }
 
-/* Global body background - theme-aware */
+/* Global body background - Sahayak theme */
 body {
-  background-color: #1A202C;
+  background-color: #0A0B0E;
   @apply text-base-content transition-colors duration-300;
 }
 [data-theme="light"] body {
-  background-color: #F9FAFB;
+  background-color: #E8F6ED;
 }
 [data-theme="light"] .app-root {
-  background-color: #F9FAFB;
+  background-color: #E8F6ED;
 }
 [data-theme="dark"] .app-root {
-  background-color: #1A202C;
+  background-color: #0A0B0E;
 }
 .page-bg {
-  background-color: #1A202C;
+  background-color: #0A0B0E;
 }
 [data-theme="light"] .page-bg {
-  background-color: #F9FAFB;
+  background-color: #E8F6ED;
 }
 [data-theme="dark"] .page-bg {
-  background-color: #1A202C;
+  background-color: #0A0B0E;
+}
+
+/* Sahayak-style: footer pure black in dark mode */
+[data-theme="dark"] .footer-main-bg,
+[data-theme="dark"] .footer-cta-bg {
+  background-color: #000000;
+}
+
+/* Sahayak-style card: 12px radius, subtle shadow */
+.card-sahayak {
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Theme-aware muted text (Sahayak secondary text) */
+[data-theme="dark"] .text-muted {
+  color: #A0A0A0;
+}
+[data-theme="light"] .text-muted {
+  color: #666666;
 }

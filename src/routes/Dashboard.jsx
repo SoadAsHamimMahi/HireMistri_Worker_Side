@@ -117,7 +117,15 @@ export default function Dashboard() {
     }));
 
     const completed = normalized.filter(a => a.status === 'completed');
-    const active = normalized.filter(a => a.status === 'accepted' || a.status === 'active');
+    // Active orders: accepted/active but exclude "price pending" (worker proposed budget, client not yet accepted)
+    const active = (myApps || []).filter(a => {
+      const status = (a.status || 'pending').toLowerCase();
+      if (status !== 'accepted' && status !== 'active') return false;
+      const hasProposedPrice = a.proposedPrice != null && a.proposedPrice !== '';
+      const priceAgreed = a.negotiationStatus === 'accepted' || (a.finalPrice != null && a.finalPrice !== '');
+      if (hasProposedPrice && !priceAgreed) return false;
+      return true;
+    });
 
     const totalEarnings = completed.reduce((sum, a) => sum + (Number(a.payout) || 0), 0);
     const completedThisWeek = completed.filter(a => a.createdAt && new Date(a.createdAt) >= startOfWeek).length;
@@ -342,24 +350,24 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen page-bg">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12">
+      <div className="bg-gradient-to-br from-[#66BB6A] to-[#1E88E5] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Welcome Card */}
           <div className="text-center mb-12 animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
               Welcome back, Worker! 👋
             </h1>
-            <p className="text-xl text-base-content opacity-80 max-w-2xl mx-auto">
+            <p className="text-xl text-muted max-w-2xl mx-auto">
               Ready to find your next job opportunity? Discover amazing local jobs that match your skills.
             </p>
           </div>
 
           {/* Enhanced Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up">
+            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Active Jobs</p>
+                  <p className="text-sm font-medium text-muted mb-1">Active Jobs</p>
                   <p className="text-3xl font-heading font-bold text-base-content">{kpis.activeCount}</p>
                 </div>
                 <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
@@ -368,10 +376,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up" style={{ animationDelay: '0.05s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Completed (Total)</p>
+                  <p className="text-sm font-medium text-muted mb-1">Completed (Total)</p>
                   <p className="text-3xl font-heading font-bold text-base-content">{kpis.completedCount}</p>
                 </div>
                 <div className="p-3 bg-primary/20 rounded-full">
@@ -380,10 +388,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Earnings</p>
+                  <p className="text-sm font-medium text-muted mb-1">Earnings</p>
                   <p className="text-3xl font-heading font-bold text-base-content">৳{kpis.totalEarnings}</p>
                 </div>
                 <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
@@ -392,10 +400,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up" style={{ animationDelay: '0.15s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-base-content opacity-70 mb-1">Response Rate</p>
+                  <p className="text-sm font-medium text-muted mb-1">Response Rate</p>
                   <p className="text-3xl font-heading font-bold text-base-content">{kpis.responseRate}%</p>
                 </div>
                 <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
@@ -406,7 +414,7 @@ export default function Dashboard() {
           </div>
 
           {/* Reports */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+          <div className="bg-base-200 rounded-xl p-6 shadow-sm border border-base-300">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-heading font-semibold text-base-content">Performance Report</h3>
@@ -445,7 +453,7 @@ export default function Dashboard() {
 
         {/* Quick Action Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <Link to="/edit-profile" className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600">
+          <Link to="/edit-profile" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
             <div className="text-center">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <i className="fas fa-user-edit text-blue-600 dark:text-blue-400 text-xl"></i>
@@ -465,7 +473,7 @@ export default function Dashboard() {
             </div>
           </Link>
           
-          <Link to="/applications" className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600">
+          <Link to="/applications" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
             <div className="text-center">
               <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <i className="fas fa-file-alt text-orange-600 dark:text-orange-400 text-xl"></i>
@@ -475,7 +483,7 @@ export default function Dashboard() {
             </div>
           </Link>
           
-          <Link to="/orders" className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600">
+          <Link to="/orders" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
             <div className="text-center">
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <i className="fas fa-shopping-bag text-purple-600 dark:text-purple-400 text-xl"></i>
@@ -585,7 +593,7 @@ export default function Dashboard() {
             return (
               <div 
                 key={jobId} 
-                className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 animate-slide-up"
+                className="group bg-base-200 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-base-300 hover:border-primary animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {/* Image with Overlay */}
@@ -633,7 +641,7 @@ export default function Dashboard() {
                   </div>
 
                   {job.applicants?.length > 0 && (
-                    <div className="mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <div className="mb-6 bg-base-300 p-4 rounded-xl border border-base-300">
                       <p className="text-sm font-semibold text-base-content opacity-80 mb-3 flex items-center">
                         <i className="fas fa-users w-4 h-4 mr-2 text-primary-500"></i>
                         Recent Applicants:
@@ -658,7 +666,7 @@ export default function Dashboard() {
                   {/* Action Button */}
                   <Link 
                     to={`/jobs/${jobId}`} 
-                    className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-heading font-semibold py-3 px-6 rounded-xl transition-all duration-200 group-hover:shadow-lg flex items-center justify-center space-x-2"
+                    className="w-full bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary text-white font-heading font-semibold py-3 px-6 rounded-xl transition-all duration-200 group-hover:shadow-lg flex items-center justify-center space-x-2"
                   >
                     <span>View Details</span>
                     <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>

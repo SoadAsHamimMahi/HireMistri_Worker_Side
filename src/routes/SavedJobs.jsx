@@ -99,7 +99,7 @@ export default function SavedJobs() {
               return (
                 <div
                   key={jobId}
-                  className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative"
+                  className="bg-base-200 border border-base-300 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative"
                 >
                   <div className="absolute top-2 right-2 z-10">
                     <BookmarkButton jobId={jobId} />
@@ -112,14 +112,14 @@ export default function SavedJobs() {
 
                   <div className="p-4 flex flex-col gap-2">
                     <h3 className="text-lg font-semibold text-base-content">{job.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">📍 {job.location}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">📂 {job.category}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-base-content opacity-70">📍 {job.location}</p>
+                    <p className="text-sm text-base-content opacity-70">📂 {job.category}</p>
+                    <p className="text-sm text-base-content opacity-70">
                       🗓️ Posted on: {job.date || (job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A')}
                     </p>
                     <span className="text-primary font-semibold text-sm">৳{job.budget}</span>
                     {job.savedAt && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-base-content opacity-60">
                         Saved {new Date(job.savedAt).toLocaleDateString()}
                       </p>
                     )}

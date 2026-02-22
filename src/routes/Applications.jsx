@@ -11,7 +11,9 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
+import { getAuth } from 'firebase/auth';
 import { AuthContext } from '../Authentication/AuthProvider';
+import { app } from '../Authentication/firebaseConfig';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import ApplicationNotes from '../components/ApplicationNotes';
 import PageContainer from '../components/layout/PageContainer';
@@ -66,31 +68,37 @@ export default function Applications() {
   const [expandedProposal, setExpandedProposal] = useState({}); // appId -> boolean for collapsible proposal
   const toggleProposal = (id) => setExpandedProposal((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // Fetch client details for contact (Call/Email)
+  // Fetch client details for contact (Call/Email) - uses contact endpoint (only for accepted apps)
   const fetchClientDetails = async (clientId) => {
-    if (!clientId) return { name: 'Client', phone: '', email: '' };
+    if (!clientId || !user?.uid) return { name: 'Client', phone: '', email: '' };
     if (clientDetails[clientId]) return clientDetails[clientId];
     
     try {
-      const response = await axios.get(`${API_BASE}/api/users/${clientId}/public`, {
-        headers: { Accept: 'application/json' }
+      const auth = getAuth(app);
+      const token = await auth.currentUser?.getIdToken?.();
+      if (!token) return { name: 'Client', phone: '', email: '' };
+
+      const contactRes = await axios.get(`${API_BASE}/api/users/${clientId}/contact`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }
       });
-      
-      if (response.data) {
-        const clientData = response.data;
+      if (contactRes.data && (contactRes.data.phone || contactRes.data.email)) {
+        const publicRes = await axios.get(`${API_BASE}/api/users/${clientId}/public`, {
+          headers: { Accept: 'application/json' }
+        });
+        const clientData = publicRes.data || {};
         const info = {
           name: clientData.displayName || 
-                [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') ||
-                clientData.email || 'Client',
-          phone: clientData.phone || '',
-          email: clientData.email || ''
+                [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') || 'Client',
+          phone: contactRes.data.phone || '',
+          email: contactRes.data.email || ''
         };
         setClientDetails(prev => ({ ...prev, [clientId]: info }));
         return info;
       }
     } catch (err) {
-      console.error('Failed to fetch client details:', err);
+      if (err?.response?.status !== 403) console.error('Failed to fetch client details:', err);
     }
+    setClientDetails(prev => ({ ...prev, [clientId]: { name: 'Client', phone: '', email: '' } }));
     return { name: 'Client', phone: '', email: '' };
   };
 
@@ -373,7 +381,7 @@ export default function Applications() {
                 🔍 Filters
               </h3>
               <button
-                className="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="lg:hidden text-base-content opacity-60 hover:opacity-80"
                 onClick={() => setFiltersOpen(false)}
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -386,7 +394,7 @@ export default function Applications() {
                   Status
                 </label>
                 <select
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
                 >
@@ -399,7 +407,7 @@ export default function Applications() {
                   Category
                 </label>
                 <select
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
                 >
@@ -412,10 +420,10 @@ export default function Applications() {
                   Search by Title
                 </label>
                 <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content opacity-60" />
                   <input
                     type="text"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
                     placeholder="e.g. AC Repair"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -617,7 +625,7 @@ export default function Applications() {
                       {app.proposalText && (
                         <div className="space-y-2">
                           {expandedProposal[app._id] ? (
-                            <div className="rounded-lg bg-base-200 dark:bg-gray-700/50 p-4">
+                            <div className="rounded-lg bg-base-200 p-4">
                               <div className="flex items-center justify-between gap-2 mb-2">
                                 <span className="text-sm font-medium text-base-content/80">Your proposal</span>
                                 <button type="button" className="btn btn-ghost btn-xs" onClick={() => toggleProposal(app._id)}>Collapse</button>
@@ -634,7 +642,7 @@ export default function Applications() {
                       )}
 
                       {/* Notes */}
-                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="pt-4 border-t border-base-300">
                         <ApplicationNotes
                           applicationId={app._id}
                           userId={user?.uid}
@@ -659,7 +667,7 @@ export default function Applications() {
       {showEditModal && editingApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleEditCancel}></div>
-          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full p-6">
+          <div className="relative bg-base-200 rounded-xl shadow-2xl max-w-2xl w-full p-6">
             <h3 className="text-xl font-bold mb-4 text-base-content">Edit Proposal</h3>
             <p className="text-sm text-base-content opacity-70 mb-4">
               Job: <strong>{editingApplication.title || 'Untitled Job'}</strong>
@@ -669,7 +677,7 @@ export default function Applications() {
                 Your Proposal <span className="text-error">*</span>
               </label>
               <textarea
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base-content resize-none"
+                className="w-full p-3 border border-base-300 rounded-lg bg-base-300 text-base-content resize-none"
                 rows={8}
                 value={editProposalText}
                 onChange={(e) => setEditProposalText(e.target.value)}
@@ -682,7 +690,7 @@ export default function Applications() {
             </div>
             <div className="flex gap-3 justify-end">
               <button
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-base-content font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-base-300 hover:bg-base-200 text-base-content font-medium rounded-lg transition-colors"
                 onClick={handleEditCancel}
                 disabled={isSaving}
               >
@@ -714,7 +722,7 @@ export default function Applications() {
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleCancelCancel}></div>
-          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="relative bg-base-200 rounded-xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold mb-4 text-base-content">Withdraw Application</h3>
             <p className="text-base-content opacity-70 mb-6">
               Are you sure you want to withdraw your application for <strong>"{cancellingApplicationTitle}"</strong>? 
@@ -722,7 +730,7 @@ export default function Applications() {
             </p>
             <div className="flex gap-3 justify-end">
               <button
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-base-content font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-base-300 hover:bg-base-200 text-base-content font-medium rounded-lg transition-colors"
                 onClick={handleCancelCancel}
                 disabled={isCancelling}
               >

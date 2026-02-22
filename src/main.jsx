@@ -24,6 +24,7 @@ import WorkerLogin from './Authentication/WorkerLogin';
 import WorkerRegister from './Authentication/WorkerRegister';
 import AuthProvider from './Authentication/AuthProvider';
 import WorkerJobDetails from './routes/WorkerJobDetails';
+import JobOffers from './routes/JobOffers';
 import SavedJobs from './routes/SavedJobs';
 import ClientProfile from './routes/ClientProfile';
 import BrowseClients from './routes/BrowseClients';
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
       { path: 'jobs', element: <Jobs /> },
       { path: 'saved-jobs', element: <SavedJobs /> },
       { path: 'applications', element: <Applications /> },
+      { path: 'job-offers', element: <JobOffers /> },
       { path: 'orders', element: <Orders /> },
       { path: 'edit-profile', element: <EditProfile /> },
       { path: 'job/:jobId', element: <JobDetails /> },

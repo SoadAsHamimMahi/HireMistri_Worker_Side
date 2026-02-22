@@ -233,7 +233,7 @@ const Jobs = () => {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               viewMode === 'list'
                 ? 'bg-primary-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-base-content opacity-80 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-base-300 text-base-content opacity-80 hover:bg-base-200'
             }`}
           >
             <i className="fas fa-list mr-2"></i>List View
@@ -243,7 +243,7 @@ const Jobs = () => {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               viewMode === 'map'
                 ? 'bg-primary-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-base-content opacity-80 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-base-300 text-base-content opacity-80 hover:bg-base-200'
             }`}
           >
             <i className="fas fa-map mr-2"></i>Map View
@@ -339,7 +339,7 @@ const Jobs = () => {
 
       {/* Advanced Filters */}
       {showAdvancedFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 p-4 bg-base-200 dark:bg-gray-700 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 p-4 bg-base-200 rounded-lg">
           {/* Multiple Categories */}
           <div>
             <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
@@ -471,14 +471,14 @@ const Jobs = () => {
 
       {/* Job Cards or Map View */}
       {loading ? (
-        <div className="py-10 text-center text-gray-500">Loading jobs...</div>
+        <div className="py-10 text-center text-base-content opacity-70">Loading jobs...</div>
       ) : jobData.length === 0 ? (
-        <div className="py-10 text-center text-gray-500">
+        <div className="py-10 text-center text-base-content opacity-70">
           No jobs match your filters.
         </div>
       ) : viewMode === 'map' ? (
         /* Map View */
-        <div key="map-view-container" className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div key="map-view-container" className="bg-base-200 rounded-xl shadow-lg border border-base-300 overflow-hidden">
           <div className="h-[600px] w-full relative">
             {jobsWithCoords.length > 0 ? (
               <MapContainer
@@ -518,7 +518,7 @@ const Jobs = () => {
                       <Popup>
                         <div className="text-sm min-w-[200px]">
                           <div className="font-semibold mb-1">{job.title || 'Untitled Job'}</div>
-                          <div className="text-gray-600 mb-2">{job.location || 'N/A'}</div>
+                          <div className="text-base-content opacity-70 mb-2">{job.location || 'N/A'}</div>
                           <div className="text-base-content opacity-80 mb-1">
                             📂 {job.category || 'General'}
                           </div>
@@ -539,7 +539,7 @@ const Jobs = () => {
                 })}
               </MapContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+              <div className="h-full flex items-center justify-center text-base-content opacity-70 opacity-70">
                 <div className="text-center">
                   <i className="fas fa-map-marked-alt text-4xl mb-2"></i>
                   <p>No jobs with location data available</p>
@@ -553,9 +553,9 @@ const Jobs = () => {
               </div>
             )}
           </div>
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+          <div className="p-4 bg-base-300 border-t border-base-300">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300">
+              <span className="text-base-content opacity-70">
                 Showing {jobsWithCoords.length} job{jobsWithCoords.length !== 1 ? 's' : ''} on map
               </span>
               {workerLocation && (
@@ -579,7 +579,7 @@ const Jobs = () => {
               return (
                 <div
                   key={jobId}
-                  className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative"
+                  className="bg-base-200 border border-base-300 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative"
                 >
                   <div className="absolute top-2 right-2 z-10">
                     <BookmarkButton jobId={jobId} />
@@ -602,13 +602,13 @@ const Jobs = () => {
                         {job.status || 'active'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">📍 {job.location}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">📂 {job.category}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">🗓️ Posted on: {job.date}</p>
+                    <p className="text-sm text-base-content opacity-70">📍 {job.location}</p>
+                    <p className="text-sm text-base-content opacity-70">📂 {job.category}</p>
+                    <p className="text-sm text-base-content opacity-70 opacity-70">🗓️ Posted on: {job.date}</p>
                     <span className="text-primary font-semibold text-sm">৳{job.budget}</span>
 
                     {job.applicants?.length > 0 && (
-                      <div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-md border dark:border-gray-600">
+                      <div className="mt-2 bg-base-300 p-2 rounded-md border border-base-300">
                         <p className="text-sm font-medium text-base-content opacity-80">👷 Applicants:</p>
                         <ul className="text-sm space-y-1">
                           {job.applicants.map((a, i) => (

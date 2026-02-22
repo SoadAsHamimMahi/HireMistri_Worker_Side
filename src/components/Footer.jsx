@@ -28,8 +28,8 @@ export default function Footer() {
 
   return (
     <footer className="mt-16 text-base-content">
-      {/* Worker CTA strip */}
-      <div className="bg-gradient-to-r from-base-200 via-base-100 to-base-200">
+      {/* Worker CTA strip - black in dark (Sahayak) */}
+      <div className="footer-cta-bg bg-gradient-to-r from-base-200 via-base-100 to-base-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h3 className="text-xl md:text-2xl font-semibold text-base-content">
             Find work faster with <span className="text-primary">Hire</span>Mistri
@@ -48,8 +48,8 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Main footer */}
-      <div className="bg-base-200 transition-colors duration-300">
+      {/* Main footer - pure black in dark mode (Sahayak style) */}
+      <div className="footer-main-bg bg-base-200 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand + contact */}

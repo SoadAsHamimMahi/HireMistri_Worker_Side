@@ -7,6 +7,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import PageContainer from '../components/layout/PageContainer';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import { JobLocationMap, LiveTrackingMap } from '../components/maps';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 const DEBUG_LOG_ENDPOINT = 'http://127.0.0.1:7244/ingest/911a7613-44ba-43a9-92c1-5f0fb37aadca';
@@ -36,6 +38,7 @@ const JobDetails = () => {
   const { user } = useContext(AuthContext) || {};
   const { isDarkMode } = useDarkMode();
   const navigate = useNavigate();
+  const { socket } = useWebSocket() || {};
   
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -568,7 +571,7 @@ const JobDetails = () => {
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -581,7 +584,7 @@ const JobDetails = () => {
       case 'low':
         return 'badge-success';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -590,7 +593,7 @@ const JobDetails = () => {
       <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading job details...</p>
+          <p className="text-base-content opacity-80">Loading job details...</p>
         </div>
       </div>
     );
@@ -606,7 +609,7 @@ const JobDetails = () => {
           <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Error Loading Job
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
+          <p className="text-base-content opacity-80 mb-6">{error}</p>
           <button 
             onClick={() => navigate('/jobs')} 
             className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
@@ -622,13 +625,13 @@ const JobDetails = () => {
     return (
       <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
+          <div className="w-24 h-24 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-briefcase text-base-content opacity-60 text-3xl"></i>
           </div>
           <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Job Not Found
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">This job may have been removed or doesn't exist.</p>
+          <p className="text-base-content opacity-80 mb-6">This job may have been removed or doesn't exist.</p>
           <button 
             onClick={() => navigate('/jobs')} 
             className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
@@ -645,12 +648,12 @@ const JobDetails = () => {
       <Toaster />
       
       {/* Header Section */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-base-200 shadow-sm border-b border-base-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <button 
               onClick={() => navigate(-1)}
-              className="flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center px-4 py-2 text-base-content opacity-80 hover:text-primary hover:bg-base-300 rounded-lg transition-colors"
             >
               <i className="fas fa-arrow-left mr-2"></i>
               Back
@@ -669,7 +672,7 @@ const JobDetails = () => {
             <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-base-content mb-6">
               {job.title || 'Untitled Job'}
             </h1>
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-gray-600 dark:text-gray-300">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-base-content opacity-80">
               <span className="flex items-center justify-center lg:justify-start text-lg">
                 <i className="fas fa-tag w-5 h-5 mr-3 text-primary-500"></i>
                 {job.category || 'General'}
@@ -692,7 +695,7 @@ const JobDetails = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Job Image Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 overflow-hidden">
               {job.images && job.images.length > 0 ? (
                 <div className="relative">
                   <img
@@ -707,17 +710,17 @@ const JobDetails = () => {
                   )}
                 </div>
               ) : (
-                <div className="h-64 lg:h-80 bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+                <div className="h-64 lg:h-80 bg-gradient-to-br from-[#66BB6A] to-[#1E88E5] flex items-center justify-center">
                   <div className="text-center">
-                    <i className="fas fa-image text-6xl text-gray-400 dark:text-gray-500 mb-4"></i>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">No image available</p>
+                    <i className="fas fa-image text-6xl text-base-content opacity-60 dark:text-base-content opacity-70 mb-4"></i>
+                    <p className="text-base-content opacity-70 text-lg">No image available</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Job Description */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <h2 className="text-2xl font-heading font-bold text-base-content mb-4">Job Description</h2>
               <div className="prose prose-sm prose-gray dark:prose-invert max-w-none">
                 <p className="text-base-content opacity-80 leading-relaxed">
@@ -728,7 +731,7 @@ const JobDetails = () => {
 
             {/* Job Requirements */}
             {job.requirements && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
                 <h2 className="text-2xl font-heading font-bold text-base-content mb-4">Requirements</h2>
                 <ul className="prose prose-sm prose-gray dark:prose-invert max-w-none space-y-2 list-disc pl-6">
                   {job.requirements.map((req, index) => (
@@ -742,7 +745,7 @@ const JobDetails = () => {
 
             {/* Additional Job Images */}
             {job.images && job.images.length > 1 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
                 <h2 className="text-2xl font-heading font-bold text-base-content mb-4">
                   Additional Images
                 </h2>
@@ -759,94 +762,44 @@ const JobDetails = () => {
               </div>
             )}
 
-            {/* Location Map - Client's Location */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-0 overflow-hidden">
-              <div className="flex items-center justify-between px-6 pt-6">
-                <h2 className="text-2xl font-heading font-bold text-base-content">Client's Location</h2>
-              </div>
-              <div className="p-4">
-                {(() => {
+            {/* Job location map (Google Maps) */}
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6">
+              <h2 className="text-2xl font-heading font-bold text-base-content mb-4">Job Location</h2>
+              <JobLocationMap
+                locationGeo={job.locationGeo || (() => {
                   const jobLL = getJobLatLng(job);
-                  const center = jobLL || workerLocation || [23.8103, 90.4125]; // Default to Dhaka if no coordinates
-                  const distanceKm = jobLL && workerLocation ? getDistanceKm(workerLocation, jobLL) : null;
-                  
-                  if (!jobLL) {
-                    // Show message if coordinates are missing
-                    return (
-                      <div className="w-full h-72 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                        <div className="text-center p-6">
-                          <i className="fas fa-map-marked-alt text-4xl text-gray-400 dark:text-gray-500 mb-4"></i>
-                          <p className="text-base-content opacity-70 mb-2">Location coordinates not available</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-500">{job.location || 'Address not specified'}</p>
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <>
-                      {distanceKm != null && (
-                        <div className="mb-3">
-                          <span className="px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-                            {distanceKm} km away
-                          </span>
-                        </div>
-                      )}
-                      <div className="w-full h-72 rounded-xl overflow-hidden">
-                        <MapContainer key={`job-details-map-${jobId}`} center={center} zoom={jobLL ? 13 : 10} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url={isDarkMode ? 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png' : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
-                          />
-                          <Marker position={jobLL} icon={JobIcon}>
-                            <Popup>
-                              <div className="text-sm">
-                                <div className="font-semibold mb-1">{job.title || 'Job Location'}</div>
-                                <div className="text-gray-600">{job.location || ''}</div>
-                                {job.clientName && (
-                                  <div className="text-gray-500 mt-1">Client: {job.clientName}</div>
-                                )}
-                              </div>
-                            </Popup>
-                          </Marker>
-                          {workerLocation && (
-                            <Marker position={workerLocation} icon={WorkerIcon}>
-                              <Popup>
-                                <div className="text-sm">
-                                  <div className="font-semibold">📍 Your Location</div>
-                                  {distanceKm != null && (
-                                    <div className="text-blue-600 mt-1">{distanceKm} km to job</div>
-                                  )}
-                                </div>
-                              </Popup>
-                            </Marker>
-                          )}
-                        </MapContainer>
-                      </div>
-                      <div className="mt-4 flex gap-3">
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(jobLL[0] + ',' + jobLL[1])}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
-                        >
-                          <i className="fas fa-directions mr-2"></i>
-                          Get Directions
-                        </a>
-                      </div>
-                    </>
-                  );
+                  return jobLL ? { lat: jobLL[0], lng: jobLL[1] } : null;
                 })()}
-              </div>
+                locationText={job.locationText || job.location}
+                className="mt-2"
+              />
             </div>
 
+            {/* Live location (when worker has accepted this job) */}
+            {currentApplication && (currentApplication.status || '').toLowerCase() === 'accepted' && job.clientId && user?.uid && (
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6">
+                <h2 className="text-2xl font-heading font-bold text-base-content mb-4">Live Location</h2>
+                <LiveTrackingMap
+                  jobId={jobId}
+                  jobLocationGeo={job.locationGeo || (() => {
+                    const jobLL = getJobLatLng(job);
+                    return jobLL ? { lat: jobLL[0], lng: jobLL[1] } : null;
+                  })()}
+                  currentUserId={user.uid}
+                  peerUserId={job.clientId}
+                  socket={socket}
+                  isAccepted={true}
+                />
+              </div>
+            )}
+
             {/* Applicants Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-heading font-bold text-base-content">
                   Applicants
                 </h2>
-                <span className="text-gray-500 dark:text-gray-400 text-lg">
+                <span className="text-base-content opacity-70 text-lg">
                   {applicants.length} total
                 </span>
               </div>
@@ -854,12 +807,12 @@ const JobDetails = () => {
               {applicantsLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                  <p className="text-gray-500 dark:text-gray-400">Loading applicants...</p>
+                  <p className="text-base-content opacity-70">Loading applicants...</p>
                 </div>
               ) : applicants.length > 0 ? (
                 <div className="space-y-4">
                   {applicants.map((app) => (
-                    <div key={app._id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div key={app._id} className="border border-base-300 rounded-xl p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
@@ -869,7 +822,7 @@ const JobDetails = () => {
                           </div>
                           <div>
                             <p className="font-medium text-base-content text-lg">{app.workerName || 'Unknown Worker'}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                            <p className="text-sm text-base-content opacity-70">
                               {app.proposalText?.substring(0, 60)}...
                             </p>
                           </div>
@@ -877,23 +830,23 @@ const JobDetails = () => {
                         <div className="text-right">
                           {app.proposedPrice ? (
                             <div>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">Proposed:</span>
+                              <span className="text-xs text-base-content opacity-70">Proposed:</span>
                               <p className="font-bold text-primary text-lg">৳{app.proposedPrice.toLocaleString()}</p>
                               {job.budget && (
-                                <p className={`text-xs ${app.proposedPrice > job.budget ? 'text-red-500' : app.proposedPrice < job.budget ? 'text-green-500' : 'text-gray-500'}`}>
+                                <p className={`text-xs ${app.proposedPrice > job.budget ? 'text-red-500' : app.proposedPrice < job.budget ? 'text-green-500' : 'text-base-content opacity-70'}`}>
                                   {app.proposedPrice > job.budget ? '↑ Higher' : app.proposedPrice < job.budget ? '↓ Lower' : 'Same'}
                                 </p>
                               )}
                             </div>
                           ) : (
                             <div>
-                              <span className="text-xs text-gray-400">No price</span>
-                              <p className="text-sm text-gray-500">proposed</p>
+                              <span className="text-xs text-base-content opacity-60">No price</span>
+                              <p className="text-sm text-base-content opacity-70">proposed</p>
                             </div>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-base-300">
                         <span className={`badge ${app.status === 'accepted' ? 'badge-success' : app.status === 'rejected' ? 'badge-error' : 'badge-warning'}`}>
                           {app.status || 'pending'}
                         </span>
@@ -909,8 +862,8 @@ const JobDetails = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <i className="fas fa-users text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <p className="text-gray-500 dark:text-gray-400 text-lg">No applicants yet</p>
+                  <i className="fas fa-users text-6xl text-base-content opacity-50 mb-4"></i>
+                  <p className="text-base-content opacity-70 text-lg">No applicants yet</p>
                 </div>
               )}
             </div>
@@ -919,13 +872,13 @@ const JobDetails = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Job Info Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Information
               </h3>
               
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 p-4 rounded-xl">
+                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-base-content opacity-70 mb-1">Budget</p>
@@ -938,9 +891,9 @@ const JobDetails = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-b border-base-300">
                     <div className="flex items-center">
-                      <i className="fas fa-briefcase w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-briefcase w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Category</span>
                     </div>
                     <span className="text-base-content font-medium">
@@ -948,9 +901,9 @@ const JobDetails = () => {
                     </span>
                   </div>
                   
-                  <div className="py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div className="py-3 border-b border-base-300">
                     <div className="flex items-start">
-                      <i className="fas fa-map-marker-alt w-5 h-5 text-gray-400 mr-3 flex-shrink-0 mt-0.5"></i>
+                      <i className="fas fa-map-marker-alt w-5 h-5 text-base-content opacity-60 mr-3 flex-shrink-0 mt-0.5"></i>
                       <div className="flex-1 min-w-0">
                         <div className="text-base-content opacity-70 text-sm mb-1">Location</div>
                         <div className="text-base-content font-medium break-words">
@@ -960,9 +913,9 @@ const JobDetails = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-b border-base-300">
                     <div className="flex items-center">
-                      <i className="fas fa-calendar w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-calendar w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Posted</span>
                     </div>
                     <span className="text-base-content font-medium">
@@ -972,7 +925,7 @@ const JobDetails = () => {
                   
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center">
-                      <i className="fas fa-info-circle w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-info-circle w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Status</span>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
@@ -984,7 +937,7 @@ const JobDetails = () => {
             </div>
 
             {/* Client Info Card - ALWAYS RENDER THIS SECTION */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-4 border-red-500 dark:border-gray-700 p-6 lg:p-8" style={{ minHeight: '200px' }}>
+            <div className="bg-base-200 rounded-2xl shadow-lg border-4 border-red-500 p-6 lg:p-8" style={{ minHeight: '200px' }}>
               <div className="bg-yellow-200 dark:bg-yellow-900 p-2 mb-4 rounded">
                 <strong>🔴 DEBUG: Client Info Card Section - IF YOU SEE THIS, SECTION IS RENDERING</strong>
               </div>
@@ -1074,7 +1027,7 @@ const JobDetails = () => {
                      job?.postedByName || 
                      (job?.clientId ? `Client ${job.clientId.substring(0, 12)}...` : 'Unknown Client')}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-base-content opacity-80">
                     {clientProfile?.headline || (clientProfile?.displayName?.includes('Loading') ? 'Fetching profile...' : 'Job Poster')}
                   </p>
                   {/* Trust Badges */}
@@ -1101,24 +1054,24 @@ const JobDetails = () => {
               
               {/* Client Stats */}
               {clientProfile?.stats && (
-                <div className="grid grid-cols-2 gap-3 mb-6 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="grid grid-cols-2 gap-3 mb-6 p-3 bg-base-300 rounded-lg">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-primary">{clientProfile.stats.totalJobsPosted || 0}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Jobs Posted</p>
+                    <p className="text-xs text-base-content opacity-70">Jobs Posted</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-green-600">{clientProfile.stats.clientJobsCompleted || 0}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-xs text-base-content opacity-70">Completed</p>
                   </div>
                   <div className="text-center">
                     <p className="text-xl font-bold text-blue-600">{clientProfile.stats.clientHireRate ?? 0}%</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Hire Rate</p>
+                    <p className="text-xs text-base-content opacity-70">Hire Rate</p>
                   </div>
                   <div className="text-center">
-                    <p className={`text-xl font-bold ${(clientProfile.stats.clientCancellationRate ?? 0) > 20 ? 'text-red-600' : 'text-gray-600'}`}>
+                    <p className={`text-xl font-bold ${(clientProfile.stats.clientCancellationRate ?? 0) > 20 ? 'text-red-600' : 'text-base-content opacity-80'}`}>
                       {clientProfile.stats.clientCancellationRate ?? 0}%
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancel Rate</p>
+                    <p className="text-xs text-base-content opacity-70">Cancel Rate</p>
                   </div>
                 </div>
               )}
@@ -1138,9 +1091,9 @@ const JobDetails = () => {
                   }, 'D');
                   // #endregion
                   return (
-                    <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                      <i className="fas fa-envelope w-5 h-5 mr-3 text-gray-400"></i>
-                      <span className="text-gray-600 dark:text-gray-300 text-sm">
+                    <div className="flex items-center py-2 border-b border-base-300">
+                      <i className="fas fa-envelope w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                      <span className="text-base-content opacity-80 text-sm">
                         {emailToShow || 'Email not available'}
                       </span>
                     </div>
@@ -1149,26 +1102,26 @@ const JobDetails = () => {
                 
                 {/* Location - Always show */}
                 {(clientProfile?.city || clientProfile?.country || job.location) ? (
-                  <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <i className="fas fa-map-marker-alt w-5 h-5 mr-3 text-gray-400"></i>
-                    <span className="text-gray-600 dark:text-gray-300 text-sm">
+                  <div className="flex items-center py-2 border-b border-base-300">
+                    <i className="fas fa-map-marker-alt w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                    <span className="text-base-content opacity-80 text-sm">
                       {clientProfile?.city || clientProfile?.country 
                         ? [clientProfile.city, clientProfile.country].filter(Boolean).join(', ')
                         : job.location || 'Location not set'}
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <i className="fas fa-map-marker-alt w-5 h-5 mr-3 text-gray-400"></i>
-                    <span className="text-gray-600 dark:text-gray-300 text-sm">Location not set</span>
+                  <div className="flex items-center py-2 border-b border-base-300">
+                    <i className="fas fa-map-marker-alt w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                    <span className="text-base-content opacity-80 text-sm">Location not set</span>
                   </div>
                 )}
                 
                 {/* Member Since */}
                 {clientProfile?.createdAt && (
-                  <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <i className="fas fa-calendar w-5 h-5 mr-3 text-gray-400"></i>
-                    <span className="text-gray-600 dark:text-gray-300 text-sm">
+                  <div className="flex items-center py-2 border-b border-base-300">
+                    <i className="fas fa-calendar w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                    <span className="text-base-content opacity-80 text-sm">
                       Member since {new Date(clientProfile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
                     </span>
                   </div>
@@ -1176,9 +1129,9 @@ const JobDetails = () => {
                 
                 {/* Last Active */}
                 {clientProfile?.lastActiveAt && (
-                  <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <i className="fas fa-clock w-5 h-5 mr-3 text-gray-400"></i>
-                    <span className="text-gray-600 dark:text-gray-300 text-sm">
+                  <div className="flex items-center py-2 border-b border-base-300">
+                    <i className="fas fa-clock w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                    <span className="text-base-content opacity-80 text-sm">
                       Last active {new Date(clientProfile.lastActiveAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
@@ -1195,15 +1148,15 @@ const JobDetails = () => {
                   // #endregion
                   return job?.clientId ? (
                     <div className="flex items-center py-2">
-                      <i className="fas fa-id-card w-5 h-5 mr-3 text-gray-400"></i>
-                      <span className="text-gray-600 dark:text-gray-300 text-xs font-mono break-all">
+                      <i className="fas fa-id-card w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                      <span className="text-base-content opacity-80 text-xs font-mono break-all">
                         {job.clientId}
                       </span>
                     </div>
                   ) : (
                     <div className="flex items-center py-2">
-                      <i className="fas fa-id-card w-5 h-5 mr-3 text-gray-400"></i>
-                      <span className="text-gray-600 dark:text-gray-300 text-xs">N/A</span>
+                      <i className="fas fa-id-card w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                      <span className="text-base-content opacity-80 text-xs">N/A</span>
                     </div>
                   );
                 })()}
@@ -1219,7 +1172,7 @@ const JobDetails = () => {
                 }, 'D');
                 // #endregion
                 return job?.clientId ? (
-                  <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
+                  <div className="pt-4 mt-4 border-t border-base-300">
                     <button
                       onClick={() => navigate(`/client/${job.clientId}`)}
                       className="btn btn-primary btn-sm w-full"
@@ -1233,7 +1186,7 @@ const JobDetails = () => {
 
             {/* Application Form */}
             {!hasApplied ? (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
                 <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                   Apply for this Job
                 </h3>
@@ -1247,35 +1200,35 @@ const JobDetails = () => {
                       value={proposalText}
                       onChange={(e) => setProposalText(e.target.value)}
                       placeholder="Write your proposal here... Explain why you're the best fit for this job."
-                      className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
+                      className="w-full px-4 py-4 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 resize-none text-lg"
                       rows={5}
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-base-content opacity-70 mt-2">
                       Minimum 50 characters required
                     </p>
                   </div>
                   
                   {/* Price Bargaining Section */}
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                  <div className="bg-base-300 rounded-xl p-4 border border-base-300">
                     <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
                       <i className="fas fa-money-bill-wave mr-2"></i>
                       Proposed Price (Optional)
                     </label>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-gray-600 dark:text-gray-300 font-medium">৳</span>
+                      <span className="text-base-content opacity-80 font-medium">৳</span>
                       <input
                         type="number"
                         value={proposedPrice}
                         onChange={(e) => setProposedPrice(e.target.value)}
                         placeholder={job.budget ? job.budget.toString() : 'Enter your price'}
-                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-600 dark:text-white"
+                        className="flex-1 px-4 py-2 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
                         min="0"
                         step="100"
                       />
                     </div>
                     {job.budget && (
                       <div className="flex items-center justify-between text-xs mt-2">
-                        <span className="text-gray-500 dark:text-gray-400">
+                        <span className="text-base-content opacity-70">
                           Job budget: <span className="font-semibold">৳{job.budget.toLocaleString()}</span>
                         </span>
                         {proposedPrice && !isNaN(parseFloat(proposedPrice)) && (
@@ -1284,7 +1237,7 @@ const JobDetails = () => {
                               ? 'text-red-500' 
                               : parseFloat(proposedPrice) < job.budget 
                               ? 'text-green-500' 
-                              : 'text-gray-500'
+                              : 'text-base-content opacity-70'
                           }`}>
                             {parseFloat(proposedPrice) > job.budget 
                               ? `+৳${(parseFloat(proposedPrice) - job.budget).toLocaleString()} higher`
@@ -1295,7 +1248,7 @@ const JobDetails = () => {
                         )}
                       </div>
                     )}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-base-content opacity-70 mt-2">
                       Leave empty to accept the job budget. You can negotiate the price after applying.
                     </p>
                   </div>
@@ -1303,7 +1256,7 @@ const JobDetails = () => {
                   <button
                     onClick={handleApply}
                     disabled={applying || !proposalText.trim() || proposalText.trim().length < 50}
-                    className="w-full bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                    className="w-full bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
                   >
                     {applying ? (
                       <span className="flex items-center justify-center">
@@ -1336,7 +1289,7 @@ const JobDetails = () => {
                 </div>
                 {currentApplication?.proposedPrice && (
                   <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                    <p className="text-sm text-base-content opacity-80 mb-1">
                       Your proposed price:
                     </p>
                     <p className="text-xl font-bold text-primary">

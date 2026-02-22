@@ -46,11 +46,15 @@ const Orders = () => {
           headers: { Accept: 'application/json' },
         });
 
-        // Filter for accepted and completed applications (these become orders)
-        // Accepted = active orders, Completed = completed orders
+        // Filter for accepted and completed applications (these become orders).
+        // Exclude "accepted but price pending": if worker proposed a different budget, only count as order once client has accepted it.
         const acceptedApplications = Array.isArray(data) ? data.filter(app => {
           const status = app.status ? app.status.toLowerCase() : '';
-          return status === 'accepted' || status === 'completed';
+          if (status !== 'accepted' && status !== 'completed') return false;
+          const hasProposedPrice = app.proposedPrice != null && app.proposedPrice !== '';
+          const priceAgreed = app.negotiationStatus === 'accepted' || (app.finalPrice != null && app.finalPrice !== '');
+          if (hasProposedPrice && !priceAgreed) return false; // don't show in My Jobs until client accepts price
+          return true;
         }) : [];
 
         // Transform applications to order format
@@ -148,7 +152,7 @@ const Orders = () => {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -161,7 +165,7 @@ const Orders = () => {
       case 'low':
         return 'badge-success';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -272,7 +276,7 @@ const Orders = () => {
       <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading orders...</p>
+          <p className="text-base-content opacity-80">Loading orders...</p>
         </div>
       </div>
     );
@@ -288,7 +292,7 @@ const Orders = () => {
           <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Error Loading Orders
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
+          <p className="text-base-content opacity-80 mb-6">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
             className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
@@ -304,13 +308,13 @@ const Orders = () => {
     <div className="min-h-screen page-bg">
       <Toaster position="top-right" />
       {/* Header Section - Mobile Optimized */}
-      <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-8 lg:py-12">
+      <div className="bg-gradient-to-r from-[#66BB6A] to-[#1E88E5] py-8 lg:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl lg:text-4xl xl:text-5xl font-heading font-bold text-base-content mb-3 lg:mb-4">
               My Orders
             </h1>
-            <p className="text-base lg:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-4">
+            <p className="text-base lg:text-xl text-base-content opacity-80 max-w-2xl mx-auto px-4">
               Manage your accepted job applications and track your work progress
             </p>
           </div>
@@ -320,7 +324,7 @@ const Orders = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards - Mobile Optimized */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+          <div className="bg-base-200 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-base-300">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div className="mb-2 lg:mb-0">
                 <p className="text-xs lg:text-sm font-medium text-base-content opacity-70">Total Orders</p>
@@ -332,7 +336,7 @@ const Orders = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+          <div className="bg-base-200 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-base-300">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div className="mb-2 lg:mb-0">
                 <p className="text-xs lg:text-sm font-medium text-base-content opacity-70">Active Orders</p>
@@ -344,7 +348,7 @@ const Orders = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+          <div className="bg-base-200 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-base-300">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div className="mb-2 lg:mb-0">
                 <p className="text-xs lg:text-sm font-medium text-base-content opacity-70">Completed</p>
@@ -358,7 +362,7 @@ const Orders = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+          <div className="bg-base-200 rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-lg border border-base-300">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div className="mb-2 lg:mb-0">
                 <p className="text-xs lg:text-sm font-medium text-base-content opacity-70">Total Earnings</p>
@@ -374,7 +378,7 @@ const Orders = () => {
         </div>
 
         {/* Filter Tabs - Mobile Optimized */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-6 lg:mb-8">
+        <div className="bg-base-200 rounded-xl lg:rounded-2xl shadow-lg border border-base-300 mb-6 lg:mb-8">
           <div className="p-4 lg:p-6">
             <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 lg:gap-2">
               {[
@@ -389,7 +393,7 @@ const Orders = () => {
                   className={`px-3 lg:px-6 py-2 lg:py-3 rounded-lg lg:rounded-xl font-medium transition-all duration-200 text-sm lg:text-base ${
                     filter === key
                       ? 'bg-primary-500 text-white shadow-lg'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'text-base-content opacity-80 hover:bg-base-300'
                   }`}
                 >
                   <span className="block lg:inline">{label}</span>
@@ -404,13 +408,13 @@ const Orders = () => {
         <div className="space-y-4 lg:space-y-6">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8 lg:py-12">
-              <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-clipboard-list text-gray-400 text-2xl lg:text-3xl"></i>
+              <div className="w-20 h-20 lg:w-24 lg:h-24 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-clipboard-list text-base-content opacity-60 text-2xl lg:text-3xl"></i>
               </div>
               <h3 className="text-lg lg:text-xl font-heading font-semibold text-base-content mb-2">
                 No orders found
               </h3>
-              <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mb-6 px-4">
+              <p className="text-sm lg:text-base text-base-content opacity-80 mb-6 px-4">
                 {filter === 'all' 
                   ? "You don't have any accepted job applications yet. Once your applications are accepted by clients, they will appear here as orders." 
                   : `No ${filter} orders found.`
@@ -428,7 +432,7 @@ const Orders = () => {
             filteredOrders.map((order, index) => (
               <div 
                 key={order.id} 
-                className="bg-white dark:bg-gray-800 rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 animate-slide-up"
+                className="bg-base-200 rounded-xl lg:rounded-2xl shadow-lg border border-base-300 overflow-hidden hover:shadow-xl transition-all duration-300 animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="p-4 lg:p-6">
@@ -440,7 +444,7 @@ const Orders = () => {
                           <h3 className="text-lg lg:text-xl font-heading font-bold text-base-content mb-2">
                             {order.jobTitle}
                           </h3>
-                          <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-2 lg:space-y-0 text-sm text-gray-600 dark:text-gray-300">
+                          <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-4 space-y-2 lg:space-y-0 text-sm text-base-content opacity-80">
                             <span className="flex items-center">
                               <i className="fas fa-tag w-4 h-4 mr-2 text-primary-500 flex-shrink-0"></i>
                               <span className="truncate">{order.category}</span>
@@ -483,7 +487,7 @@ const Orders = () => {
                           />
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-base-content truncate">{order.clientName}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">Client • Click to view profile</p>
+                            <p className="text-sm text-base-content opacity-80">Client • Click to view profile</p>
                           </div>
                         </Link>
                       ) : (
@@ -495,12 +499,12 @@ const Orders = () => {
                           />
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-base-content truncate">{order.clientName}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">Client</p>
+                            <p className="text-sm text-base-content opacity-80">Client</p>
                           </div>
                         </div>
                       )}
 
-                      <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                      <p className="text-sm lg:text-base text-base-content opacity-80 mb-4 line-clamp-3">
                         {order.proposalText || order.description || 'No description provided.'}
                       </p>
 
@@ -511,7 +515,7 @@ const Orders = () => {
                             <span className="text-sm font-medium text-base-content opacity-80">Progress</span>
                             <span className="text-sm text-base-content opacity-70">{order.progress}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div className="w-full bg-base-300 rounded-full h-2">
                             <div 
                               className="bg-primary-500 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${order.progress}%` }}
@@ -558,7 +562,7 @@ const Orders = () => {
                             </button>
                             
                             {expandedOrderId === order.id && (
-                              <div key={`order-map-${order.id}`} className="mt-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                              <div key={`order-map-${order.id}`} className="mt-3 bg-base-200 rounded-lg border border-base-300 overflow-hidden">
                                 <div className="h-64 w-full relative">
                                   <MapContainer
                                     key={`map-order-${order.id}`}
@@ -575,7 +579,7 @@ const Orders = () => {
                                       <Popup>
                                         <div className="text-sm">
                                           <div className="font-semibold mb-1">{order.jobTitle}</div>
-                                          <div className="text-gray-600">{order.location}</div>
+                                          <div className="text-base-content opacity-80">{order.location}</div>
                                         </div>
                                       </Popup>
                                     </Marker>
@@ -593,7 +597,7 @@ const Orders = () => {
                                     )}
                                   </MapContainer>
                                 </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                                <div className="p-3 bg-base-300 border-t border-base-300">
                                   <a
                                     href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(jobCoords[0] + ',' + jobCoords[1])}`}
                                     target="_blank"
@@ -613,23 +617,23 @@ const Orders = () => {
                       {/* Order Details - Mobile Optimized */}
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 text-xs lg:text-sm">
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400 mb-1">Start Date</p>
+                          <p className="text-base-content opacity-70 mb-1">Start Date</p>
                           <p className="font-medium text-base-content text-xs lg:text-sm">
                             {new Date(order.startDate).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400 mb-1">End Date</p>
+                          <p className="text-base-content opacity-70 mb-1">End Date</p>
                           <p className="font-medium text-base-content text-xs lg:text-sm">
                             {new Date(order.endDate).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400 mb-1">Est. Hours</p>
+                          <p className="text-base-content opacity-70 mb-1">Est. Hours</p>
                           <p className="font-medium text-base-content text-xs lg:text-sm">{order.estimatedHours}h</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400 mb-1">Order ID</p>
+                          <p className="text-base-content opacity-70 mb-1">Order ID</p>
                           <p className="font-medium text-base-content text-xs lg:text-sm truncate">{order.id}</p>
                         </div>
                       </div>
@@ -658,12 +662,12 @@ const Orders = () => {
                           <button
                             onClick={() => handleChangeStatus(order.id, 'cancelled')}
                             disabled={Boolean(updating[order.id])}
-                            className={`w-full ${updating[order.id] ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'} text-base-content opacity-80 font-medium py-2 lg:py-3 px-4 rounded-lg lg:rounded-xl transition-colors text-sm lg:text-base`}
+                            className={`w-full ${updating[order.id] ? 'bg-base-300 cursor-not-allowed' : 'bg-base-300 hover:bg-base-200'} text-base-content opacity-80 font-medium py-2 lg:py-3 px-4 rounded-lg lg:rounded-xl transition-colors text-sm lg:text-base`}
                           >
                             <i className="fas fa-ban mr-2"></i>
                             {updating[order.id] ? 'Working...' : 'Cancel Order'}
                           </button>
-                          <button className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-base-content opacity-80 font-medium py-2 lg:py-3 px-4 rounded-lg lg:rounded-xl transition-colors text-sm lg:text-base">
+                          <button className="w-full bg-base-300 hover:bg-base-200 text-base-content opacity-80 font-medium py-2 lg:py-3 px-4 rounded-lg lg:rounded-xl transition-colors text-sm lg:text-base">
                             <i className="fas fa-comments mr-2"></i>
                             Message Client
                           </button>

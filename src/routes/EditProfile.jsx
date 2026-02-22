@@ -428,13 +428,13 @@ export default function WorkerProfile() {
       <Toaster />
 
       {/* Enhanced Header */}
-      <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12">
+      <div className="bg-gradient-to-r from-[#66BB6A] to-[#1E88E5] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
               My Profile
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-base-content opacity-80 max-w-2xl mx-auto">
               Manage your professional information and showcase your skills to potential employers.
             </p>
           </div>
@@ -444,7 +444,7 @@ export default function WorkerProfile() {
       <PageContainer className="py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Enhanced Profile Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-3xl p-6 flex flex-col items-center border border-gray-100 dark:border-gray-700">
+          <div className="bg-base-200 shadow-2xl rounded-3xl p-6 flex flex-col items-center border border-base-300">
             <div className="relative mb-4">
               <div
                 {...getRootProps()}
@@ -470,7 +470,7 @@ export default function WorkerProfile() {
               
               {/* Status Indicator */}
               {profile.profileCover && (
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 rounded-full border-4 border-white dark:border-gray-800 flex items-center justify-center">
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 rounded-full border-4 border-base-200 flex items-center justify-center">
                   <i className="fas fa-check text-white text-sm"></i>
                 </div>
               )}
@@ -478,7 +478,7 @@ export default function WorkerProfile() {
 
             <div className="text-center">
               <h2 className="text-2xl font-heading font-bold text-base-content mb-2">{fullName}</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">{secondaryLine}</p>
+              <p className="text-base-content opacity-70 mb-4">{secondaryLine}</p>
               
               {/* Trust Badges */}
               <div className="flex flex-wrap gap-2 justify-center mb-4">
@@ -519,20 +519,20 @@ export default function WorkerProfile() {
               
               {/* Profile Stats */}
               <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
+                <div className="bg-base-300 rounded-xl p-4 text-center">
                   <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
                     {stats?.averageRating?.toFixed(1) || "0.0"}
                   </div>
                   <div className="text-xs text-base-content opacity-70">Rating</div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
+                <div className="bg-base-300 rounded-xl p-4 text-center">
                   <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
                     {stats?.workerCompletedJobs || 0}
                   </div>
                   <div className="text-xs text-base-content opacity-70">Jobs Done</div>
                 </div>
                 {stats?.workerResponseRate !== undefined && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center col-span-2">
+                  <div className="bg-base-300 rounded-xl p-4 text-center col-span-2">
                     <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
                       {stats.workerResponseRate}%
                     </div>
@@ -556,15 +556,15 @@ export default function WorkerProfile() {
           </div>
 
           {/* Enhanced Tabs + Content */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 shadow-2xl rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="lg:col-span-2 bg-base-200 shadow-2xl rounded-3xl border border-base-300 overflow-hidden">
             {/* Enhanced Tabs */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4">
+            <div className="bg-base-300 px-6 py-4">
               <div className="flex space-x-1">
                 <button 
                   className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                     tab === "overview" 
                       ? "bg-primary-500 text-white shadow-lg" 
-                      : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                      : "text-base-content opacity-80 hover:bg-base-200 hover:text-primary"
                   }`} 
                   onClick={() => setTab("overview")}
                 >
@@ -575,7 +575,7 @@ export default function WorkerProfile() {
                   className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                     tab === "edit" 
                       ? "bg-primary-500 text-white shadow-lg" 
-                      : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                      : "text-base-content opacity-80 hover:bg-base-200 hover:text-primary"
                   }`} 
                   onClick={() => setTab("edit")}
                 >
@@ -586,7 +586,7 @@ export default function WorkerProfile() {
                   className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                     tab === "password" 
                       ? "bg-primary-500 text-white shadow-lg" 
-                      : "text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400"
+                      : "text-base-content opacity-80 hover:bg-base-200 hover:text-primary"
                   }`} 
                   onClick={() => setTab("password")}
                 >
@@ -606,20 +606,20 @@ export default function WorkerProfile() {
                     <section>
                       <h3 className="text-lg font-semibold mb-4 text-base-content">Performance Metrics</h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div className="bg-base-300 rounded-lg p-4">
                           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerCompletedJobs || 0}</div>
                           <div className="text-sm text-base-content opacity-70">Completed Jobs</div>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div className="bg-base-300 rounded-lg p-4">
                           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerActiveOrders || 0}</div>
                           <div className="text-sm text-base-content opacity-70">Active Orders</div>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div className="bg-base-300 rounded-lg p-4">
                           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerResponseRate || 0}%</div>
                           <div className="text-sm text-base-content opacity-70">Response Rate</div>
                         </div>
                         {stats.workerResponseTimeHours && (
-                          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                          <div className="bg-base-300 rounded-lg p-4">
                             <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerResponseTimeHours}h</div>
                             <div className="text-sm text-base-content opacity-70">Avg Response</div>
                           </div>
@@ -660,7 +660,7 @@ export default function WorkerProfile() {
                   {(profile.pricing?.hourlyRate || profile.pricing?.startingPrice || profile.pricing?.minimumCharge) && (
                     <section>
                       <h3 className="text-lg font-semibold mb-4 text-base-content">Pricing</h3>
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                      <div className="bg-base-300 rounded-lg p-4">
                         {profile.pricing.hourlyRate && (
                           <div className="mb-2">
                             <span className="text-sm text-base-content opacity-70">Hourly Rate: </span>
@@ -712,7 +712,7 @@ export default function WorkerProfile() {
                       <h3 className="text-lg font-semibold mb-4 text-base-content">Certifications</h3>
                       <div className="space-y-2">
                         {profile.certifications.map((cert, i) => (
-                          <div key={i} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                          <div key={i} className="bg-base-300 rounded-lg p-3">
                             <div className="font-semibold text-base-content">{cert.title}</div>
                             {cert.issuer && <div className="text-sm text-base-content opacity-70">Issued by: {cert.issuer}</div>}
                             {cert.year && <div className="text-sm text-base-content opacity-70">Year: {cert.year}</div>}
@@ -737,7 +737,7 @@ export default function WorkerProfile() {
                   {/* Profile details */}
                   <section>
                     <h3 className="text-lg font-semibold mb-4 text-base-content">Profile Details</h3>
-                    <div className="rounded-xl border dark:border-gray-600 bg-base-100 dark:bg-gray-700 overflow-hidden">
+                    <div className="rounded-xl border border-base-300 bg-base-100 overflow-hidden">
                       {[
                         ["Full Name", fullName],
                         ["Phone", profile.phone || "—"],
@@ -760,8 +760,8 @@ export default function WorkerProfile() {
                         ],
                         ["Field of Interest", fieldOfInterest],
                       ].map(([label, value], i) => (
-                        <div key={i} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 py-3 px-4 ${i ? "border-t dark:border-gray-600" : ""}`}>
-                          <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                        <div key={i} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 py-3 px-4 ${i ? "border-t border-base-300" : ""}`}>
+                          <span className="text-base-content opacity-70">{label}</span>
                           <span className="sm:col-span-2 font-medium text-base-content break-words">
                             {typeof value === "string" || typeof value === "number" ? value : value}
                           </span>
@@ -943,7 +943,7 @@ export default function WorkerProfile() {
                         </button>
                       </div>
                       {profile.certifications?.map((cert, i) => (
-                        <div key={i} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-2">
+                        <div key={i} className="bg-base-300 p-4 rounded-lg mb-2">
                           <div className="grid md:grid-cols-2 gap-4 mb-2">
                             <input
                               type="text"
@@ -1032,10 +1032,10 @@ export default function WorkerProfile() {
                     <label className="block text-sm font-medium mb-2 text-base-content opacity-80">Portfolio Images</label>
                     <div
                       {...getPortfolioRootProps()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-primary-500 transition-colors"
+                      className="border-2 border-dashed border-base-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
                     >
                       <input {...getPortfolioInputProps()} />
-                      <i className="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                      <i className="fas fa-cloud-upload-alt text-4xl text-base-content opacity-60 mb-2"></i>
                       <p className="text-base-content opacity-70">Drag & drop images here, or click to select</p>
                       <p className="text-sm text-base-content opacity-50 mt-1">Multiple images supported</p>
                     </div>

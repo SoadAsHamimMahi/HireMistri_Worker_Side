@@ -126,7 +126,7 @@ const WorkerRegister = () => {
   };
 
   return (
-    <section className="bg-white dark:bg-gray-900">
+    <section className="bg-base-200">
       <div className="flex justify-center min-h-screen">
         <div
           className="hidden bg-cover lg:block lg:w-2/5"
@@ -150,7 +150,7 @@ const WorkerRegister = () => {
                 type="button"
                 onClick={handleGoogle}
                 disabled={submitting}
-                className="w-full py-3 px-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl flex items-center justify-center gap-3 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 border-2 border-base-300 rounded-xl flex items-center justify-center gap-3 hover:border-primary hover:bg-base-300 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <img src={GoogleImage} alt="Google" className="w-5 h-5" />
                 <span className="font-medium text-base-content opacity-80">
@@ -161,7 +161,7 @@ const WorkerRegister = () => {
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                <div className="w-full border-t border-base-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-base-200 text-base-content opacity-60">

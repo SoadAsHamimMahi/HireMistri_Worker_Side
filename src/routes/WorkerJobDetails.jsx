@@ -249,7 +249,7 @@ export default function WorkerJobDetails() {
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -263,7 +263,7 @@ export default function WorkerJobDetails() {
       case 'rejected':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -332,7 +332,7 @@ export default function WorkerJobDetails() {
       case 'low':
         return 'badge-success';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-base-content';
+        return 'bg-base-300 text-base-content';
     }
   };
 
@@ -341,7 +341,7 @@ export default function WorkerJobDetails() {
       <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading job details...</p>
+          <p className="text-base-content opacity-80">Loading job details...</p>
         </div>
       </div>
     );
@@ -357,7 +357,7 @@ export default function WorkerJobDetails() {
           <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Error Loading Job
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">{err}</p>
+          <p className="text-base-content opacity-80 mb-6">{err}</p>
           <button 
             onClick={() => navigate('/jobs')} 
             className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
@@ -373,13 +373,13 @@ export default function WorkerJobDetails() {
     return (
       <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
+          <div className="w-24 h-24 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-briefcase text-base-content opacity-60 text-3xl"></i>
           </div>
           <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
             Job Not Found
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">This job may have been removed or doesn't exist.</p>
+          <p className="text-base-content opacity-80 mb-6">This job may have been removed or doesn't exist.</p>
           <button 
             onClick={() => navigate('/jobs')} 
             className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
@@ -405,12 +405,12 @@ export default function WorkerJobDetails() {
       <Toaster />
       
       {/* Header Section */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-base-200 shadow-sm border-b border-base-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <button 
               onClick={() => navigate(-1)}
-              className="flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center px-4 py-2 text-base-content opacity-80 hover:text-primary hover:bg-base-300 rounded-lg transition-colors"
             >
               <i className="fas fa-arrow-left mr-2"></i>
               Back
@@ -435,7 +435,7 @@ export default function WorkerJobDetails() {
             <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-base-content mb-6">
               {job.title || 'Untitled Job'}
             </h1>
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-gray-600 dark:text-gray-300">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-base-content opacity-80">
               <span className="flex items-center justify-center lg:justify-start text-lg">
                 <i className="fas fa-tag w-5 h-5 mr-3 text-primary-500"></i>
                 {job.category || 'General'}
@@ -458,7 +458,7 @@ export default function WorkerJobDetails() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Job Image Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 overflow-hidden">
               {images.length > 0 ? (
                 <div className="relative">
                   <img
@@ -473,17 +473,17 @@ export default function WorkerJobDetails() {
                   )}
                 </div>
               ) : (
-                <div className="h-64 lg:h-80 bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+                <div className="h-64 lg:h-80 bg-gradient-to-br from-[#66BB6A] to-[#1E88E5] flex items-center justify-center">
                   <div className="text-center">
-                    <i className="fas fa-image text-6xl text-gray-400 dark:text-gray-500 mb-4"></i>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">No image available</p>
+                    <i className="fas fa-image text-6xl text-base-content opacity-60 dark:text-base-content opacity-70 mb-4"></i>
+                    <p className="text-base-content opacity-70 dark:text-base-content opacity-60 text-lg">No image available</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Job Description */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                 Job Description
               </h2>
@@ -496,7 +496,7 @@ export default function WorkerJobDetails() {
 
             {/* Additional Job Images */}
             {images.length > 1 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
                 <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
                   Additional Images
                 </h2>
@@ -514,30 +514,30 @@ export default function WorkerJobDetails() {
             )}
 
             {/* Applicants Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">
                   Applicants
                 </h2>
-                <span className="text-gray-500 dark:text-gray-400 text-lg">
+                <span className="text-base-content opacity-70 dark:text-base-content opacity-60 text-lg">
                   {job.applicants?.length || 0} total
                 </span>
               </div>
               {Array.isArray(job.applicants) && job.applicants.length ? (
                 <div className="space-y-4">
                   {job.applicants.map((a, i) => (
-                    <div key={i} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between bg-white dark:bg-gray-800">
+                    <div key={i} className="border border-base-300 rounded-xl p-4 flex items-center justify-between bg-base-200">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-lg font-bold text-primary-600 dark:text-primary-400">
                           {(a.name || '?').slice(0, 1).toUpperCase()}
                         </div>
                         <div>
                           <p className="font-medium text-base-content text-lg">{a.name || 'Unknown'}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">⭐ {a.rating ?? '—'}</p>
+                          <p className="text-sm text-base-content opacity-70 dark:text-base-content opacity-60">⭐ {a.rating ?? '—'}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-gray-500 dark:text-gray-400 text-sm">Bid:</span>
+                        <span className="text-base-content opacity-70 dark:text-base-content opacity-60 text-sm">Bid:</span>
                         <span className="font-semibold text-primary text-lg ml-2">৳{a.price ?? '—'}</span>
                       </div>
                     </div>
@@ -545,8 +545,8 @@ export default function WorkerJobDetails() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <i className="fas fa-users text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <p className="text-gray-500 dark:text-gray-400 text-lg">No applicants yet</p>
+                  <i className="fas fa-users text-6xl text-base-content opacity-50 mb-4"></i>
+                  <p className="text-base-content opacity-70 dark:text-base-content opacity-60 text-lg">No applicants yet</p>
                 </div>
               )}
             </div>
@@ -555,13 +555,13 @@ export default function WorkerJobDetails() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Job Info Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Information
               </h3>
               
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 p-4 rounded-xl">
+                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-base-content opacity-70 mb-1">Budget</p>
@@ -574,9 +574,9 @@ export default function WorkerJobDetails() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-b border-base-300">
                     <div className="flex items-center">
-                      <i className="fas fa-briefcase w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-briefcase w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Category</span>
                     </div>
                     <span className="text-base-content font-medium">
@@ -584,9 +584,9 @@ export default function WorkerJobDetails() {
                     </span>
                   </div>
                   
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-b border-base-300">
                     <div className="flex items-center">
-                      <i className="fas fa-map-marker-alt w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-map-marker-alt w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Location</span>
                     </div>
                     <span className="text-base-content font-medium text-right max-w-32 truncate">
@@ -594,9 +594,9 @@ export default function WorkerJobDetails() {
                     </span>
                   </div>
                   
-                  <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-b border-base-300">
                     <div className="flex items-center">
-                      <i className="fas fa-calendar w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-calendar w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Posted</span>
                     </div>
                     <span className="text-base-content font-medium">
@@ -606,7 +606,7 @@ export default function WorkerJobDetails() {
                   
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center">
-                      <i className="fas fa-info-circle w-5 h-5 text-gray-400 mr-3"></i>
+                      <i className="fas fa-info-circle w-5 h-5 text-base-content opacity-60 mr-3"></i>
                       <span className="text-base-content opacity-70">Status</span>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
@@ -618,7 +618,7 @@ export default function WorkerJobDetails() {
             </div>
 
             {/* Client Info Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
               <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                 Job Owner
               </h3>
@@ -631,20 +631,20 @@ export default function WorkerJobDetails() {
                   <p className="font-bold text-base-content text-lg">
                     {poster.name}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Job Poster</p>
+                  <p className="text-sm text-base-content opacity-80">Job Poster</p>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <div className="flex items-center py-3 border-b border-gray-100 dark:border-gray-700">
-                  <i className="fas fa-envelope w-5 h-5 mr-3 text-gray-400"></i>
-                  <span className="text-gray-600 dark:text-gray-300 text-sm">
+                <div className="flex items-center py-3 border-b border-base-300">
+                  <i className="fas fa-envelope w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                  <span className="text-base-content opacity-80 text-sm">
                     {poster.email || 'N/A'}
                   </span>
                 </div>
                 <div className="flex items-center py-3">
-                  <i className="fas fa-id-card w-5 h-5 mr-3 text-gray-400"></i>
-                  <span className="text-gray-600 dark:text-gray-300 text-sm font-mono">
+                  <i className="fas fa-id-card w-5 h-5 mr-3 text-base-content opacity-60"></i>
+                  <span className="text-base-content opacity-80 text-sm font-mono">
                     {poster.clientId || 'N/A'}
                   </span>
                 </div>
@@ -663,7 +663,7 @@ export default function WorkerJobDetails() {
 
             {/* Application Form or Status */}
             {hasApplied && application ? (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
                 <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                   Application Status
                 </h3>
@@ -703,17 +703,17 @@ export default function WorkerJobDetails() {
                         <textarea
                           value={editedProposalText}
                           onChange={(e) => setEditedProposalText(e.target.value)}
-                          className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
+                          className="w-full px-4 py-4 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 resize-none text-lg"
                           rows={5}
                         />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        <p className="text-xs text-base-content opacity-70 dark:text-base-content opacity-60 mt-2">
                           Minimum 50 characters required ({editedProposalText.length}/50)
                         </p>
                         <div className="flex gap-3 mt-4">
                           <button
                             onClick={handleSaveProposal}
                             disabled={saving || !editedProposalText.trim() || editedProposalText.trim().length < 50}
-                            className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                            className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
                           >
                             {saving ? (
                               <span className="flex items-center justify-center">
@@ -730,7 +730,7 @@ export default function WorkerJobDetails() {
                           <button
                             onClick={handleCancelEdit}
                             disabled={saving}
-                            className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
+                            className="px-6 py-3 bg-base-300 hover:bg-base-200 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
                           >
                             Cancel
                           </button>
@@ -738,21 +738,21 @@ export default function WorkerJobDetails() {
                       </>
                     ) : (
                       <>
-                        <div className="w-full px-4 py-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-base-content text-lg min-h-[120px] whitespace-pre-wrap">
+                        <div className="w-full px-4 py-4 border border-base-300 rounded-xl bg-base-300 text-base-content text-lg min-h-[120px] whitespace-pre-wrap">
                           {application.proposalText || 'No proposal text available'}
                         </div>
                         {application.status === 'pending' && (
                           <div className="flex gap-3 mt-4">
                             <button
                               onClick={handleEditProposal}
-                              className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                              className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
                             >
                               <i className="fas fa-edit mr-2"></i>
                               Edit Proposal
                             </button>
                             <Link
                               to="/applications"
-                              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl flex items-center justify-center"
+                              className="px-6 py-3 bg-base-300 hover:bg-base-200 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl flex items-center justify-center"
                             >
                               <i className="fas fa-eye mr-2"></i>
                               View All Applications
@@ -763,7 +763,7 @@ export default function WorkerJobDetails() {
                           <div className="mt-4">
                             <Link
                               to="/applications"
-                              className="w-full block text-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
+                              className="w-full block text-center px-6 py-3 bg-base-300 hover:bg-base-200 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
                             >
                               <i className="fas fa-eye mr-2"></i>
                               View All Applications
@@ -776,7 +776,7 @@ export default function WorkerJobDetails() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 lg:p-8">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
                 <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
                   Apply for this Job
                 </h3>
@@ -798,10 +798,10 @@ export default function WorkerJobDetails() {
                       value={proposal}
                       onChange={(e) => setProposal(e.target.value)}
                       placeholder="Write your proposal here... Explain why you're the best fit for this job."
-                      className="w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-lg"
+                      className="w-full px-4 py-4 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 resize-none text-lg"
                       rows={5}
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-base-content opacity-70 dark:text-base-content opacity-60 mt-2">
                       Minimum 50 characters required ({proposal.length}/50)
                     </p>
                   </div>
@@ -809,7 +809,7 @@ export default function WorkerJobDetails() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => setApplyOpen(!applyOpen)}
-                      className="flex-1 bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-600 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                      className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
                       disabled={!authReady}
                     >
                       {applyOpen ? 'Cancel' : 'Apply for this Job'}
@@ -864,7 +864,7 @@ function InfoRow({ icon, label, value }) {
     <div className="flex items-start gap-3 py-1">
       <span className="text-xl leading-6">{icon}</span>
       <div className="text-sm">
-        <p className="text-gray-500">{label}</p>
+        <p className="text-base-content opacity-70">{label}</p>
         <p className="font-medium text-base-content break-words">{value}</p>
       </div>
     </div>
