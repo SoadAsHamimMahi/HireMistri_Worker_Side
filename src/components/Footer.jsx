@@ -27,7 +27,7 @@ export default function Footer() {
   const cats = useMemo(() => CATEGORIES.slice(0, 8), []);
 
   return (
-    <footer className="mt-16 text-base-content">
+    <footer className="mt-16 w-full text-base-content">
       {/* Worker CTA strip - black in dark (Sahayak) */}
       <div className="footer-cta-bg bg-gradient-to-r from-base-200 via-base-100 to-base-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">

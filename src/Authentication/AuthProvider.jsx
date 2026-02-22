@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useMemo, useState } from 'react';
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -28,6 +28,9 @@ googleProvider.setCustomParameters({
 
 const AuthProvider = ({ children }) => { // ✅ fixed `children`
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const API_BASE = useMemo(() => (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, ''), []);
 
   // Create new user
   const createUser = (email, password) => {
@@ -95,17 +98,28 @@ const AuthProvider = ({ children }) => { // ✅ fixed `children`
     return signOut(auth);
   };
 
+  const getIdToken = async () => {
+    if (!auth.currentUser) return null;
+    return auth.currentUser.getIdToken();
+  };
+
   // Track current user
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      console.log("Current User:", currentUser);
+      setLoading(true);
+      if (!currentUser) setLoading(false);
+      else setLoading(false);
+      if (currentUser) console.log("Current User:", currentUser);
     });
     return () => unsubscribe();
   }, []);
 
   const authInfo = {
     user,
+    loading,
+    getIdToken,
+    API_BASE,
     createUser,
     signIn,
     signInWithGoogle,

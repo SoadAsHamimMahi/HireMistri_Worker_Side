@@ -29,6 +29,8 @@ import SavedJobs from './routes/SavedJobs';
 import ClientProfile from './routes/ClientProfile';
 import BrowseClients from './routes/BrowseClients';
 import MessagesPaused from './routes/MessagesPaused';
+import MessagesInbox from './routes/MessagesInbox';
+import SupportInbox from './routes/Support/SupportInbox';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 import { MessagesProvider } from './contexts/MessagesContext';
@@ -56,6 +58,10 @@ const router = createBrowserRouter([
       { path: 'browse-clients', element: <BrowseClients /> },
       { path: 'messages', element: <MessagesPaused /> },
       { path: 'messages/:conversationId', element: <MessagesPaused /> },
+      { path: 'chats', element: <MessagesInbox basePath="chats" /> },
+      { path: 'chats/:conversationId', element: <MessagesInbox basePath="chats" /> },
+      { path: 'support', element: <SupportInbox /> },
+      { path: 'support/:ticketId', element: <SupportInbox /> },
     ],
   },
 ]);

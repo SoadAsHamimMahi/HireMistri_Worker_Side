@@ -63,39 +63,7 @@ export default function WorkerNavbar() {
 
   return (
     <div className="w-full">
-      {/* Sahayak-style green top bar */}
-      <div className="bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-10 text-primary-content text-sm">
-            <div className="flex items-center gap-4">
-              <Link to="/register" className="flex items-center gap-2 hover:opacity-90">
-                <i className="fas fa-user-plus"></i>
-                <span>Become Provider</span>
-              </Link>
-            </div>
-            <div className="hidden sm:flex items-center gap-4">
-              <span className="opacity-90">English</span>
-              <DarkModeToggle />
-              <Link to="/jobs" className="flex items-center gap-2 hover:opacity-90">
-                <i className="fas fa-shopping-cart"></i>
-              </Link>
-              {isAuthed && (
-                <button
-                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                  className="flex items-center gap-2 font-medium"
-                >
-                  <i className="fas fa-user"></i>
-                  <span>Account</span>
-                  <i className={`fas fa-chevron-up text-xs transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`}></i>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-base-200 shadow-sm border-b border-base-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="bg-base-200 shadow-sm border-b border-base-300 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Enhanced Logo */}
             <Link to="/" className="flex items-center space-x-3">
@@ -172,6 +140,30 @@ export default function WorkerNavbar() {
                   >
                     Orders
                   </NavLink>
+                  <NavLink 
+                    to="/chats" 
+                    className={({ isActive }) => 
+                      `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-primary/20 text-primary' 
+                          : 'text-base-content hover:bg-base-300'
+                      }`
+                    }
+                  >
+                    Messages
+                  </NavLink>
+                  <NavLink 
+                    to="/support" 
+                    className={({ isActive }) => 
+                      `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-primary/20 text-primary' 
+                          : 'text-base-content hover:bg-base-300'
+                      }`
+                    }
+                  >
+                    Support
+                  </NavLink>
 
                   {/* Notifications */}
                   <div className="relative">
@@ -220,6 +212,22 @@ export default function WorkerNavbar() {
                         >
                           <i className="far fa-users w-4 h-4 mr-3 text-primary"></i>
                           Browse Clients
+                        </Link>
+                        <Link 
+                          to="/chats" 
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center px-3 py-2.5 rounded-lg text-base-content hover:bg-primary/10 hover:text-primary text-sm"
+                        >
+                          <i className="far fa-comment-dots w-4 h-4 mr-3 text-primary"></i>
+                          Messages
+                        </Link>
+                        <Link 
+                          to="/support" 
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center px-3 py-2.5 rounded-lg text-base-content hover:bg-primary/10 hover:text-primary text-sm"
+                        >
+                          <i className="far fa-life-ring w-4 h-4 mr-3 text-primary"></i>
+                          Support Center
                         </Link>
                         <Link 
                           to="/edit-profile" 
@@ -292,7 +300,6 @@ export default function WorkerNavbar() {
               </button>
             </div>
           </div>
-        </div>
       </div>
 
       {/* Enhanced Mobile Drawer */}
@@ -418,6 +425,34 @@ export default function WorkerNavbar() {
                     >
                       <i className="fas fa-users w-5 h-5 text-base-content"></i>
                       <span>Browse Clients</span>
+                    </NavLink>
+                    <NavLink 
+                      to="/chats" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className={({ isActive }) => 
+                        `flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary' 
+                            : 'text-base-content hover:bg-base-300'
+                        }`
+                      }
+                    >
+                      <i className="fas fa-comment-dots w-5 h-5 text-base-content"></i>
+                      <span>Messages</span>
+                    </NavLink>
+                    <NavLink 
+                      to="/support" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className={({ isActive }) => 
+                        `flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary' 
+                            : 'text-base-content hover:bg-base-300'
+                        }`
+                      }
+                    >
+                      <i className="fas fa-life-ring w-5 h-5 text-base-content"></i>
+                      <span>Support Center</span>
                     </NavLink>
                     <NavLink 
                       to="/edit-profile" 
