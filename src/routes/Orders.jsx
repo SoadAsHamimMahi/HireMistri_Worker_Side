@@ -222,13 +222,24 @@ const Orders = () => {
 
       setOrders(prev => prev.map(order =>
         order.id === orderId
-          ? { ...order, status: nextStatus, progress: nextStatus === 'completed' ? 100 : order.progress }
+          ? {
+              ...order,
+              status: nextStatus === 'completed' ? order.status : nextStatus,
+              progress: nextStatus === 'completed' ? order.progress : order.progress
+            }
           : order
       ));
 
-      const { data } = await axios.patch(`${API_BASE}/api/applications/${orderId}`, { status: nextStatus }, {
+      const { data } = await axios.patch(
+        `${API_BASE}/api/applications/${orderId}`,
+        {
+          status: nextStatus,
+          ...(nextStatus === 'completed' ? { actorRole: 'worker' } : {})
+        },
+        {
         headers: { 'Content-Type': 'application/json' },
-      });
+        }
+      );
 
       if (data && typeof data === 'object') {
         setOrders(prev => prev.map(order =>
@@ -246,10 +257,17 @@ const Orders = () => {
         }
       }
 
+      const effectiveStatus = (data?.status || nextStatus || '').toLowerCase();
       toast.success(
-        nextStatus === 'completed' ? 'Order marked as completed.' :
-        nextStatus === 'active' ? 'Order set to active.' :
-        nextStatus === 'cancelled' ? 'Order cancelled.' : 'Order status updated.'
+        nextStatus === 'completed'
+          ? (effectiveStatus === 'completed'
+              ? 'Job completed by both sides.'
+              : 'Completion sent. Waiting for client confirmation.')
+          : nextStatus === 'active'
+            ? 'Order set to active.'
+            : nextStatus === 'cancelled'
+              ? 'Order cancelled.'
+              : 'Order status updated.'
       );
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Failed to update order status.';

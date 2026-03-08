@@ -349,8 +349,8 @@ export default function Dashboard() {
   /* ---------- UI ---------- */
   return (
     <div className="min-h-screen page-bg">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-[#66BB6A] to-[#1E88E5] py-12">
+      {/* Hero Section - white in light mode, gradient in dark */}
+      <div className="bg-white dark:bg-gradient-to-br dark:from-gray-600 dark:to-gray-800 py-12 my-5 rounded-md border border-base-300/50 dark:border-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Welcome Card */}
           <div className="text-center mb-12 animate-fade-in">
@@ -370,8 +370,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted mb-1">Active Jobs</p>
                   <p className="text-3xl font-heading font-bold text-base-content">{kpis.activeCount}</p>
                 </div>
-                <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
-                  <i className="fas fa-briefcase text-primary-600 dark:text-primary-400 text-xl" />
+                <div className="p-3 bg-primary/20 rounded-full">
+                  <i className="fas fa-briefcase text-primary text-xl" />
                 </div>
               </div>
             </div>
@@ -394,8 +394,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted mb-1">Earnings</p>
                   <p className="text-3xl font-heading font-bold text-base-content">৳{kpis.totalEarnings}</p>
                 </div>
-                <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                  <i className="fas fa-coins text-yellow-600 dark:text-yellow-400 text-xl" />
+                <div className="p-3 bg-accent/20 rounded-full">
+                  <i className="fas fa-coins text-accent text-xl" />
                 </div>
               </div>
             </div>
@@ -406,8 +406,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted mb-1">Response Rate</p>
                   <p className="text-3xl font-heading font-bold text-base-content">{kpis.responseRate}%</p>
                 </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                  <i className="fas fa-reply text-blue-600 dark:text-blue-400 text-xl" />
+                <div className="p-3 bg-secondary/20 rounded-full">
+                  <i className="fas fa-reply text-secondary text-xl" />
                 </div>
               </div>
             </div>
@@ -475,8 +475,8 @@ export default function Dashboard() {
           
           <Link to="/applications" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
             <div className="text-center">
-              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-file-alt text-orange-600 dark:text-orange-400 text-xl"></i>
+              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i className="fas fa-file-alt text-accent text-xl"></i>
               </div>
               <h3 className="font-heading font-semibold text-base-content mb-1">Applications</h3>
               <p className="text-sm text-base-content opacity-70">Track your apps</p>
@@ -485,8 +485,8 @@ export default function Dashboard() {
           
           <Link to="/orders" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
             <div className="text-center">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-shopping-bag text-purple-600 dark:text-purple-400 text-xl"></i>
+              <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i className="fas fa-shopping-bag text-secondary text-xl"></i>
               </div>
               <h3 className="font-heading font-semibold text-base-content mb-1">My Orders</h3>
               <p className="text-sm text-base-content opacity-70">View your work</p>
@@ -663,10 +663,10 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Action Button */}
+                  {/* Action Button - visible with black text */}
                   <Link 
                     to={`/jobs/${jobId}`} 
-                    className="w-full bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary text-white font-heading font-semibold py-3 px-6 rounded-xl transition-all duration-200 group-hover:shadow-lg flex items-center justify-center space-x-2"
+                    className="w-full bg-base-200 border-2 border-base-300 text-black dark:text-white hover:bg-base-300 font-heading font-semibold py-3 px-6 rounded-xl transition-all duration-200 group-hover:shadow-lg flex items-center justify-center space-x-2"
                   >
                     <span>View Details</span>
                     <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>

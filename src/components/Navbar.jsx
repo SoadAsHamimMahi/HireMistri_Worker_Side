@@ -177,8 +177,8 @@ export default function WorkerNavbar() {
                     </button>
                   </div>
 
-                  {/* Dark Mode Toggle - only in main nav on mobile (green bar has it on desktop) */}
-                  <div className="sm:hidden"><DarkModeToggle /></div>
+                  {/* Dark Mode Toggle */}
+                  <DarkModeToggle />
 
                   {/* Profile Dropdown */}
                   <div className="relative profile-dropdown">

@@ -523,6 +523,10 @@ const JobDetails = () => {
       toast.error('Please write a proposal');
       return;
     }
+    if (!proposedPrice || isNaN(parseFloat(proposedPrice)) || parseFloat(proposedPrice) <= 0) {
+      toast.error('Please enter a valid proposed price');
+      return;
+    }
 
     try {
       setApplying(true);
@@ -534,11 +538,8 @@ const JobDetails = () => {
         status: 'pending'
       };
       
-      // Add proposed price if provided
-      if (proposedPrice && !isNaN(parseFloat(proposedPrice)) && parseFloat(proposedPrice) > 0) {
-        applicationData.proposedPrice = parseFloat(proposedPrice);
-        applicationData.negotiationStatus = 'pending';
-      }
+      applicationData.proposedPrice = parseFloat(proposedPrice);
+      applicationData.negotiationStatus = 'pending';
       
       const { data } = await axios.post(`${API_BASE}/api/applications`, applicationData);
 
@@ -1212,7 +1213,7 @@ const JobDetails = () => {
                   <div className="bg-base-300 rounded-xl p-4 border border-base-300">
                     <label className="block text-sm font-medium text-base-content opacity-80 mb-2">
                       <i className="fas fa-money-bill-wave mr-2"></i>
-                      Proposed Price (Optional)
+                      Proposed Price *
                     </label>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-base-content opacity-80 font-medium">৳</span>
@@ -1222,7 +1223,7 @@ const JobDetails = () => {
                         onChange={(e) => setProposedPrice(e.target.value)}
                         placeholder={job.budget ? job.budget.toString() : 'Enter your price'}
                         className="flex-1 px-4 py-2 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
-                        min="0"
+                        min="1"
                         step="100"
                       />
                     </div>
@@ -1249,13 +1250,13 @@ const JobDetails = () => {
                       </div>
                     )}
                     <p className="text-xs text-base-content opacity-70 mt-2">
-                      Leave empty to accept the job budget. You can negotiate the price after applying.
+                      A proposed price is required. The client can accept, reject, or counter this amount.
                     </p>
                   </div>
                   
                   <button
                     onClick={handleApply}
-                    disabled={applying || !proposalText.trim() || proposalText.trim().length < 50}
+                    disabled={applying || !proposalText.trim() || proposalText.trim().length < 50 || !proposedPrice || parseFloat(proposedPrice) <= 0}
                     className="w-full bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
                   >
                     {applying ? (

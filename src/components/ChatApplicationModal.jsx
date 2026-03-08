@@ -26,8 +26,8 @@ export default function ChatApplicationModal({
       return;
     }
 
-    if (proposedPrice && (isNaN(proposedPrice) || parseFloat(proposedPrice) <= 0)) {
-      toast.error('Price must be a positive number');
+    if (!proposedPrice || isNaN(proposedPrice) || parseFloat(proposedPrice) <= 0) {
+      toast.error('Proposed price must be a positive number');
       return;
     }
 
@@ -44,7 +44,7 @@ export default function ChatApplicationModal({
         workerId: user.uid,
         clientId,
         proposalText: proposalText.trim(),
-        ...(proposedPrice && { proposedPrice: parseFloat(proposedPrice) }),
+        proposedPrice: parseFloat(proposedPrice),
         ...(currency && { currency })
       };
 
@@ -99,7 +99,7 @@ export default function ChatApplicationModal({
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <label className="label">
-                <span className="label-text">Proposed Price (Optional)</span>
+                <span className="label-text">Proposed Price *</span>
               </label>
               <input
                 type="number"
@@ -107,8 +107,9 @@ export default function ChatApplicationModal({
                 placeholder="Enter your proposed price"
                 value={proposedPrice}
                 onChange={(e) => setProposedPrice(e.target.value)}
-                min="0"
+                min="1"
                 step="0.01"
+                required
               />
             </div>
             <div>
@@ -140,7 +141,7 @@ export default function ChatApplicationModal({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={submitting || proposalText.trim().length < 50}
+              disabled={submitting || proposalText.trim().length < 50 || !proposedPrice || parseFloat(proposedPrice) <= 0}
             >
               {submitting ? (
                 <>

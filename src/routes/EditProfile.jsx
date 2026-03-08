@@ -7,6 +7,22 @@ import PageContainer from "../components/layout/PageContainer";
 
 const base = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
 
+const normalizeProfileImageUrl = (value) => {
+  if (!value || typeof value !== "string") return "";
+  const raw = value.trim();
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.pathname.startsWith("/uploads/")) {
+      return `${base}${parsed.pathname}`;
+    }
+    return raw;
+  } catch {
+    if (raw.startsWith("/uploads/")) return `${base}${raw}`;
+    return raw;
+  }
+};
+
 /* ---------------------------- Tiny Tag Input ---------------------------- */
 function TagInput({ value = [], onChange, label, placeholder = "Type and press Enter" }) {
   const [t, setT] = useState("");
@@ -141,7 +157,7 @@ export default function WorkerProfile() {
       throw new Error(err.error || `Avatar upload failed (HTTP ${res.status})`);
     }
     const data = await res.json();
-    const url = data?.url;
+    const url = normalizeProfileImageUrl(data?.url);
     if (!url) throw new Error("No image URL returned");
     return url;
   };
@@ -174,7 +190,7 @@ export default function WorkerProfile() {
       const res = await fetch(`${base}/api/users/${uid}`);
       if (res.ok) {
         const updated = await res.json();
-        setProfile(prev => ({ ...prev, profileCover: updated.profileCover || url }));
+        setProfile(prev => ({ ...prev, profileCover: normalizeProfileImageUrl(updated.profileCover) || url }));
       }
       toast.success("Profile photo updated and saved!");
     } catch (e) {
@@ -226,6 +242,7 @@ export default function WorkerProfile() {
               setProfile((prev) => ({
                 ...prev,
                 ...data,
+                profileCover: normalizeProfileImageUrl(data.profileCover) || "",
                 skills: Array.isArray(data.skills) ? data.skills : [],
                 languages: Array.isArray(data.languages) ? data.languages : [],
                 servicesOffered: data.servicesOffered || { categories: [], tags: [] },

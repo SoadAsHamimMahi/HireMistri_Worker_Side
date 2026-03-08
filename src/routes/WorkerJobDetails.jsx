@@ -2,6 +2,8 @@ import { useEffect, useState, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import { JobLocationMap, LiveTrackingMap } from '../components/maps';
 import toast, { Toaster } from 'react-hot-toast';
 import BookmarkButton from '../components/BookmarkButton';
 import ShareButton from '../components/ShareButton';
@@ -11,6 +13,7 @@ export default function WorkerJobDetails() {
   const navigate = useNavigate();
   const ctx = useContext(AuthContext) || {};
   const { isDarkMode } = useDarkMode();
+  const { socket } = useWebSocket() || {};
   const base = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
   // auth state (use context first, then fallback to Firebase directly)
@@ -23,8 +26,8 @@ export default function WorkerJobDetails() {
   const [err, setErr] = useState('');
 
   // apply/proposal UI state
-  const [applyOpen, setApplyOpen] = useState(false);
   const [proposal, setProposal] = useState('');
+  const [proposedPrice, setProposedPrice] = useState('');
   const [saving, setSaving] = useState(false);
   const [appliedMsg, setAppliedMsg] = useState('');
   
@@ -34,6 +37,11 @@ export default function WorkerJobDetails() {
   const [isEditingProposal, setIsEditingProposal] = useState(false);
   const [editedProposalText, setEditedProposalText] = useState('');
   const [fetchingApplication, setFetchingApplication] = useState(false);
+  const [negotiatingPrice, setNegotiatingPrice] = useState(false);
+  const [workerLocation, setWorkerLocation] = useState(null);
+  const [geoError, setGeoError] = useState('');
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [clientPublic, setClientPublic] = useState(null);
 
   // keep uid in sync with AuthContext
   useEffect(() => {
@@ -80,6 +88,31 @@ export default function WorkerJobDetails() {
     })();
     return () => { ignore = true; };
   }, [id, base]);
+
+  // fetch job owner public profile to show reliable client name
+  useEffect(() => {
+    if (!job?.clientId) {
+      setClientPublic(null);
+      return;
+    }
+    let ignore = false;
+    (async () => {
+      try {
+        const res = await fetch(`${base}/api/users/${encodeURIComponent(job.clientId)}/public`, {
+          headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) {
+          if (!ignore) setClientPublic(null);
+          return;
+        }
+        const data = await res.json();
+        if (!ignore) setClientPublic(data);
+      } catch {
+        if (!ignore) setClientPublic(null);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [job?.clientId, base]);
 
   // fetch application for current user and job
   const fetchApplication = async () => {
@@ -136,6 +169,16 @@ export default function WorkerJobDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, id, authReady, base]);
 
+  // Keep application state fresh so worker sees client counter offers.
+  useEffect(() => {
+    if (!authReady || !uid || !id) return undefined;
+    const timer = setInterval(() => {
+      fetchApplication();
+    }, 10000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady, uid, id]);
+
   // submit proposal → POST /api/applications
   const submitProposal = async () => {
     if (!authReady) return; // wait until we know
@@ -150,6 +193,11 @@ export default function WorkerJobDetails() {
     }
     if (text.length < 50) {
       toast.error('Please write at least 50 characters for your proposal.');
+      return;
+    }
+    const price = parseFloat(proposedPrice);
+    if (Number.isNaN(price) || price <= 0) {
+      toast.error('Please enter a valid proposed budget amount.');
       return;
     }
     try {
@@ -170,7 +218,8 @@ export default function WorkerJobDetails() {
         workerEmail,
         workerName,
         workerPhone,
-        proposalText: text
+        proposalText: text,
+        proposedPrice: price
       };
 
       const res = await fetch(`${base}/api/applications`, {
@@ -209,8 +258,8 @@ export default function WorkerJobDetails() {
         if (data.ok || data.application) {
           toast.success('Proposal submitted successfully!');
           setAppliedMsg('✅ Proposal submitted!');
-          setApplyOpen(false);
           setProposal('');
+          setProposedPrice('');
           // Use the application data from the response directly
           if (data.application) {
             setApplication(data.application);
@@ -323,6 +372,55 @@ export default function WorkerJobDetails() {
     }
   };
 
+  const handleCounterDecision = async (decision) => {
+    if (!application?.jobId || !uid) {
+      toast.error('Application details are missing.');
+      return;
+    }
+    if (decision === 'accept') {
+      const counter = Number(application.counterPrice);
+      if (!Number.isFinite(counter) || counter <= 0) {
+        toast.error('Invalid counter offer amount.');
+        return;
+      }
+    }
+    try {
+      setNegotiatingPrice(true);
+      const payload =
+        decision === 'accept'
+          ? {
+              jobId: application.jobId,
+              workerId: uid,
+              finalPrice: Number(application.counterPrice),
+              negotiationStatus: 'accepted',
+            }
+          : {
+              jobId: application.jobId,
+              workerId: uid,
+              negotiationStatus: 'cancelled',
+            };
+      const res = await fetch(`${base}/api/applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.error || 'Failed to update counter decision');
+      }
+      if (body?.application) {
+        setApplication(body.application);
+      } else {
+        await fetchApplication();
+      }
+      toast.success(decision === 'accept' ? 'Counter offer accepted.' : 'Counter offer declined.');
+    } catch (e) {
+      toast.error(e.message || 'Failed to update counter decision.');
+    } finally {
+      setNegotiatingPrice(false);
+    }
+  };
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high':
@@ -334,6 +432,37 @@ export default function WorkerJobDetails() {
       default:
         return 'bg-base-300 text-base-content';
     }
+  };
+
+  const requestWorkerLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setGeoError('Geolocation is not supported on this device/browser.');
+      return;
+    }
+    setGeoLoading(true);
+    setGeoError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setWorkerLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setGeoLoading(false);
+      },
+      (error) => {
+        let message = 'Unable to get your location right now.';
+        if (error?.code === 1) {
+          message = 'Location permission was denied. Please allow location access in browser/site settings.';
+        } else if (error?.code === 2) {
+          message = 'Your location is currently unavailable. Turn on GPS/location services and try again.';
+        } else if (error?.code === 3) {
+          message = 'Location request timed out. Please try again.';
+        }
+        setGeoError(message);
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   if (loading) {
@@ -394,11 +523,16 @@ export default function WorkerJobDetails() {
   // Images + poster fields (fallbacks so it doesn't crash if missing)
   const images = Array.isArray(job.images) && job.images.length ? job.images : [];
   const poster = {
-    name: job.postedByName || job.clientName || 'Unknown',
+    name: job.postedByName || job.clientName || clientPublic?.displayName || 'Unknown',
     email: (job.postedByEmail || job.email || '').toString(),
     phone: job.postedByPhone || job.phone || '',
-    clientId: job.clientId || '',
+    clientId: job.clientId || clientPublic?.uid || '',
   };
+  const resolvedJobGeo = job.locationGeo || getJobLatLng(job);
+  const resolvedLocationText = job.locationText || job.location || 'No location specified';
+  const applicationStatus = (application?.status || '').toLowerCase();
+  const isAcceptedApplication = hasApplied && applicationStatus === 'accepted';
+  const distanceKm = getDistanceKm(workerLocation, resolvedJobGeo);
 
   return (
     <div className="min-h-screen page-bg">
@@ -510,6 +644,55 @@ export default function WorkerJobDetails() {
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">
+                  Job Location
+                </h2>
+                {distanceKm !== null && (
+                  <span className="badge badge-info badge-outline">
+                    ~{distanceKm} km from you
+                  </span>
+                )}
+              </div>
+
+              <JobLocationMap
+                locationGeo={resolvedJobGeo}
+                locationText={resolvedLocationText}
+                className="mt-2"
+              />
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {distanceKm === null && (
+                  <button
+                    type="button"
+                    onClick={requestWorkerLocation}
+                    disabled={geoLoading}
+                    className="btn btn-sm btn-ghost"
+                  >
+                    {geoLoading ? 'Finding your location...' : 'Use my location for distance'}
+                  </button>
+                )}
+                {geoError && <p className="text-sm text-error">{geoError}</p>}
+              </div>
+            </div>
+
+            {isAcceptedApplication && poster.clientId && uid && (
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
+                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-4">
+                  Live Location
+                </h2>
+                <LiveTrackingMap
+                  jobId={String(job._id || id)}
+                  jobLocationGeo={resolvedJobGeo}
+                  currentUserId={uid}
+                  peerUserId={poster.clientId}
+                  socket={socket}
+                  isAccepted
+                />
               </div>
             )}
 
@@ -741,6 +924,59 @@ export default function WorkerJobDetails() {
                         <div className="w-full px-4 py-4 border border-base-300 rounded-xl bg-base-300 text-base-content text-lg min-h-[120px] whitespace-pre-wrap">
                           {application.proposalText || 'No proposal text available'}
                         </div>
+                        {application?.proposedPrice ? (
+                          <div className="mt-3 p-3 rounded-xl border border-base-300 bg-base-300 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-base-content opacity-70">Your Proposed Budget</p>
+                              <p className="text-lg font-semibold text-primary">
+                                ৳{Number(application.proposedPrice).toLocaleString()}
+                              </p>
+                            </div>
+                            {application?.counterPrice ? (
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs text-base-content opacity-70">Client Counter Offer</p>
+                                <p className="text-lg font-semibold text-warning">
+                                  ৳{Number(application.counterPrice).toLocaleString()}
+                                </p>
+                              </div>
+                            ) : null}
+                            {application?.finalPrice ? (
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs text-base-content opacity-70">Final Agreed Price</p>
+                                <p className="text-lg font-semibold text-success">
+                                  ৳{Number(application.finalPrice).toLocaleString()}
+                                </p>
+                              </div>
+                            ) : null}
+                            {(application?.negotiationStatus || application?.counterPrice) ? (
+                              <p className="text-xs text-base-content opacity-70">
+                                Negotiation status: {(application.negotiationStatus || (application.counterPrice ? 'countered' : 'pending')).toString()}
+                              </p>
+                            ) : null}
+                            {application.status === 'pending' &&
+                            application?.counterPrice &&
+                            !['accepted', 'cancelled'].includes((application.negotiationStatus || '').toLowerCase()) ? (
+                              <div className="pt-2 mt-2 border-t border-base-300 flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-success btn-sm"
+                                  disabled={negotiatingPrice}
+                                  onClick={() => handleCounterDecision('accept')}
+                                >
+                                  {negotiatingPrice ? 'Saving...' : 'Accept Counter'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-sm"
+                                  disabled={negotiatingPrice}
+                                  onClick={() => handleCounterDecision('decline')}
+                                >
+                                  Decline Counter
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
                         {application.status === 'pending' && (
                           <div className="flex gap-3 mt-4">
                             <button
@@ -792,6 +1028,21 @@ export default function WorkerJobDetails() {
                   
                   <div>
                     <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
+                      Proposed Budget (BDT)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="100"
+                      value={proposedPrice}
+                      onChange={(e) => setProposedPrice(e.target.value)}
+                      placeholder="Enter your proposed amount"
+                      className="w-full px-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 text-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
                       Your Proposal
                     </label>
                     <textarea
@@ -808,37 +1059,24 @@ export default function WorkerJobDetails() {
                   
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setApplyOpen(!applyOpen)}
+                      onClick={submitProposal}
                       className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
-                      disabled={!authReady}
+                      disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50 || !proposedPrice || Number(proposedPrice) <= 0}
                     >
-                      {applyOpen ? 'Cancel' : 'Apply for this Job'}
+                      {saving ? (
+                        <span className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                          Submitting...
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center">
+                          <i className="fas fa-paper-plane mr-2"></i>
+                          Apply for this Job
+                        </span>
+                      )}
                     </button>
                     <BookmarkButton jobId={id} />
                   </div>
-
-                  {/* Proposal submission */}
-                  {applyOpen && (
-                    <div className="mt-6">
-                      <button
-                        onClick={submitProposal}
-                        disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50}
-                        className="btn btn-primary w-full font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
-                      >
-                        {saving ? (
-                          <span className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                            Submitting...
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center">
-                            <i className="fas fa-paper-plane mr-2"></i>
-                            Submit Proposal
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  )}
 
                   {/* Feedback */}
                   {appliedMsg && (
@@ -883,4 +1121,32 @@ function timeAgo(input) {
   if (h < 24) return `${h} hour${h > 1 ? 's' : ''} ago`;
   const days = Math.floor(h / 24);
   return `${days} day${days > 1 ? 's' : ''} ago`;
+}
+
+function toNumber(value) {
+  const n = typeof value === 'string' ? parseFloat(value) : value;
+  return Number.isFinite(n) ? n : null;
+}
+
+function getJobLatLng(j) {
+  if (!j) return null;
+  const lat = toNumber(j.lat ?? j.latitude ?? j?.locationLat ?? j?.location?.lat ?? j?.coordinates?.lat);
+  const lng = toNumber(j.lng ?? j.longitude ?? j?.locationLng ?? j?.location?.lng ?? j?.coordinates?.lng);
+  if (lat === null || lng === null) return null;
+  return { lat, lng };
+}
+
+function getDistanceKm(a, b) {
+  if (!a || !b) return null;
+  const latA = toNumber(a.lat);
+  const lngA = toNumber(a.lng);
+  const latB = toNumber(b.lat);
+  const lngB = toNumber(b.lng);
+  if (latA === null || lngA === null || latB === null || lngB === null) return null;
+  const R = 6371;
+  const dLat = (latB - latA) * Math.PI / 180;
+  const dLng = (lngB - lngA) * Math.PI / 180;
+  const s1 = Math.sin(dLat / 2) ** 2 + Math.cos(latA * Math.PI / 180) * Math.cos(latB * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
+  return Math.round(R * c * 10) / 10;
 }

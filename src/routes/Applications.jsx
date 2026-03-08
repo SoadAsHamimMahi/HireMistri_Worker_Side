@@ -16,6 +16,7 @@ import { AuthContext } from '../Authentication/AuthProvider';
 import { app } from '../Authentication/firebaseConfig';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import ApplicationNotes from '../components/ApplicationNotes';
+import RatingModal from '../components/RatingModal';
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
 
@@ -58,6 +59,10 @@ export default function Applications() {
   const [editingApplication, setEditingApplication] = useState(null);
   const [editProposalText, setEditProposalText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedApplicationForRating, setSelectedApplicationForRating] = useState(null);
+  const [completingApplicationId, setCompletingApplicationId] = useState(null);
+  const [negotiatingApplicationId, setNegotiatingApplicationId] = useState(null);
 
   // filters
   const [statusFilter, setStatusFilter] = useState('All');
@@ -146,7 +151,7 @@ export default function Applications() {
   // Preload client details for accepted applications (for Contact Call/Email)
   useEffect(() => {
     applications
-      .filter(a => (a.status || '').toLowerCase() === 'accepted' && a.clientId)
+      .filter(a => ['accepted', 'completed'].includes((a.status || '').toLowerCase()) && a.clientId)
       .forEach(a => fetchClientDetails(a.clientId));
   }, [applications]);
 
@@ -176,6 +181,7 @@ export default function Applications() {
   const groupedApps = useMemo(() => ({
     accepted: filteredApps.filter(a => (a.status || '').toLowerCase() === 'accepted'),
     pending: filteredApps.filter(a => (a.status || '').toLowerCase() === 'pending'),
+    completed: filteredApps.filter(a => (a.status || '').toLowerCase() === 'completed'),
     rejected: filteredApps.filter(a => (a.status || '').toLowerCase() === 'rejected')
   }), [filteredApps]);
   const acceptedAppsCount = groupedApps.accepted.length;
@@ -293,6 +299,70 @@ export default function Applications() {
       navigate(`/jobs/${app.jobId}`);
     } else {
       toast.error('Unable to open job. Please try again.');
+    }
+  };
+
+  const handleMarkComplete = async (application) => {
+    if (!application?._id) return;
+    try {
+      setCompletingApplicationId(application._id);
+      const { data } = await axios.patch(`${API_BASE}/api/applications/${application._id}`, {
+        status: 'completed',
+        actorRole: 'worker',
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      setApplications((prev) =>
+        prev.map((app) => (app._id === application._id ? { ...app, ...data } : app))
+      );
+
+      if ((data?.status || '').toLowerCase() === 'completed') {
+        toast.success('Job completed by both sides. You can now rate the client.');
+      } else {
+        toast.success('Completion sent. Waiting for client confirmation.');
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to update completion status');
+    } finally {
+      setCompletingApplicationId(null);
+    }
+  };
+
+  const handleCounterDecision = async (application, decision) => {
+    if (!application?.jobId || !user?.uid) {
+      toast.error('Missing application details.');
+      return;
+    }
+    try {
+      setNegotiatingApplicationId(application._id);
+      const payload =
+        decision === 'accept'
+          ? {
+              jobId: application.jobId,
+              workerId: user.uid,
+              finalPrice: Number(application.counterPrice),
+              negotiationStatus: 'accepted',
+            }
+          : {
+              jobId: application.jobId,
+              workerId: user.uid,
+              negotiationStatus: 'cancelled',
+            };
+
+      const { data } = await axios.post(`${API_BASE}/api/applications`, payload);
+      const updated = data?.application;
+      if (updated) {
+        setApplications((prev) =>
+          prev.map((app) => (app._id === application._id ? { ...app, ...updated } : app))
+        );
+      }
+      toast.success(decision === 'accept' ? 'Counter offer accepted.' : 'Counter offer declined.');
+    } catch (error) {
+      console.error('Failed to update counter decision:', error);
+      toast.error(error?.response?.data?.error || 'Failed to update counter decision.');
+    } finally {
+      setNegotiatingApplicationId(null);
     }
   };
 
@@ -504,12 +574,12 @@ export default function Applications() {
                 )}
 
                 {/* Applications List - Grouped by status */}
-                {['accepted', 'pending', 'rejected'].map((statusKey) => {
+                {['accepted', 'pending', 'completed', 'rejected'].map((statusKey) => {
                   const group = groupedApps[statusKey];
                   if (group.length === 0) return null;
-                  const sectionLabels = { accepted: 'Active Orders', pending: 'Pending', rejected: 'Rejected' };
-                  const sectionIcons = { accepted: 'fa-user-check', pending: 'fa-clock', rejected: 'fa-times-circle' };
-                  const sectionClass = { accepted: 'text-green-600 dark:text-green-400', pending: 'text-yellow-600 dark:text-yellow-400', rejected: 'text-red-600 dark:text-red-400' };
+                  const sectionLabels = { accepted: 'Active Orders', pending: 'Pending', completed: 'Completed', rejected: 'Rejected' };
+                  const sectionIcons = { accepted: 'fa-user-check', pending: 'fa-clock', completed: 'fa-check-double', rejected: 'fa-times-circle' };
+                  const sectionClass = { accepted: 'text-green-600 dark:text-green-400', pending: 'text-yellow-600 dark:text-yellow-400', completed: 'text-blue-600 dark:text-blue-400', rejected: 'text-red-600 dark:text-red-400' };
                   return (
                     <div key={statusKey} className="mb-8">
                       <h3 className={`flex items-center gap-2 text-lg font-semibold mb-4 ${sectionClass[statusKey]}`}>
@@ -599,6 +669,19 @@ export default function Applications() {
                                 </>
                               ) : null;
                             })()}
+                            <button
+                              className="btn btn-info btn-sm gap-1.5"
+                              disabled={completingApplicationId === app._id || !!app.completedByWorkerAt}
+                              onClick={() => handleMarkComplete(app)}
+                              title={app.completedByWorkerAt ? 'You already marked completion' : 'Mark this work as completed'}
+                            >
+                              {completingApplicationId === app._id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                              ) : (
+                                <i className="fas fa-check-double"></i>
+                              )}
+                              {app.completedByWorkerAt ? 'Completion Sent' : 'Mark as Complete'}
+                            </button>
                           </>
                         )}
                         {app.status?.toLowerCase() === 'pending' && (
@@ -617,6 +700,18 @@ export default function Applications() {
                           <button className="btn btn-sm btn-info gap-1.5" onClick={() => handleReapply(app)}>
                             <i className="fas fa-redo"></i>
                             Reapply
+                          </button>
+                        )}
+                        {app.status?.toLowerCase() === 'completed' && (
+                          <button
+                            className="btn btn-sm btn-primary gap-1.5"
+                            onClick={() => {
+                              setSelectedApplicationForRating(app);
+                              setRatingModalOpen(true);
+                            }}
+                          >
+                            <i className="fas fa-star"></i>
+                            Rate Client
                           </button>
                         )}
                       </div>
@@ -638,6 +733,65 @@ export default function Applications() {
                               View your proposal
                             </button>
                           )}
+                        </div>
+                      )}
+
+                      {(app.proposedPrice || app.counterPrice || app.finalPrice || app.negotiationStatus) && (
+                        <div className="rounded-lg border border-base-300 bg-base-200 p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-base-content/80">Price Negotiation</span>
+                            <span className="text-xs badge badge-outline">
+                              {(app.negotiationStatus || (app.counterPrice ? 'countered' : 'pending')).toString()}
+                            </span>
+                          </div>
+
+                          {app.proposedPrice ? (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-base-content/70">Your Proposed</span>
+                              <span className="font-semibold text-primary">৳{Number(app.proposedPrice).toLocaleString()}</span>
+                            </div>
+                          ) : null}
+
+                          {app.counterPrice ? (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-base-content/70">Client Counter</span>
+                              <span className="font-semibold text-warning">৳{Number(app.counterPrice).toLocaleString()}</span>
+                            </div>
+                          ) : null}
+
+                          {app.finalPrice ? (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-base-content/70">Final Agreed</span>
+                              <span className="font-semibold text-success">৳{Number(app.finalPrice).toLocaleString()}</span>
+                            </div>
+                          ) : null}
+
+                          {app.status === 'pending' &&
+                          app.counterPrice &&
+                          !['accepted', 'cancelled'].includes((app.negotiationStatus || '').toLowerCase()) ? (
+                            <div className="pt-2 mt-2 border-t border-base-300 flex flex-wrap gap-2">
+                              <button
+                                className="btn btn-success btn-sm gap-1.5"
+                                disabled={negotiatingApplicationId === app._id}
+                                onClick={() => handleCounterDecision(app, 'accept')}
+                              >
+                                {negotiatingApplicationId === app._id ? (
+                                  <i className="fas fa-spinner fa-spin"></i>
+                                ) : (
+                                  <i className="fas fa-check"></i>
+                                )}
+                                Accept Counter
+                              </button>
+                              <button
+                                className="btn btn-outline btn-sm gap-1.5"
+                                disabled={negotiatingApplicationId === app._id}
+                                onClick={() => handleCounterDecision(app, 'decline')}
+                              >
+                                <i className="fas fa-times"></i>
+                                Decline Counter
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
                       )}
 
@@ -753,6 +907,25 @@ export default function Applications() {
             </div>
           </div>
         </div>
+      )}
+
+      {ratingModalOpen && selectedApplicationForRating && (
+        <RatingModal
+          isOpen={ratingModalOpen}
+          onClose={() => {
+            setRatingModalOpen(false);
+            setSelectedApplicationForRating(null);
+          }}
+          jobId={selectedApplicationForRating.jobId}
+          applicationId={selectedApplicationForRating._id?.toString() || selectedApplicationForRating._id}
+          workerId={user?.uid}
+          clientId={selectedApplicationForRating.clientId}
+          clientName={clientDetails[selectedApplicationForRating.clientId]?.name || 'Client'}
+          jobTitle={selectedApplicationForRating.title || 'Job'}
+          onSuccess={() => {
+            toast.success('Your review has been submitted.');
+          }}
+        />
       )}
     </div>
   );
