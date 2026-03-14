@@ -132,7 +132,7 @@ const WorkerRegister = () => {
           className="hidden bg-cover lg:block lg:w-2/5"
           style={{ backgroundImage: `url(${regImage})` }}
         />
-        <div className="flex items-center w-full max-w-3xl p-8 mx-auto lg:px-12 lg:w-3/5">
+        <div className="flex items-center w-full p-8 mx-auto lg:px-12">
           <div className="w-full">
             <h1 className="text-2xl font-semibold tracking-wider text-base-content">
               Worker — Create a new account

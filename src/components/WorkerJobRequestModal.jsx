@@ -94,7 +94,7 @@ export default function WorkerJobRequestModal({
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-lg">
+      <div className="modal-box">
         <h3 className="font-bold text-lg mb-4">Create Job Request</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">

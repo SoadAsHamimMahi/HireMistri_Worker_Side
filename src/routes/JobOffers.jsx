@@ -82,7 +82,7 @@ export default function JobOffers() {
                 <i className="fas fa-inbox text-3xl text-base-content/50"></i>
               </div>
               <h3 className="text-lg font-semibold text-base-content">No job offers yet</h3>
-              <p className="text-base-content/70 max-w-md">
+              <p className="text-base-content/70 ">
                 Complete your profile and services to get more offers. Clients can send you direct job offers from your profile.
               </p>
             </div>

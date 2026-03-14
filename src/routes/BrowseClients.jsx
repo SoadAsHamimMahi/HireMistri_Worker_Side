@@ -60,7 +60,7 @@ const BrowseClients = () => {
   if (loading) {
     return (
       <div className="min-h-screen page-bg">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6 text-base-content">Browse Clients</h1>
           <div className="flex justify-center items-center py-12">
             <span className="loading loading-spinner loading-lg"></span>
@@ -74,7 +74,7 @@ const BrowseClients = () => {
   if (error) {
     return (
       <div className="min-h-screen page-bg">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6 text-base-content">Browse Clients</h1>
           <div className="alert alert-error">
             <i className="fas fa-exclamation-triangle"></i>
@@ -90,7 +90,7 @@ const BrowseClients = () => {
 
   return (
     <div className="min-h-screen page-bg">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-base-content">Browse Clients</h1>
           <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>

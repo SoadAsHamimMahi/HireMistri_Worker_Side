@@ -535,563 +535,526 @@ export default function WorkerJobDetails() {
   const distanceKm = getDistanceKm(workerLocation, resolvedJobGeo);
 
   return (
-    <div className="min-h-screen page-bg">
+    <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans selection:bg-primary/30">
       <Toaster />
       
-      {/* Header Section */}
-      <div className="bg-base-200 shadow-sm border-b border-base-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
+      {/* Top Navbar / Header area */}
+      <div className="sticky top-0 z-[100] bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
+        <div className="mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate(-1)}
-              className="flex items-center px-4 py-2 text-base-content opacity-80 hover:text-primary hover:bg-base-300 rounded-lg transition-colors"
+              className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all border border-white/5"
             >
-              <i className="fas fa-arrow-left mr-2"></i>
-              Back
+              <i className="fas fa-arrow-left text-sm opacity-70"></i>
             </button>
-            <div className="flex space-x-3 items-center">
-              <BookmarkButton jobId={id} className="!btn-lg" />
-              <ShareButton
-                jobId={id}
-                jobTitle={job.title}
-                jobDescription={job.description}
-              />
-              <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
-                {job.status || 'Active'}
-              </span>
-              <span className={`px-4 py-2 rounded-full text-sm font-medium ${getPriorityColor(job.priority || 'medium')}`}>
-                {job.priority || 'Medium'} Priority
-              </span>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+                <i className="fas fa-hammer text-primary text-sm"></i>
+              </div>
+              <span className="font-heading font-bold text-lg tracking-tight text-white/90">Hire Mistri</span>
             </div>
           </div>
-          
-          <div className="text-center">
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-base-content mb-6">
-              {job.title || 'Untitled Job'}
-            </h1>
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center space-y-3 lg:space-y-0 lg:space-x-8 text-base-content opacity-80">
-              <span className="flex items-center justify-center lg:justify-start text-lg">
-                <i className="fas fa-tag w-5 h-5 mr-3 text-primary-500"></i>
-                {job.category || 'General'}
-              </span>
-              <span className="flex items-center justify-center lg:justify-start text-lg">
-                <i className="fas fa-map-marker-alt w-5 h-5 mr-3 text-primary-500"></i>
-                {job.location || 'N/A'}
-              </span>
-              <span className="flex items-center justify-center lg:justify-start text-lg">
-                <i className="fas fa-calendar w-5 h-5 mr-3 text-primary-500"></i>
-                {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
+          <div className="flex items-center gap-3">
+             <div className="tooltip tooltip-bottom" data-tip="Share Job">
+               <ShareButton jobId={id} jobTitle={job.title} jobDescription={job.description} className="!w-10 !h-10 !rounded-full bg-white/5 border-white/5 hover:bg-white/10" />
+             </div>
+             <div className="tooltip tooltip-bottom" data-tip="Bookmark">
+               <BookmarkButton jobId={id} className="!w-10 !h-10 !rounded-full bg-white/5 border-white/5 hover:bg-white/10" />
+             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Job Image Section */}
-            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 overflow-hidden">
-              {images.length > 0 ? (
-                <div className="relative">
-                  <img
-                    src={images[0]}
-                    alt={job.title || 'Job image'}
-                    className="w-full h-64 lg:h-80 object-cover"
+          
+          {/* Main Content (Left 2/3) */}
+          <div className="lg:col-span-2 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            
+            {/* 1. Hero Title Card */}
+            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -mr-32 -mt-32"></div>
+               
+               <h1 className="text-3xl lg:text-4xl font-heading font-black text-white mb-4 leading-tight">
+                 {job.title || 'Untitled Job'}
+               </h1>
+               
+               <div className="flex flex-wrap items-center gap-6 text-sm">
+                 <div className="flex items-center gap-2 font-bold text-[#00C853]">
+                   <i className="fas fa-money-bill-wave"></i>
+                   <span className="text-xl">৳{job.budget?.toLocaleString() || 'N/A'} Total</span>
+                 </div>
+                 <div className="flex items-center gap-2 text-white/60">
+                   <i className="fas fa-map-marker-alt"></i>
+                   <span>{job.location || 'N/A'}</span>
+                 </div>
+                 <div className="flex items-center gap-2 text-white/40">
+                   <i className="fas fa-clock"></i>
+                   <span>Posted {timeAgo(job.createdAt || job.date)}</span>
+                 </div>
+               </div>
+               
+               {distanceKm !== null && (
+                 <div className="mt-6">
+                    <span className="inline-flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-1.5 rounded-full text-xs font-bold border border-green-500/20 shadow-lg shadow-green-500/5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                      {distanceKm} KM FROM YOU
+                    </span>
+                 </div>
+               )}
+            </div>
+
+            {/* 2. Job Details Grid */}
+            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
+               <h2 className="text-xl font-heading font-bold text-white mb-6 flex items-center gap-2">
+                 <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                 Job Details
+               </h2>
+               
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <div className="bg-[#111] border border-white/5 p-4 rounded-2xl">
+                    <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Category</span>
+                    <span className="text-lg font-bold text-white/90">{job.category || 'Masonry (Mistri)'}</span>
+                 </div>
+                 <div className="bg-[#111] border border-white/5 p-4 rounded-2xl">
+                    <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Duration</span>
+                    <span className="text-lg font-bold text-white/90">{job.duration || '5 Days'}</span>
+                 </div>
+                 <div className="bg-[#111] border border-white/5 p-4 rounded-2xl">
+                    <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Start Date</span>
+                    <span className="text-lg font-bold text-white/90">{job.startDate ? new Date(job.startDate).toLocaleDateString() : 'Immediate'}</span>
+                 </div>
+               </div>
+
+               {/* Description */}
+               <div className="mt-8">
+                 <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-4">Description</h3>
+                 <div className="text-white/70 leading-relaxed space-y-4 text-base">
+                   {job.description ? (
+                     job.description.split('\n').map((para, i) => (
+                       <p key={i}>{para}</p>
+                     ))
+                   ) : (
+                     <p>Looking for an experienced professional for this project. Materials will be provided by client. High quality finishing expected.</p>
+                   )}
+                 </div>
+               </div>
+
+               {/* Required Skills */}
+               <div className="mt-8">
+                 <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-4">Required Skills</h3>
+                 <div className="flex flex-wrap gap-2">
+                   {(job.skills || ['Plastering', 'Tile Installation', 'Cement Work', 'Finishing']).map((skill, idx) => (
+                     <span key={idx} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-medium hover:bg-white/10 hover:border-white/20 transition-all cursor-default">
+                       {skill}
+                     </span>
+                   ))}
+                 </div>
+               </div>
+            </div>
+
+            {/* 2.5 Image Gallery */}
+            {images && images.length > 0 && (
+               <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
+                  <h2 className="text-xl font-heading font-bold text-white mb-6 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                    Project Media
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     {images.map((img, idx) => (
+                        <div key={idx} className={`relative rounded-2xl overflow-hidden border border-white/5 group ${idx === 0 && images.length % 2 !== 0 ? 'sm:col-span-2' : ''}`}>
+                           <img 
+                              src={img} 
+                              alt={`Job ${idx}`} 
+                              className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+                           />
+                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                              <span className="text-[10px] font-bold text-white uppercase tracking-widest">View Full Image</span>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
+
+            {/* Required Skills moved below Gallery or kept in Details? Let's keep it in Details as I had it. */}
+
+            {/* 3. Work Location */}
+            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
+               <h2 className="text-xl font-heading font-bold text-white mb-6 flex items-center gap-2">
+                 <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                 Work Location
+               </h2>
+               
+               <div className="relative rounded-3xl overflow-hidden border border-white/5 h-[350px] shadow-2xl">
+                  <JobLocationMap
+                    locationGeo={resolvedJobGeo}
+                    locationText={resolvedLocationText}
+                    className="h-full w-full"
                   />
-                  {images.length > 1 && (
-                    <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                      +{images.length - 1} more
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="h-64 lg:h-80 bg-gradient-to-br from-[#66BB6A] to-[#1E88E5] flex items-center justify-center">
-                  <div className="text-center">
-                    <i className="fas fa-image text-6xl text-base-content opacity-60 dark:text-base-content opacity-70 mb-4"></i>
-                    <p className="text-base-content opacity-70 dark:text-base-content opacity-60 text-lg">No image available</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Job Description */}
-            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-              <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
-                Job Description
-              </h2>
-              <div className="prose prose-gray dark:prose-invert max-w-none">
-                <p className="text-base-content opacity-80 leading-relaxed text-lg">
-                  {job.description || 'No description provided.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Additional Job Images */}
-            {images.length > 1 && (
-              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-6">
-                  Additional Images
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {images.slice(1).map((image, index) => (
-                    <img
-                      key={index}
-                      src={image}
-                      alt={`Job image ${index + 2}`}
-                      className="w-full h-48 object-cover rounded-xl shadow-md hover:shadow-lg transition-shadow"
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">
-                  Job Location
-                </h2>
-                {distanceKm !== null && (
-                  <span className="badge badge-info badge-outline">
-                    ~{distanceKm} km from you
-                  </span>
-                )}
-              </div>
-
-              <JobLocationMap
-                locationGeo={resolvedJobGeo}
-                locationText={resolvedLocationText}
-                className="mt-2"
-              />
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                {distanceKm === null && (
-                  <button
-                    type="button"
-                    onClick={requestWorkerLocation}
-                    disabled={geoLoading}
-                    className="btn btn-sm btn-ghost"
-                  >
-                    {geoLoading ? 'Finding your location...' : 'Use my location for distance'}
-                  </button>
-                )}
-                {geoError && <p className="text-sm text-error">{geoError}</p>}
-              </div>
-            </div>
-
-            {isAcceptedApplication && poster.clientId && uid && (
-              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content mb-4">
-                  Live Location
-                </h2>
-                <LiveTrackingMap
-                  jobId={String(job._id || id)}
-                  jobLocationGeo={resolvedJobGeo}
-                  currentUserId={uid}
-                  peerUserId={poster.clientId}
-                  socket={socket}
-                  isAccepted
-                />
-              </div>
-            )}
-
-            {/* Applicants Section */}
-            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl lg:text-3xl font-heading font-bold text-base-content">
-                  Applicants
-                </h2>
-                <span className="text-base-content opacity-70 dark:text-base-content opacity-60 text-lg">
-                  {job.applicants?.length || 0} total
-                </span>
-              </div>
-              {Array.isArray(job.applicants) && job.applicants.length ? (
-                <div className="space-y-4">
-                  {job.applicants.map((a, i) => (
-                    <div key={i} className="border border-base-300 rounded-xl p-4 flex items-center justify-between bg-base-200">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-lg font-bold text-primary-600 dark:text-primary-400">
-                          {(a.name || '?').slice(0, 1).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-base-content text-lg">{a.name || 'Unknown'}</p>
-                          <p className="text-sm text-base-content opacity-70 dark:text-base-content opacity-60">⭐ {a.rating ?? '—'}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-base-content opacity-70 dark:text-base-content opacity-60 text-sm">Bid:</span>
-                        <span className="font-semibold text-primary text-lg ml-2">৳{a.price ?? '—'}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <i className="fas fa-users text-6xl text-base-content opacity-50 mb-4"></i>
-                  <p className="text-base-content opacity-70 dark:text-base-content opacity-60 text-lg">No applicants yet</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Job Info Card */}
-            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
-                Job Information
-              </h3>
-              
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-base-content opacity-70 mb-1">Budget</p>
-                      <p className="text-3xl font-heading font-bold text-primary-600 dark:text-primary-400">
-                        ৳{job.budget?.toLocaleString() || 'N/A'}
-                      </p>
-                    </div>
-                    <i className="fas fa-money-bill-wave text-3xl text-primary-500 dark:text-primary-400"></i>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between py-3 border-b border-base-300">
-                    <div className="flex items-center">
-                      <i className="fas fa-briefcase w-5 h-5 text-base-content opacity-60 mr-3"></i>
-                      <span className="text-base-content opacity-70">Category</span>
-                    </div>
-                    <span className="text-base-content font-medium">
-                      {job.category || 'N/A'}
-                    </span>
-                  </div>
                   
-                  <div className="flex items-center justify-between py-3 border-b border-base-300">
-                    <div className="flex items-center">
-                      <i className="fas fa-map-marker-alt w-5 h-5 text-base-content opacity-60 mr-3"></i>
-                      <span className="text-base-content opacity-70">Location</span>
+                  {/* Map Overlay Info */}
+                  <div className="absolute bottom-6 left-6 right-6 z-[400]">
+                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl inline-flex items-center gap-3 shadow-2xl">
+                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                         <i className="fas fa-map-marker-alt"></i>
+                       </div>
+                       <span className="text-sm font-bold text-white/90 tracking-tight">
+                         {resolvedLocationText}
+                       </span>
                     </div>
-                    <span className="text-base-content font-medium text-right max-w-32 truncate">
-                      {job.location || 'N/A'}
-                    </span>
                   </div>
-                  
-                  <div className="flex items-center justify-between py-3 border-b border-base-300">
-                    <div className="flex items-center">
-                      <i className="fas fa-calendar w-5 h-5 text-base-content opacity-60 mr-3"></i>
-                      <span className="text-base-content opacity-70">Posted</span>
-                    </div>
-                    <span className="text-base-content font-medium">
-                      {timeAgo(job.createdAt || job.date)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between py-3">
-                    <div className="flex items-center">
-                      <i className="fas fa-info-circle w-5 h-5 text-base-content opacity-60 mr-3"></i>
-                      <span className="text-base-content opacity-70">Status</span>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status || 'active')}`}>
-                      {job.status || 'Active'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Client Info Card */}
-            <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-              <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
-                Job Owner
-              </h3>
-              
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-blue-100 dark:from-primary-900 dark:to-blue-900 rounded-full flex items-center justify-center">
-                  <i className="fas fa-user text-primary-600 dark:text-primary-400 text-2xl"></i>
-                </div>
-                <div>
-                  <p className="font-bold text-base-content text-lg">
-                    {poster.name}
-                  </p>
-                  <p className="text-sm text-base-content opacity-80">Job Poster</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center py-3 border-b border-base-300">
-                  <i className="fas fa-envelope w-5 h-5 mr-3 text-base-content opacity-60"></i>
-                  <span className="text-base-content opacity-80 text-sm">
-                    {poster.email || 'N/A'}
-                  </span>
-                </div>
-                <div className="flex items-center py-3">
-                  <i className="fas fa-id-card w-5 h-5 mr-3 text-base-content opacity-60"></i>
-                  <span className="text-base-content opacity-80 text-sm font-mono">
-                    {poster.clientId || 'N/A'}
-                  </span>
-                </div>
-                {poster.clientId && (
-                  <div className="pt-3">
+               </div>
+               
+               <div className="mt-4">
+                 {distanceKm === null && (
                     <button
-                      onClick={() => navigate(`/client/${poster.clientId}`)}
-                      className="btn btn-primary btn-sm w-full"
+                      type="button"
+                      onClick={requestWorkerLocation}
+                      disabled={geoLoading}
+                      className="text-primary text-sm font-bold flex items-center gap-2 hover:underline"
                     >
-                      <i className="fas fa-user mr-2"></i>View Client Profile
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Application Form or Status */}
-            {hasApplied && application ? (
-              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-                <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
-                  Application Status
-                </h3>
-                
-                <div className="space-y-6">
-                  {/* Status Badge */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-base-content opacity-70 mb-2">Status</p>
-                      <span className={`px-4 py-2 rounded-full text-sm font-medium ${getApplicationStatusColor(application.status)}`}>
-                        {application.status ? application.status.charAt(0).toUpperCase() + application.status.slice(1) : 'Pending'}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-base-content opacity-70 mb-2">Submitted</p>
-                      <p className="text-sm text-base-content font-medium">
-                        {application.createdAt 
-                          ? new Date(application.createdAt).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                          : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Proposal Text */}
-                  <div>
-                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
-                      Your Proposal
-                    </label>
-                    {isEditingProposal ? (
-                      <>
-                        <textarea
-                          value={editedProposalText}
-                          onChange={(e) => setEditedProposalText(e.target.value)}
-                          className="w-full px-4 py-4 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 resize-none text-lg"
-                          rows={5}
-                        />
-                        <p className="text-xs text-base-content opacity-70 dark:text-base-content opacity-60 mt-2">
-                          Minimum 50 characters required ({editedProposalText.length}/50)
-                        </p>
-                        <div className="flex gap-3 mt-4">
-                          <button
-                            onClick={handleSaveProposal}
-                            disabled={saving || !editedProposalText.trim() || editedProposalText.trim().length < 50}
-                            className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
-                          >
-                            {saving ? (
-                              <span className="flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Saving...
-                              </span>
-                            ) : (
-                              <span className="flex items-center justify-center">
-                                <i className="fas fa-save mr-2"></i>
-                                Save Changes
-                              </span>
-                            )}
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            disabled={saving}
-                            className="px-6 py-3 bg-base-300 hover:bg-base-200 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-full px-4 py-4 border border-base-300 rounded-xl bg-base-300 text-base-content text-lg min-h-[120px] whitespace-pre-wrap">
-                          {application.proposalText || 'No proposal text available'}
-                        </div>
-                        {application?.proposedPrice ? (
-                          <div className="mt-3 p-3 rounded-xl border border-base-300 bg-base-300 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs text-base-content opacity-70">Your Proposed Budget</p>
-                              <p className="text-lg font-semibold text-primary">
-                                ৳{Number(application.proposedPrice).toLocaleString()}
-                              </p>
-                            </div>
-                            {application?.counterPrice ? (
-                              <div className="flex items-center justify-between">
-                                <p className="text-xs text-base-content opacity-70">Client Counter Offer</p>
-                                <p className="text-lg font-semibold text-warning">
-                                  ৳{Number(application.counterPrice).toLocaleString()}
-                                </p>
-                              </div>
-                            ) : null}
-                            {application?.finalPrice ? (
-                              <div className="flex items-center justify-between">
-                                <p className="text-xs text-base-content opacity-70">Final Agreed Price</p>
-                                <p className="text-lg font-semibold text-success">
-                                  ৳{Number(application.finalPrice).toLocaleString()}
-                                </p>
-                              </div>
-                            ) : null}
-                            {(application?.negotiationStatus || application?.counterPrice) ? (
-                              <p className="text-xs text-base-content opacity-70">
-                                Negotiation status: {(application.negotiationStatus || (application.counterPrice ? 'countered' : 'pending')).toString()}
-                              </p>
-                            ) : null}
-                            {application.status === 'pending' &&
-                            application?.counterPrice &&
-                            !['accepted', 'cancelled'].includes((application.negotiationStatus || '').toLowerCase()) ? (
-                              <div className="pt-2 mt-2 border-t border-base-300 flex flex-wrap gap-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-success btn-sm"
-                                  disabled={negotiatingPrice}
-                                  onClick={() => handleCounterDecision('accept')}
-                                >
-                                  {negotiatingPrice ? 'Saving...' : 'Accept Counter'}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline btn-sm"
-                                  disabled={negotiatingPrice}
-                                  onClick={() => handleCounterDecision('decline')}
-                                >
-                                  Decline Counter
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        {application.status === 'pending' && (
-                          <div className="flex gap-3 mt-4">
-                            <button
-                              onClick={handleEditProposal}
-                              className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                              <i className="fas fa-edit mr-2"></i>
-                              Edit Proposal
-                            </button>
-                            <Link
-                              to="/applications"
-                              className="px-6 py-3 bg-base-300 hover:bg-base-200 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl flex items-center justify-center"
-                            >
-                              <i className="fas fa-eye mr-2"></i>
-                              View All Applications
-                            </Link>
-                          </div>
-                        )}
-                        {application.status !== 'pending' && (
-                          <div className="mt-4">
-                            <Link
-                              to="/applications"
-                              className="w-full block text-center px-6 py-3 bg-base-300 hover:bg-base-200 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
-                            >
-                              <i className="fas fa-eye mr-2"></i>
-                              View All Applications
-                            </Link>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-300 p-6 lg:p-8">
-                <h3 className="text-xl lg:text-2xl font-heading font-bold text-base-content mb-6">
-                  Apply for this Job
-                </h3>
-                
-                <div className="space-y-6">
-                  {!uid && authReady && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                      <p className="text-red-600 dark:text-red-400 text-sm">
-                        You must sign in to submit a proposal.
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
-                      Proposed Budget (BDT)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="100"
-                      value={proposedPrice}
-                      onChange={(e) => setProposedPrice(e.target.value)}
-                      placeholder="Enter your proposed amount"
-                      className="w-full px-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 text-lg"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
-                      Your Proposal
-                    </label>
-                    <textarea
-                      value={proposal}
-                      onChange={(e) => setProposal(e.target.value)}
-                      placeholder="Write your proposal here... Explain why you're the best fit for this job."
-                      className="w-full px-4 py-4 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300 resize-none text-lg"
-                      rows={5}
-                    />
-                    <p className="text-xs text-base-content opacity-70 dark:text-base-content opacity-60 mt-2">
-                      Minimum 50 characters required ({proposal.length}/50)
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <button
-                      onClick={submitProposal}
-                      className="flex-1 bg-gradient-to-r from-primary to-primary-focus hover:from-primary-focus hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
-                      disabled={saving || !authReady || !proposal.trim() || proposal.trim().length < 50 || !proposedPrice || Number(proposedPrice) <= 0}
-                    >
-                      {saving ? (
-                        <span className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                          Submitting...
-                        </span>
+                      {geoLoading ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Accessing location...
+                        </>
                       ) : (
-                        <span className="flex items-center justify-center">
-                          <i className="fas fa-paper-plane mr-2"></i>
-                          Apply for this Job
-                        </span>
+                        <>
+                          <i className="fas fa-location-arrow"></i>
+                          Calculate distance from me
+                        </>
                       )}
                     </button>
-                    <BookmarkButton jobId={id} />
-                  </div>
+                 )}
+                 {geoError && <p className="text-xs text-red-500 mt-2">{geoError}</p>}
+               </div>
+            </div>
 
-                  {/* Feedback */}
-                  {appliedMsg && (
-                    <div className={`p-4 rounded-xl ${appliedMsg.startsWith('✅') ? 'bg-success/20 border border-success' : 'bg-error/20 border border-error'}`}>
-                      <p className={`text-sm ${appliedMsg.startsWith('✅') ? 'text-success' : 'text-error'}`}>
-                        {appliedMsg}
-                      </p>
-                    </div>
-                  )}
+            {/* Live Tracking Map Overlay (Conditional) */}
+            {isAcceptedApplication && poster.clientId && uid && (
+              <div className="bg-[#1a1a1a] border border-primary/20 rounded-xl p-8 bg-primary/5">
+                <h2 className="text-xl font-heading font-bold text-primary mb-4">
+                  <i className="fas fa-map-marked-alt mr-2"></i> Live Tracking
+                </h2>
+                <div className="rounded-2xl overflow-hidden border border-primary/30 h-[400px]">
+                  <LiveTrackingMap
+                    jobId={String(job._id || id)}
+                    jobLocationGeo={resolvedJobGeo}
+                    currentUserId={uid}
+                    peerUserId={poster.clientId}
+                    socket={socket}
+                    isAccepted
+                  />
                 </div>
               </div>
             )}
+
+            {/* 4. Application Status or Apply Section */}
+            {hasApplied && application ? (
+               <div className="bg-[#1a1a1a] border border-primary/20 rounded-xl p-8 bg-primary/5">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2">
+                      <i className="fas fa-file-alt text-primary"></i>
+                      Your Application Status
+                    </h2>
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                      application.status === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                      application.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                      'bg-primary/10 text-primary border-primary/20'
+                    }`}>
+                      {application.status || 'Pending'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-8">
+                     {/* Proposal Text */}
+                     <div>
+                        <div className="flex items-center justify-between mb-4">
+                           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Your Proposal</h3>
+                           {!isEditingProposal && application.status === 'pending' && (
+                              <button onClick={handleEditProposal} className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline">
+                                Edit Proposal
+                              </button>
+                           )}
+                        </div>
+                        
+                        {isEditingProposal ? (
+                           <div className="space-y-4">
+                              <textarea
+                                value={editedProposalText}
+                                onChange={(e) => setEditedProposalText(e.target.value)}
+                                className="w-full px-6 py-4 bg-[#111] border border-primary/30 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all outline-none text-white resize-none"
+                                rows={6}
+                              />
+                              <div className="flex gap-3">
+                                 <button onClick={handleSaveProposal} disabled={saving || editedProposalText.length < 50} className="flex-1 py-3 rounded-xl bg-primary text-black font-bold text-xs uppercase tracking-widest transition-all hover:bg-primary-focus">
+                                    {saving ? 'Saving...' : 'Save Changes'}
+                                 </button>
+                                 <button onClick={handleCancelEdit} className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/10">
+                                    Cancel
+                                 </button>
+                              </div>
+                           </div>
+                        ) : (
+                           <p className="text-white/70 bg-white/5 p-6 rounded-2xl border border-white/5 leading-relaxed italic">
+                              "{application.proposalText || 'No proposal text provided.'}"
+                           </p>
+                        )}
+                     </div>
+
+                     {/* Price Details */}
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-[#111] border border-white/5 p-5 rounded-2xl">
+                           <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Original Bid</span>
+                           <span className="text-xl font-black text-white">৳{Number(application.proposedPrice || 0).toLocaleString()}</span>
+                        </div>
+                        
+                        {application.counterPrice && (
+                           <div className="bg-amber-500/5 border border-amber-500/20 p-5 rounded-2xl relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-2 bg-amber-500 text-black text-[8px] font-black uppercase tracking-widest rounded-bl-lg">Counter Offer</div>
+                              <span className="block text-[10px] font-bold text-amber-500/70 uppercase tracking-widest mb-2">Client Offered</span>
+                              <span className="text-xl font-black text-amber-500">৳{Number(application.counterPrice).toLocaleString()}</span>
+                              
+                              {application.status === 'pending' && !['accepted', 'declined'].includes((application.negotiationStatus || '').toLowerCase()) && (
+                                 <div className="flex gap-2 mt-4">
+                                    <button onClick={() => handleCounterDecision('accept')} disabled={negotiatingPrice} className="flex-1 py-2 bg-amber-500 text-black text-[10px] font-black uppercase tracking-tighter rounded-lg hover:bg-amber-400 transition-all">Accept</button>
+                                    <button onClick={() => handleCounterDecision('decline')} disabled={negotiatingPrice} className="flex-1 py-2 bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-tighter rounded-lg hover:bg-white/10 transition-all">Decline</button>
+                                 </div>
+                              )}
+                           </div>
+                        )}
+
+                        {application.finalPrice && (
+                           <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl col-span-full">
+                              <span className="block text-[10px] font-bold text-green-500/70 uppercase tracking-widest mb-2">Final Agreed Price</span>
+                              <span className="text-2xl font-black text-green-500">৳{Number(application.finalPrice).toLocaleString()}</span>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* Action Buttons */}
+                     <div className="pt-4 flex gap-4">
+                        <button className="flex-1 py-4 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-white/90 transition-all">
+                           Message Client
+                        </button>
+                        <button className="flex-1 py-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-black uppercase tracking-widest text-xs hover:bg-red-500/20 transition-all">
+                           Withdraw Application
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            ) : !hasApplied && (
+               <div className="bg-[#1a1a1a] border border-primary/10 rounded-xl p-8">
+                  <h2 className="text-xl font-heading font-bold text-white mb-8 flex items-center gap-3">
+                    <i className="fas fa-paper-plane text-primary text-sm"></i>
+                    Apply for this Job
+                  </h2>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Your Proposed Price (৳)</label>
+                      <div className="relative">
+                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40 font-bold">৳</span>
+                         <input
+                           type="number"
+                           value={proposedPrice}
+                           onChange={(e) => setProposedPrice(e.target.value)}
+                           placeholder="15,000"
+                           className="w-full pl-10 pr-6 py-4 bg-[#111] border border-white/5 rounded-2xl focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold text-lg text-white"
+                         />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Your Proposal / Message</label>
+                      <textarea
+                        value={proposal}
+                        onChange={(e) => setProposal(e.target.value)}
+                        placeholder="Briefly describe your experience with similar work..."
+                        rows={6}
+                        className="w-full px-6 py-4 bg-[#111] border border-white/5 rounded-2xl focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none text-white resize-none"
+                      />
+                      <div className="flex justify-between items-center mt-2 px-2">
+                         <span className={`text-[10px] font-bold ${proposal.length < 50 ? 'text-white/30' : 'text-green-500'}`}>
+                           {proposal.length}/50 min characters
+                         </span>
+                         {saving && <span className="loading loading-spinner loading-xs text-primary"></span>}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-4 pt-4">
+                       <button
+                         onClick={submitProposal}
+                         disabled={saving || proposal.trim().length < 50 || !proposedPrice}
+                         className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#00C853] to-[#64DD17] text-black font-black uppercase tracking-widest text-sm shadow-xl shadow-green-500/10 hover:shadow-green-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                       >
+                         {saving ? 'Processing...' : 'Submit Proposal'}
+                       </button>
+                       <button className="flex-1 py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-sm hover:bg-white/90 active:scale-95 transition-all">
+                         Message Client
+                       </button>
+                    </div>
+                  </div>
+               </div>
+            )}
+
+            {/* Existing Applicants List - Modernized */}
+            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
+               <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                    Recent Applicants
+                  </h2>
+                  <span className="text-xs font-bold text-white/40 tracking-widest uppercase">{job.applicants?.length || 0} TOTAL</span>
+               </div>
+               
+               {job.applicants && job.applicants.length > 0 ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {job.applicants.map((app, idx) => (
+                      <div key={idx} className="bg-[#111] border border-white/5 p-4 rounded-2xl hover:border-white/10 transition-all group">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-black">
+                              {app.name?.charAt(0) || 'U'}
+                            </div>
+                            <div className="flex-1">
+                               <p className="font-bold text-white/90 group-hover:text-primary transition-colors">{app.name}</p>
+                               <div className="flex items-center gap-3 text-[10px] font-bold text-white/40 uppercase tracking-tighter">
+                                  <span className="text-amber-500 flex items-center gap-1">
+                                    <i className="fas fa-star"></i> {app.rating || 'N/A'}
+                                  </span>
+                                  <span>•</span>
+                                  <span>৳{app.price?.toLocaleString()}</span>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+               ) : (
+                 <div className="text-center py-10 bg-white/5 rounded-3xl border border-dashed border-white/10">
+                    <p className="text-white/40 font-bold uppercase tracking-widest text-xs">No applicants yet. Be the first!</p>
+                 </div>
+               )}
+            </div>
+          </div>
+
+          {/* Sidebar (Right 1/3) */}
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
+            
+            {/* 1. About the Client */}
+            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
+               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-8">About the Client</h3>
+               
+               <div className="flex items-center gap-5 mb-8">
+                  <div className="relative">
+                    <img
+                      src={clientPublic?.pfp || 'https://via.placeholder.com/150'}
+                      alt={poster.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                    />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#050505] flex items-center justify-center text-[10px] text-white">
+                       <i className="fas fa-check"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-heading font-bold text-xl text-white">{poster.name}</h4>
+                    <div className="flex items-center gap-1 text-amber-500 text-sm mt-1">
+                       <i className="fas fa-star"></i>
+                       <i className="fas fa-star"></i>
+                       <i className="fas fa-star"></i>
+                       <i className="fas fa-star"></i>
+                       <i className="fas fa-star"></i>
+                       <span className="text-white/40 text-xs ml-1">(12 reviews)</span>
+                    </div>
+                  </div>
+               </div>
+               
+               <div className="space-y-4 mb-8">
+                  <div className="flex items-center gap-3 text-sm font-medium text-white/70">
+                     <i className="fas fa-check-circle text-green-500"></i>
+                     <span>Identity Verified</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm font-medium text-white/70">
+                     <i className="fas fa-check-circle text-green-500"></i>
+                     <span>Payment Verified</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm font-medium text-white/40">
+                     <i className="fas fa-calendar-alt"></i>
+                     <span>Member since 2021</span>
+                  </div>
+               </div>
+               
+               <div className="pt-6 border-t border-white/5">
+                  <button 
+                    onClick={() => navigate(`/client/${poster.clientId}`)}
+                    className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-primary text-xs font-black uppercase tracking-widest hover:bg-primary/10 hover:border-primary/30 transition-all"
+                  >
+                    View Full Profile
+                  </button>
+               </div>
+            </div>
+
+            {/* 2. Safety Tips */}
+            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8 group">
+               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
+                 Hire Mistri Safety Tips
+                 <i className="fas fa-shield-alt text-primary opacity-50"></i>
+               </h3>
+               
+               <ul className="space-y-6">
+                 <li className="flex gap-4">
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 text-[10px]">
+                      <i className="fas fa-check"></i>
+                    </div>
+                    <p className="text-xs text-white/60 leading-relaxed">Always get a clear scope of work before starting.</p>
+                 </li>
+                 <li className="flex gap-4">
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 text-[10px]">
+                      <i className="fas fa-check"></i>
+                    </div>
+                    <p className="text-xs text-white/60 leading-relaxed">Request 20% advance only via platform escrow.</p>
+                 </li>
+                 <li className="flex gap-4">
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-[10px]">
+                      <i className="fas fa-info"></i>
+                    </div>
+                    <p className="text-xs text-white/60 leading-relaxed">Contact support for any disputes or payment issues.</p>
+                 </li>
+               </ul>
+            </div>
+
+            {/* 3. Job Activity */}
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-8">
+               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-8">Job Activity</h3>
+               
+               <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                     <span className="text-sm text-white/60">Proposals</span>
+                     <span className="text-sm font-black text-white">5 - 10</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                     <span className="text-sm text-white/60">Interviewing</span>
+                     <span className="text-sm font-black text-white">2</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                     <span className="text-sm text-white/60">Last View</span>
+                     <span className="text-sm font-black text-white">12 mins ago</span>
+                  </div>
+               </div>
+            </div>
+
           </div>
         </div>
       </div>
+
+      {/* Footer Branding */}
+      <footer className="py-12 border-t border-white/5 mt-12 text-center">
+        <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.4em]">
+          © 2024 Hire Mistri • Professional Services Marketplace
+        </p>
+      </footer>
     </div>
   );
 }

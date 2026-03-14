@@ -30,7 +30,7 @@ export default function Footer() {
     <footer className="mt-16 w-full text-base-content">
       {/* Worker CTA strip - black in dark (Sahayak) */}
       <div className="footer-cta-bg bg-gradient-to-r from-base-200 via-base-100 to-base-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h3 className="text-xl md:text-2xl font-semibold text-base-content">
             Find work faster with <span className="text-primary">Hire</span>Mistri
           </h3>
@@ -38,7 +38,7 @@ export default function Footer() {
             <Link to="/jobs" className="btn btn-primary">
               Find Jobs
             </Link>
-            <Link to="/applications" className="inline-flex items-center justify-center px-5 py-2 rounded-md border border-base-300 hover:bg-base-200 transition text-base-content">
+            <Link to="/dashboard/applications" className="inline-flex items-center justify-center px-5 py-2 rounded-md border border-base-300 hover:bg-base-200 transition text-base-content">
               My Applications
             </Link>
             <Link to="/dashboard" className="inline-flex items-center justify-center px-5 py-2 rounded-md border border-base-300 hover:bg-base-200 transition text-base-content">
@@ -50,7 +50,7 @@ export default function Footer() {
 
       {/* Main footer - pure black in dark mode (Sahayak style) */}
       <div className="footer-main-bg bg-base-200 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand + contact */}
             <div>
@@ -103,8 +103,8 @@ export default function Footer() {
               <h4 className="text-base-content font-semibold mb-4">For Workers</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/jobs" className="text-base-content opacity-70 hover:opacity-100">Find Jobs</Link></li>
-                <li><Link to="/applications" className="text-base-content opacity-70 hover:opacity-100">My Applications</Link></li>
-                <li><Link to="/orders" className="text-base-content opacity-70 hover:opacity-100">My Orders</Link></li>
+                <li><Link to="/dashboard/applications" className="text-base-content opacity-70 hover:opacity-100">My Applications</Link></li>
+                <li><Link to="/dashboard/orders" className="text-base-content opacity-70 hover:opacity-100">My Orders</Link></li>
                 <li><Link to="/edit-profile" className="text-base-content opacity-70 hover:opacity-100">Edit Profile</Link></li>
                 <li><Link to="/settings" className="text-base-content opacity-70 hover:opacity-100">Account Settings</Link></li>
                 <li><Link to="/how-it-works#workers" className="text-base-content opacity-70 hover:opacity-100">How it works</Link></li>

@@ -148,7 +148,7 @@ export default function SupportThread({ ticketId: ticketIdProp, onBack }) {
                   className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[75%] rounded-lg p-3 ${
+                    className={`rounded-lg p-3 ${
                       isUser ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content border border-base-300'
                     }`}
                   >

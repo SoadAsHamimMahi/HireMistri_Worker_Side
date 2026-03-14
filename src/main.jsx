@@ -1,7 +1,7 @@
 // src/main.jsx or src/index.jsx
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 // Leaflet CSS - imported globally for map components
@@ -13,7 +13,6 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 // Layout & Routes
 import Root from './routes/Root';
 import ErrorPage from './routes/ErrorPage';
-import Home from './routes/Home';
 import Dashboard from './routes/Dashboard';
 import Jobs from './routes/Jobs';
 import Applications from './routes/Applications';
@@ -31,6 +30,9 @@ import BrowseClients from './routes/BrowseClients';
 import MessagesPaused from './routes/MessagesPaused';
 import MessagesInbox from './routes/MessagesInbox';
 import SupportInbox from './routes/Support/SupportInbox';
+import DashboardLayout from './routes/DashboardLayout';
+import Earnings from './routes/Earnings';
+import Settings from './routes/Settings';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 import { MessagesProvider } from './contexts/MessagesContext';
@@ -42,13 +44,20 @@ const router = createBrowserRouter([
     element: <Root />,
     errorElement: <ErrorPage />,
     children: [
-      { path: '', element: <Home /> },
-      { path: 'dashboard', element: <Dashboard /> },
+      { path: '', element: <Navigate to="/dashboard" replace /> },
+      {
+        path: 'dashboard',
+        element: <DashboardLayout />,
+        children: [
+          { index: true, element: <Dashboard /> },
+          { path: 'applications', element: <Applications /> },
+          { path: 'job-offers', element: <JobOffers /> },
+          { path: 'orders', element: <Orders /> },
+          { path: 'earnings', element: <Earnings /> },
+        ],
+      },
       { path: 'jobs', element: <Jobs /> },
       { path: 'saved-jobs', element: <SavedJobs /> },
-      { path: 'applications', element: <Applications /> },
-      { path: 'job-offers', element: <JobOffers /> },
-      { path: 'orders', element: <Orders /> },
       { path: 'edit-profile', element: <EditProfile /> },
       { path: 'job/:jobId', element: <JobDetails /> },
       { path: 'login', element: <WorkerLogin /> },
@@ -62,6 +71,7 @@ const router = createBrowserRouter([
       { path: 'chats/:conversationId', element: <MessagesInbox basePath="chats" /> },
       { path: 'support', element: <SupportInbox /> },
       { path: 'support/:ticketId', element: <SupportInbox /> },
+      { path: 'settings', element: <Settings /> },
     ],
   },
 ]);

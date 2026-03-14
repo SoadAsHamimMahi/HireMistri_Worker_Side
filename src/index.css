@@ -1,82 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0%);
-    opacity: 1;
-  }
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
 }
 
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out forwards;
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0%); opacity: 1; }
 }
+.animate-slideIn { animation: slideIn 0.3s ease-out forwards; }
 
 @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
 }
+.animate-fadeSlideIn { animation: fadeSlideIn 0.4s ease-out forwards; }
 
-.animate-fadeSlideIn {
-  animation: fadeSlideIn 0.4s ease-out forwards;
-}
+.dark { color-scheme: dark; }
 
-/* Ensure dark mode works properly */
-.dark {
-  color-scheme: dark;
-}
-
-/* Global body background - Sahayak theme */
 body {
   background-color: #0A0B0E;
   @apply text-base-content transition-colors duration-300;
 }
-[data-theme="light"] body {
-  background-color: #E8F6ED;
-}
-[data-theme="light"] .app-root {
-  background-color: #E8F6ED;
-}
-[data-theme="dark"] .app-root {
-  background-color: #0A0B0E;
-}
-.page-bg {
-  background-color: #0A0B0E;
-}
-[data-theme="light"] .page-bg {
-  background-color: #E8F6ED;
-}
-[data-theme="dark"] .page-bg {
-  background-color: #0A0B0E;
-}
+[data-theme="light"] body { background-color: #E8F6ED; }
+[data-theme="light"] .app-root { background-color: #E8F6ED; }
+[data-theme="dark"] .app-root { background-color: #0A0B0E; }
+.page-bg { background-color: #0A0B0E; }
+[data-theme="light"] .page-bg { background-color: #E8F6ED; }
+[data-theme="dark"] .page-bg { background-color: #0A0B0E; }
 
-/* Sahayak-style: footer pure black in dark mode */
 [data-theme="dark"] .footer-main-bg,
 [data-theme="dark"] .footer-cta-bg {
   background-color: #000000;
 }
 
-/* Sahayak-style card: 12px radius, subtle shadow */
 .card-sahayak {
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-/* Theme-aware muted text (Sahayak secondary text) */
-[data-theme="dark"] .text-muted {
-  color: #A0A0A0;
-}
-[data-theme="light"] .text-muted {
-  color: #666666;
+[data-theme="dark"] .text-muted { color: #A0A0A0; }
+[data-theme="light"] .text-muted { color: #666666; }
+
+.is-dashboard-page {
+  background-color: #0A0A0A !important;
 }

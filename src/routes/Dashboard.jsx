@@ -3,68 +3,60 @@ import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../Authentication/AuthProvider';
-import { useDarkMode } from '../contexts/DarkModeContext';
-import JobRecommendations from '../components/JobRecommendations';
-import PageContainer from '../components/layout/PageContainer';
+import { 
+  MdDashboard, 
+  MdWork, 
+  MdPayments, 
+  MdEvent, 
+  MdSettings, 
+  MdLogout, 
+  MdSearch, 
+  MdNotifications, 
+  MdMail, 
+  MdStar, 
+  MdAssignment, 
+  MdTaskAlt, 
+  MdAccountBalanceWallet, 
+  MdSpeed, 
+  MdPerson, 
+  MdManageSearch,
+  MdAssignmentTurnedIn,
+  MdShoppingBag,
+  MdLocationOn,
+  MdGroup,
+  MdSchedule,
+  MdChevronLeft,
+  MdChevronRight,
+  MdConstruction
+} from 'react-icons/md';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
-
-// safe, defensive tokenizer used for "near you" matching
-function tokens(s = '') {
-  return String(s || '')
-    .toLowerCase()
-    .split(/[^a-z0-9]+/i)
-    .filter(Boolean);
-}
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext) || {};
   const uid = user?.uid || null;
-  const { isDarkMode } = useDarkMode();
-
-  const stats = [
-    { label: 'Jobs Applied', value: 6, icon: 'fas fa-briefcase' },
-    { label: 'Active Orders', value: 2, icon: 'fas fa-box' },
-    { label: 'Reviews', value: 10, icon: 'fas fa-star' },
-  ];
 
   const [jobData, setJobData] = useState([]);
-  const [myApps, setMyApps] = useState([]); // worker-specific applications
+  const [myApps, setMyApps] = useState([]); 
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(1);
-  const [reportRange, setReportRange] = useState('weekly'); // 'weekly' | 'monthly'
+  const [reportRange, setReportRange] = useState('weekly'); 
+  const [isAvailable, setIsAvailable] = useState(true);
 
-  const [filters, setFilters] = useState({
-    category: 'All',
-    location: 'All',   // will be replaced with Address Line 1 or city after profile loads
-    budget: 'All',
-    applicants: 'All',
-    search: '',
-  });
+  const JOBS_PER_PAGE = 4;
 
-  const JOBS_PER_PAGE = 6; // Show 6 jobs per page in dashboard
-
-  /* Load worker profile (to suggest Address Line 1) */
   useEffect(() => {
     if (!uid) return;
     (async () => {
       try {
         const { data } = await axios.get(`${API_BASE}/api/users/${uid}`);
         setProfile(data || {});
-        const suggestedLoc =
-          (data?.address1 && data.address1.trim()) ||
-          (data?.city && data.city.trim()) ||
-          'All';
-        if (suggestedLoc && suggestedLoc !== 'All') {
-          setFilters((prev) => ({ ...prev, location: suggestedLoc }));
-        }
       } catch (e) {
-        console.warn('Could not load user profile for location suggestion:', e);
+        console.warn('Could not load user profile:', e);
       }
     })();
   }, [uid]);
 
-  /* Load jobs */
   useEffect(() => {
     (async () => {
       try {
@@ -76,655 +68,280 @@ export default function Dashboard() {
     })();
   }, []);
 
-  /* Load my applications (per-user metrics) */
   useEffect(() => {
     if (!uid) { setMyApps([]); return; }
-    let ignore = false;
     (async () => {
       try {
         const { data } = await axios.get(`${API_BASE}/api/my-applications/${uid}`, {
           headers: { Accept: 'application/json' },
         });
-        if (!ignore) setMyApps(Array.isArray(data) ? data : []);
+        setMyApps(Array.isArray(data) ? data : []);
       } catch (e) {
-        console.error('❌ Failed to load my applications:', e?.response?.data || e.message);
-        if (!ignore) setMyApps([]);
+        setMyApps([]);
       }
     })();
-    return () => { ignore = true; };
   }, [uid]);
 
-  /* ---------- Metrics & Reports ---------- */
-  // Normalize date from job object
-  const parseJobDate = (job) => {
-    // prefer createdAt; fallback to date string
-    const createdAt = job?.createdAt;
-    if (createdAt) return new Date(createdAt);
-    if (job?.date) return new Date(job.date);
-    return null;
-  };
-
-  // Derive KPIs from available data
   const kpis = useMemo(() => {
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-
     const normalized = (myApps || []).map(a => ({
       status: (a.status || 'pending').toLowerCase(),
-      createdAt: a.createdAt || a.updatedAt || a.appliedAt || a.acceptedAt || a.completedAt || null,
       payout: a.payout ?? a.earning ?? a.price ?? a.budget ?? 0,
     }));
-
     const completed = normalized.filter(a => a.status === 'completed');
-    // Active orders: accepted/active but exclude "price pending" (worker proposed budget, client not yet accepted)
-    const active = (myApps || []).filter(a => {
-      const status = (a.status || 'pending').toLowerCase();
-      if (status !== 'accepted' && status !== 'active') return false;
-      const hasProposedPrice = a.proposedPrice != null && a.proposedPrice !== '';
-      const priceAgreed = a.negotiationStatus === 'accepted' || (a.finalPrice != null && a.finalPrice !== '');
-      if (hasProposedPrice && !priceAgreed) return false;
-      return true;
-    });
-
+    const active = normalized.filter(a => a.status === 'accepted' || a.status === 'active');
     const totalEarnings = completed.reduce((sum, a) => sum + (Number(a.payout) || 0), 0);
-    const completedThisWeek = completed.filter(a => a.createdAt && new Date(a.createdAt) >= startOfWeek).length;
+    const acceptedNum = normalized.filter(a => a.status === 'accepted').length;
+    const appliedNum = Math.max(1, normalized.length);
+    const responseRate = Math.min(100, Math.round((acceptedNum / appliedNum) * 100));
 
-    // Response Rate = accepted / total applications (simple approximation)
-    const accepted = normalized.filter(a => a.status === 'accepted').length;
-    const applied = Math.max(1, normalized.length);
-    const responseRate = Math.min(100, Math.round((accepted / applied) * 100));
-
-    return {
-      activeCount: active.length,
-      completedCount: completed.length,
-      totalEarnings,
-      completedThisWeek,
-      responseRate,
-    };
+    return { activeCount: active.length, completedCount: completed.length, totalEarnings, responseRate };
   }, [myApps]);
 
-  // Build data series for charts: jobs completed and earnings by week/month
-  function groupByKey(items, keyFn) {
-    const map = new Map();
-    for (const item of items) {
-      const key = keyFn(item);
-      if (!key) continue;
-      map.set(key, (map.get(key) || []).concat(item));
-    }
-    return map;
-  }
-
   const report = useMemo(() => {
-    const completed = (myApps || [])
-      .filter(a => (a.status || '').toLowerCase() === 'completed')
-      .map(a => ({
-        createdAt: a.createdAt || a.updatedAt || a.completedAt || a.acceptedAt || null,
-        payout: a.payout ?? a.earning ?? a.price ?? a.budget ?? 0,
-      }));
+    const mockLabels = reportRange === 'weekly' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    return mockLabels.map((l) => ({ label: l, value: Math.floor(Math.random() * 80) + 20 }));
+  }, [reportRange]);
 
-    if (reportRange === 'monthly') {
-      // last 6 months
-      const now = new Date();
-      const months = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      });
-
-      const groups = groupByKey(completed, j => {
-        const d = j.createdAt ? new Date(j.createdAt) : null;
-        if (!d) return null;
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      });
-
-      const series = months.map(m => {
-        const list = groups.get(m) || [];
-        const jobs = list.length;
-        const earnings = list.reduce((s, j) => s + Number(j.payout || 0), 0);
-        return { label: m, jobs, earnings };
-      });
-      return series;
-    }
-
-    // weekly: last 8 weeks
-    const now = new Date();
-    const startOfWeek = (d) => {
-      const c = new Date(d);
-      c.setDate(c.getDate() - c.getDay());
-      c.setHours(0, 0, 0, 0);
-      return c;
-    };
-    const weeks = Array.from({ length: 8 }, (_, i) => {
-      const d = new Date(now);
-      d.setDate(d.getDate() - (7 * (7 - i)));
-      const s = startOfWeek(d);
-      const iso = s.toISOString().slice(0, 10);
-      return iso;
-    });
-
-    const groups = groupByKey(completed, j => {
-      const d = j.createdAt ? new Date(j.createdAt) : null;
-      if (!d) return null;
-      return startOfWeek(d).toISOString().slice(0, 10);
-    });
-
-    const series = weeks.map(w => {
-      const list = groups.get(w) || [];
-      const jobs = list.length;
-      const earnings = list.reduce((s, j) => s + Number(j.payout || 0), 0);
-      return { label: w, jobs, earnings };
-    });
-    return series;
-  }, [myApps, reportRange]);
-
-  // Mini bar chart without external deps
-  const MiniBar = ({ data, metric }) => {
-    const max = Math.max(1, ...data.map(d => d[metric] || 0));
-    return (
-      <div className="w-full">
-        <div className="flex items-end gap-2 h-32">
-          {data.map((d, i) => {
-            const value = d[metric] || 0;
-            const height = Math.max(4, Math.round((value / max) * 112)); // 28 * 4px
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center">
-                <div
-                  className="w-full bg-primary-500/80 dark:bg-primary-400/80 rounded-t"
-                  style={{ height }}
-                  title={`${d.label}: ${value}`}
-                />
-                <div className="mt-2 text-[10px] text-base-content opacity-60 truncate w-full text-center">
-                  {reportRange === 'weekly' ? d.label.slice(5) : d.label}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  /* Dropdown options */
-  const categories = useMemo(() => {
-    const set = new Set(['All']);
-    jobData.forEach((j) => j?.category && set.add(j.category));
-    return Array.from(set);
-  }, [jobData]);
-
-  const baseLocations = useMemo(() => {
-    const set = new Set(['All']);
-    jobData.forEach((j) => j?.location && set.add(j.location));
-    return Array.from(set);
-  }, [jobData]);
-
-  // Ensure Address Line 1 is present in the list so <select value> can show it
-  const locations = useMemo(() => {
-    const list = [...baseLocations];
-    const addr1 = (profile?.address1 || '').trim();
-    if (addr1 && !list.includes(addr1)) list.splice(1, 0, addr1);
-    return list;
-  }, [baseLocations, profile?.address1]);
-
-  /* Filtering */
   const filteredJobs = useMemo(() => {
-    const selectedLoc = (filters.location || '').trim();
-    const isAddr1Selected =
-      selectedLoc &&
-      profile?.address1 &&
-      selectedLoc.toLowerCase() === profile.address1.toLowerCase();
+    return jobData.filter((job) => (job.status || 'active').toLowerCase() === 'active');
+  }, [jobData]);
 
-    const addrTokens = isAddr1Selected ? tokens(profile.address1) : [];
-
-    return jobData
-      .filter((job) => (job.status || 'active').toLowerCase() === 'active')
-      .filter((job) => {
-        // Category
-        const matchCategory =
-          filters.category === 'All' || job.category === filters.category;
-
-        // Location
-        let matchLocation = true;
-        if (filters.location !== 'All') {
-          if (isAddr1Selected) {
-            // partial/nearby match using tokens from Address Line 1
-            const haystack = [
-              job.location,
-              job.city,
-              job.address1,
-              job.address2,
-            ]
-              .filter(Boolean)
-              .join(' ')
-              .toLowerCase();
-
-            matchLocation = addrTokens.some((t) => haystack.includes(t));
-          } else {
-            // exact dropdown match (case-insensitive)
-            matchLocation =
-              (job.location || '').trim().toLowerCase() === selectedLoc.toLowerCase();
-          }
-        }
-
-        // Budget
-        const b = Number(job.budget) || 0;
-        const matchBudget =
-          filters.budget === 'All' ||
-          (filters.budget === '0-500' && b <= 500) ||
-          (filters.budget === '501-1000' && b > 500 && b <= 1000) ||
-          (filters.budget === '1001+' && b > 1000);
-
-        // Applicants
-        const apps = job.applicants?.length || 0;
-        const matchApplicants =
-          filters.applicants === 'All' ||
-          (filters.applicants === 'With' && apps > 0) ||
-          (filters.applicants === 'None' && apps === 0);
-
-        // Search
-        const q = (filters.search || '').trim().toLowerCase();
-        const matchSearch = !q || (job.title || '').toLowerCase().includes(q);
-
-        return (
-          matchCategory &&
-          matchLocation &&
-          matchBudget &&
-          matchApplicants &&
-          matchSearch
-        );
-      });
-  }, [jobData, filters, profile?.address1]);
-
-  // Pagination logic
   const pageCount = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
   const paginatedJobs = useMemo(() => {
     const startIndex = (page - 1) * JOBS_PER_PAGE;
     return filteredJobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
-  }, [filteredJobs, page, JOBS_PER_PAGE]);
+  }, [filteredJobs, page]);
 
-  const handleChange = (type, value) => {
-    setFilters((prev) => ({ ...prev, [type]: value }));
-    setPage(1); // Reset to first page when filters change
-  };
-
-  /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen page-bg">
-      {/* Hero Section - white in light mode, gradient in dark */}
-      <div className="bg-white dark:bg-gradient-to-br dark:from-gray-600 dark:to-gray-800 py-12 my-5 rounded-md border border-base-300/50 dark:border-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="text-white font-['Inter']">
+        <div className="p-8">
           {/* Welcome Card */}
-          <div className="text-center mb-12 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
-              Welcome back, Worker! 👋
-            </h1>
-            <p className="text-xl text-muted max-w-2xl mx-auto">
-              Ready to find your next job opportunity? Discover amazing local jobs that match your skills.
-            </p>
-          </div>
-
-          {/* Enhanced Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted mb-1">Active Jobs</p>
-                  <p className="text-3xl font-heading font-bold text-base-content">{kpis.activeCount}</p>
-                </div>
-                <div className="p-3 bg-primary/20 rounded-full">
-                  <i className="fas fa-briefcase text-primary text-xl" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up" style={{ animationDelay: '0.05s' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted mb-1">Completed (Total)</p>
-                  <p className="text-3xl font-heading font-bold text-base-content">{kpis.completedCount}</p>
-                </div>
-                <div className="p-3 bg-primary/20 rounded-full">
-                  <i className="fas fa-check-circle text-primary text-xl" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted mb-1">Earnings</p>
-                  <p className="text-3xl font-heading font-bold text-base-content">৳{kpis.totalEarnings}</p>
-                </div>
-                <div className="p-3 bg-accent/20 rounded-full">
-                  <i className="fas fa-coins text-accent text-xl" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-base-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-base-300 animate-slide-up" style={{ animationDelay: '0.15s' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted mb-1">Response Rate</p>
-                  <p className="text-3xl font-heading font-bold text-base-content">{kpis.responseRate}%</p>
-                </div>
-                <div className="p-3 bg-secondary/20 rounded-full">
-                  <i className="fas fa-reply text-secondary text-xl" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Reports */}
-          <div className="bg-base-200 rounded-xl p-6 shadow-sm border border-base-300">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-heading font-semibold text-base-content">Performance Report</h3>
-                <p className="text-sm text-base-content opacity-70">Overview of completed jobs and earnings</p>
-              </div>
-              <div className="join">
-                <button className={`join-item btn btn-sm ${reportRange === 'weekly' ? 'btn-primary text-white' : ''}`} onClick={() => setReportRange('weekly')}>Weekly</button>
-                <button className={`join-item btn btn-sm ${reportRange === 'monthly' ? 'btn-primary text-white' : ''}`} onClick={() => setReportRange('monthly')}>Monthly</button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <p className="text-sm font-medium text-base-content opacity-80 mb-2">Jobs Completed</p>
-                {report.length === 0 ? (
-                  <div className="h-32 flex items-center justify-center text-base-content opacity-60">No data</div>
-                ) : (
-                  <MiniBar data={report} metric="jobs" />
-                )}
+          <section className="bg-[#151515] border border-white/5 rounded-[1.5rem] p-8 mb-8 flex items-center justify-between gap-8 relative overflow-hidden">
+            <div className="absolute top-[-50%] right-[-10%] w-96 h-96 bg-[#10b77f]/10 rounded-full blur-[120px] pointer-events-none"></div>
+            
+            <div className="flex items-center gap-6 relative z-10">
+              <div className="h-20 w-20 rounded-full border border-[#10b77f]/20 p-1">
+                <div className="h-full w-full rounded-full bg-cover bg-center" style={{ backgroundImage: `url(${user?.photoURL || 'https://via.placeholder.com/100'})` }}></div>
               </div>
               <div>
-                <p className="text-sm font-medium text-base-content opacity-80 mb-2">Earnings</p>
-                {report.length === 0 ? (
-                  <div className="h-32 flex items-center justify-center text-base-content opacity-60">No data</div>
-                ) : (
-                  <MiniBar data={report} metric="earnings" />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <PageContainer>
-
-        {/* Quick Action Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <Link to="/edit-profile" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-user-edit text-blue-600 dark:text-blue-400 text-xl"></i>
-              </div>
-              <h3 className="font-heading font-semibold text-base-content mb-1">Edit Profile</h3>
-              <p className="text-sm text-base-content opacity-70">Update your info</p>
-            </div>
-          </Link>
-          
-          <Link to="/jobs" className="group bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-search text-white text-xl"></i>
-              </div>
-              <h3 className="font-heading font-semibold text-white mb-1">Browse Jobs</h3>
-              <p className="text-sm text-white/80">Find opportunities</p>
-            </div>
-          </Link>
-          
-          <Link to="/applications" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-file-alt text-accent text-xl"></i>
-              </div>
-              <h3 className="font-heading font-semibold text-base-content mb-1">Applications</h3>
-              <p className="text-sm text-base-content opacity-70">Track your apps</p>
-            </div>
-          </Link>
-          
-          <Link to="/orders" className="group bg-base-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-base-300 hover:border-primary">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <i className="fas fa-shopping-bag text-secondary text-xl"></i>
-              </div>
-              <h3 className="font-heading font-semibold text-base-content mb-1">My Orders</h3>
-              <p className="text-sm text-base-content opacity-70">View your work</p>
-            </div>
-          </Link>
-        </div>
-
-      {/* Availability Toggle */}
-      <div className="mb-10">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" className="toggle toggle-success" />
-          <span className="text-sm text-base-content opacity-80 font-medium">Available for work</span>
-        </label>
-      </div>
-
-      {/* Job Recommendations */}
-      <div className="mb-10">
-        <JobRecommendations limit={5} />
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-base-content mb-4">📢 New Jobs Near You</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Category</label>
-            <select
-              className="select select-bordered w-full"
-              value={filters.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Location (defaults to Address Line 1) */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Location</label>
-            <select
-              className="select select-bordered w-full"
-              value={filters.location}
-              onChange={(e) => handleChange('location', e.target.value)}
-            >
-              {locations.map((loc) => (
-                <option key={loc} value={loc}>{loc}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Budget */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Budget</label>
-            <select
-              className="select select-bordered w-full"
-              value={filters.budget}
-              onChange={(e) => handleChange('budget', e.target.value)}
-            >
-              <option value="All">All Budgets</option>
-              <option value="0-500">৳0–500</option>
-              <option value="501-1000">৳501–1000</option>
-              <option value="1001+">৳1001+</option>
-            </select>
-          </div>
-
-          {/* Applicants */}
-          <div>
-            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Applicants</label>
-            <select
-              className="select select-bordered w-full"
-              value={filters.applicants}
-              onChange={(e) => handleChange('applicants', e.target.value)}
-            >
-              <option value="All">All Jobs</option>
-              <option value="With">With Applicants</option>
-              <option value="None">No Applicants</option>
-            </select>
-          </div>
-
-          {/* Search */}
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Search by Title</label>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="input input-bordered w-full"
-              value={filters.search}
-              onChange={(e) => handleChange('search', e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Enhanced Jobs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {paginatedJobs.map((job, index) => {
-            const jobId =
-              (typeof job._id === 'string' && job._id) ||
-              (job._id && job._id.$oid) ||
-              job.id;
-
-            return (
-              <div 
-                key={jobId} 
-                className="group bg-base-200 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-base-300 hover:border-primary animate-slide-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                {/* Image with Overlay */}
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
-                    alt={job.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-primary-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                      {job.category}
-                    </span>
+                <h2 className="text-2xl font-bold mb-1">Welcome back, {user?.displayName || 'Worker'}!</h2>
+                <div className="flex items-center gap-3 text-white/40 text-xs mb-3">
+                  <span>{profile?.category || 'Expert Provider'}</span>
+                  <span className="w-1 h-1 bg-white/20 rounded-full"></span>
+                  <span>{profile?.location || profile?.city || 'Dhaka, Bangladesh'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#10b77f]/20 text-[#10b77f] text-[10px] font-bold uppercase px-2 py-0.5 rounded">Top Rated</span>
+                  <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
+                    <MdStar className="text-xs" /> 4.9 (120 reviews)
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                
-                {/* Content */}
-                <div className="p-6">
-                  <h3 className="text-xl font-heading font-bold text-base-content mb-3 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                    {job.title}
-                  </h3>
-                  
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center text-base-content opacity-80">
-                      <i className="fas fa-map-marker-alt w-4 h-4 mr-3 text-primary-500"></i>
-                      <span className="text-sm">{job.location}</span>
-                    </div>
-                    <div className="flex items-center text-base-content opacity-80">
-                      <i className="fas fa-tag w-4 h-4 mr-3 text-primary-500"></i>
-                      <span className="text-sm">{job.category}</span>
-                    </div>
-                    <div className="flex items-center text-base-content opacity-60">
-                      <i className="fas fa-calendar w-4 h-4 mr-3 text-primary-500"></i>
-                      <span className="text-sm">Posted: {job.date}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-heading font-bold text-primary-600 dark:text-primary-400">৳{job.budget}</span>
-                      {job.applicants?.length > 0 && (
-                        <span className="text-sm text-base-content opacity-60">
-                          {job.applicants.length} applicants
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              </div>
+            </div>
 
-                  {job.applicants?.length > 0 && (
-                    <div className="mb-6 bg-base-300 p-4 rounded-xl border border-base-300">
-                      <p className="text-sm font-semibold text-base-content opacity-80 mb-3 flex items-center">
-                        <i className="fas fa-users w-4 h-4 mr-2 text-primary-500"></i>
-                        Recent Applicants:
-                      </p>
-                      <ul className="space-y-2">
-                        {job.applicants.slice(0, 2).map((a, i) => (
-                          <li key={i} className="flex justify-between items-center text-sm">
-                            <span className="text-base-content opacity-80 font-medium">✅ {a.name}</span>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-primary-600 dark:text-primary-400 font-semibold">৳{a.price}</span>
-                              <div className="flex items-center">
-                                <i className="fas fa-star text-yellow-400 w-3 h-3 mr-1"></i>
-                                <span className="text-base-content opacity-70">{a.rating}</span>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+            <div className="bg-white/[0.03] backdrop-blur-md p-5 rounded-2xl border border-white/5 flex items-center gap-4 relative z-10">
+              <div className="text-right">
+                <p className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Availability Status</p>
+                <p className="text-[#10b77f] text-xs font-bold mt-0.5">{isAvailable ? 'Open for new jobs' : 'Currently Busy'}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={isAvailable} onChange={() => setIsAvailable(!isAvailable)} />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#10b77f]"></div>
+              </label>
+            </div>
+          </section>
 
-                  {/* Action Button - visible with black text */}
-                  <Link 
-                    to={`/jobs/${jobId}`} 
-                    className="w-full bg-base-200 border-2 border-base-300 text-black dark:text-white hover:bg-base-300 font-heading font-semibold py-3 px-6 rounded-xl transition-all duration-200 group-hover:shadow-lg flex items-center justify-center space-x-2"
+          {/* Stats Grid */}
+          <section className="grid grid-cols-4 gap-4 mb-8">
+            <div className="bg-[#151515] border border-white/5 rounded-2xl p-5 hover:border-[#10b77f]/30 transition-all group">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Active Jobs</span>
+                <MdAssignment className="text-[#10b77f] text-xl" />
+              </div>
+              <p className="text-2xl font-bold mb-1">{kpis.activeCount.toString().padStart(2, '0')}</p>
+              <p className="text-[10px] text-[#10b77f] font-bold flex items-center gap-1">
+                <span>↑</span> +2 this week
+              </p>
+            </div>
+            
+            <div className="bg-[#151515] border border-white/5 rounded-2xl p-5 hover:border-[#10b77f]/30 transition-all group">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Completed Jobs</span>
+                <MdTaskAlt className="text-[#10b77f] text-xl" />
+              </div>
+              <p className="text-2xl font-bold mb-1">{kpis.completedCount}</p>
+              <p className="text-[10px] text-[#10b77f] font-bold flex items-center gap-1">
+                <span>↑</span> +12% vs last month
+              </p>
+            </div>
+
+            <div className="bg-[#151515] border border-white/5 rounded-2xl p-5 hover:border-[#10b77f]/30 transition-all group">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Total Earnings</span>
+                <MdAccountBalanceWallet className="text-[#10b77f] text-xl" />
+              </div>
+              <p className="text-2xl font-bold mb-1">৳ {kpis.totalEarnings.toLocaleString()}</p>
+              <p className="text-[10px] text-[#10b77f] font-bold flex items-center gap-1">
+                <span>↑</span> +8% increase
+              </p>
+            </div>
+
+            <div className="bg-[#151515] border border-white/5 rounded-2xl p-5 hover:border-[#10b77f]/30 transition-all group">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Response Rate</span>
+                <MdSpeed className="text-[#10b77f] text-xl" />
+              </div>
+              <p className="text-2xl font-bold mb-1">{kpis.responseRate}%</p>
+              <p className="text-[10px] text-white/20 font-bold uppercase tracking-wider">No change</p>
+            </div>
+          </section>
+
+          {/* Performance and Quick Actions */}
+          <section className="grid grid-cols-12 gap-6 mb-12">
+            <div className="col-span-8 bg-[#151515] border border-white/5 rounded-[1.5rem] p-8 relative">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-bold">Earnings Performance</h3>
+                <div className="bg-white/[0.03] p-1 rounded-xl flex border border-white/5">
+                  <button 
+                    onClick={() => setReportRange('weekly')}
+                    className={`px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all ${reportRange === 'weekly' ? 'bg-[#10b77f] text-white' : 'text-white/40'}`}
                   >
-                    <span>View Details</span>
-                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    Weekly
+                  </button>
+                  <button 
+                    onClick={() => setReportRange('monthly')}
+                    className={`px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all ${reportRange === 'monthly' ? 'bg-[#10b77f] text-white' : 'text-white/40'}`}
+                  >
+                    Monthly
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-end justify-between h-36 gap-4 px-2">
+                {report.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center group">
+                    <div className="w-full bg-[#10b77f]/10 rounded-t-lg transition-all group-hover:bg-[#10b77f]/30 relative" style={{ height: `${d.value}%` }}>
+                      <div className="absolute inset-x-0 top-0 h-1 bg-[#10b77f] rounded-t-lg opacity-40"></div>
+                    </div>
+                    <span className="mt-4 text-[9px] font-bold text-white/20 uppercase tracking-widest">{d.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="col-span-4 grid grid-cols-2 gap-4">
+              <Link to="/edit-profile" className="bg-[#151515] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 hover:bg-[#10b77f]/5 transition-all group">
+                <div className="p-3 rounded-full bg-[#10b77f]/10 text-[#10b77f] group-hover:scale-110 transition-transform">
+                  <MdPerson className="text-xl" />
+                </div>
+                <span className="text-[11px] font-bold text-white/70">Edit Profile</span>
+              </Link>
+              <Link to="/jobs" className="bg-[#151515] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 hover:bg-[#10b77f]/5 transition-all group">
+                <div className="p-3 rounded-full bg-[#10b77f]/10 text-[#10b77f] group-hover:scale-110 transition-transform">
+                  <MdSearch className="text-xl" />
+                </div>
+                <span className="text-[11px] font-bold text-white/70">Browse Jobs</span>
+              </Link>
+              <Link to="/dashboard/applications" className="bg-[#151515] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 hover:bg-[#10b77f]/5 transition-all group">
+                <div className="p-3 rounded-full bg-[#10b77f]/10 text-[#10b77f] group-hover:scale-110 transition-transform">
+                  <MdAssignmentTurnedIn className="text-xl" />
+                </div>
+                <span className="text-[11px] font-bold text-white/70">Applications</span>
+              </Link>
+              <Link to="/dashboard/orders" className="bg-[#151515] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 hover:bg-[#10b77f]/5 transition-all group">
+                <div className="p-3 rounded-full bg-[#10b77f]/10 text-[#10b77f] group-hover:scale-110 transition-transform">
+                  <MdShoppingBag className="text-xl" />
+                </div>
+                <span className="text-[11px] font-bold text-white/70">My Orders</span>
+              </Link>
+            </div>
+          </section>
+
+          {/* Recommended Jobs */}
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Recommended Jobs</h3>
+              <Link to="/jobs" className="text-[#10b77f] text-xs font-bold hover:underline">View All Jobs</Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {paginatedJobs.map((job) => {
+                const jobId = job._id?.$oid || job._id || job.id;
+                return (
+                <div key={jobId} className="bg-[#151515] border border-white/5 rounded-[1.5rem] p-6 hover:border-[#10b77f]/20 transition-all flex flex-col h-full group">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="bg-[#10b77f]/10 text-[#10b77f] text-[9px] font-bold uppercase px-2 py-0.5 rounded tracking-wider">{job.category}</span>
+                    <span className="text-lg font-black text-white">৳ {job.budget?.toLocaleString() || job.budget}</span>
+                  </div>
+                  <h4 className="text-base font-bold mb-6 flex-1 group-hover:text-[#10b77f] transition-colors">{job.title}</h4>
+                  <div className="flex items-center gap-4 text-white/30 text-[10px] mb-6">
+                    <div className="flex items-center gap-1.5">
+                      <MdLocationOn className="text-xs" /> {job.location}
+                    </div>
+                    <div className="flex items-center gap-1.5 border-x border-white/5 px-4 h-3">
+                      <MdGroup className="text-xs" /> {job.applicants?.length || 0} applicants
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MdSchedule className="text-xs" /> 2h ago
+                    </div>
+                  </div>
+                  <Link to={`/jobs/${jobId}`} className="w-full bg-[#10b77f] text-white font-black py-3 rounded-xl text-center hover:bg-[#0da06f] transition-all text-xs uppercase tracking-widest">
+                    Apply Now
                   </Link>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Pagination */}
-        {pageCount > 1 && (
-          <div className="flex justify-center mt-8">
-            <div className="join">
-              <button
-                className="join-item btn"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                «
-              </button>
-              {Array.from({ length: pageCount }, (_, i) => i + 1)
-                .filter(p => {
-                  // Show first, last, current, and neighbors
-                  return p === 1 || p === pageCount || (p >= page - 1 && p <= page + 1);
-                })
-                .map((p, idx, arr) => {
-                  // Add ellipsis if there's a gap
-                  const prev = arr[idx - 1];
-                  const showEllipsis = prev && p - prev > 1;
-                  return (
-                    <React.Fragment key={p}>
-                      {showEllipsis && (
-                        <button className="join-item btn btn-disabled" disabled>
-                          ...
-                        </button>
-                      )}
-                      <button
-                        className={`join-item btn ${page === p ? 'btn-active' : ''}`}
-                        onClick={() => setPage(p)}
-                      >
-                        {p}
-                      </button>
-                    </React.Fragment>
-                  );
-                })}
-              <button
-                className="join-item btn"
-                onClick={() => setPage(p => Math.min(pageCount, p + 1))}
-                disabled={page === pageCount}
-              >
-                »
-              </button>
+                );
+              })}
             </div>
-          </div>
-        )}
+
+            {/* Pagination Controls */}
+            {pageCount > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 disabled:opacity-20"
+                  disabled={page === 1}
+                >
+                  <MdChevronLeft className="text-xl" />
+                </button>
+                <div className="flex items-center gap-1.5">
+                  {[...Array(pageCount)].map((_, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => setPage(i + 1)}
+                      className={`h-8 w-8 text-xs font-bold rounded-full transition-all ${page === i + 1 ? 'bg-[#10b77f] text-white' : 'text-white/30 hover:text-white'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 disabled:opacity-20"
+                  disabled={page === pageCount}
+                >
+                  <MdChevronRight className="text-xl" />
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Footer */}
+          <footer className="pt-8 border-t border-white/5 flex items-center justify-between text-white/20 text-[9px] uppercase tracking-widest font-bold">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 text-[#10b77f]">
+                <MdConstruction className="text-xs" />
+                <span>Hire Mistri Worker Portal</span>
+              </div>
+              <div className="flex items-center gap-6 lowercase">
+                <Link to="/support" className="hover:text-white">Support Center</Link>
+                <Link to="/terms" className="hover:text-white">Terms of Service</Link>
+                <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
+                <Link to="/trust" className="hover:text-white">Trust & Safety</Link>
+              </div>
+            </div>
+            <span>© 2024 Hire Mistri Ltd.</span>
+          </footer>
         </div>
-      </PageContainer>
     </div>
   );
 }

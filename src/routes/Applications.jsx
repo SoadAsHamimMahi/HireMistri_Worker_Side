@@ -92,8 +92,7 @@ export default function Applications() {
         });
         const clientData = publicRes.data || {};
         const info = {
-          name: clientData.displayName || 
-                [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') || 'Client',
+          name: [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') || clientData.displayName || 'Client',
           phone: contactRes.data.phone || '',
           email: contactRes.data.email || ''
         };
@@ -615,7 +614,7 @@ export default function Applications() {
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-base-content/80">
                         <span className="flex items-center gap-1.5 min-w-0" title={app.location || undefined}>
                           <MapPinIcon className="w-4 h-4 text-primary shrink-0" />
-                          <span className="truncate max-w-[200px] sm:max-w-none">{app.location || 'N/A'}</span>
+                          <span className="truncate">{app.location || 'N/A'}</span>
                         </span>
                         {app.category && (
                           <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
@@ -821,7 +820,7 @@ export default function Applications() {
       {showEditModal && editingApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleEditCancel}></div>
-          <div className="relative bg-base-200 rounded-xl shadow-2xl max-w-2xl w-full p-6">
+          <div className="relative bg-base-200 rounded-xl shadow-2xl w-full p-6">
             <h3 className="text-xl font-bold mb-4 text-base-content">Edit Proposal</h3>
             <p className="text-sm text-base-content opacity-70 mb-4">
               Job: <strong>{editingApplication.title || 'Untitled Job'}</strong>
@@ -876,7 +875,7 @@ export default function Applications() {
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleCancelCancel}></div>
-          <div className="relative bg-base-200 rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="relative bg-base-200 rounded-xl shadow-2xl w-full p-6">
             <h3 className="text-xl font-bold mb-4 text-base-content">Withdraw Application</h3>
             <p className="text-base-content opacity-70 mb-6">
               Are you sure you want to withdraw your application for <strong>"{cancellingApplicationTitle}"</strong>? 

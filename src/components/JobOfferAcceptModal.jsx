@@ -75,7 +75,7 @@ export default function JobOfferAcceptModal({
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-2xl">
+      <div className="modal-box">
         <h3 className="font-bold text-lg mb-4">
           <i className="fas fa-briefcase mr-2 text-primary"></i>
           Accept Job Offer: {job.title}

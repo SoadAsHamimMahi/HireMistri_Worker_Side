@@ -657,7 +657,7 @@ export default function Messages({
             if (item.type === 'separator') {
               return (
                 <div key={item.key} className="flex items-center justify-center my-4">
-                  <div className="divider w-full max-w-xs">
+                  <div className="divider w-full">
                     <span className="text-xs text-base-content opacity-60 px-2">{item.date}</span>
                   </div>
                 </div>
@@ -673,7 +673,7 @@ export default function Messages({
             if (isSystemMessage) {
               return (
                 <div key={item.key} className="flex items-center justify-center my-2">
-                  <div className="bg-base-200 border border-base-300 rounded-lg px-4 py-2 max-w-[85%]">
+                  <div className="bg-base-200 border border-base-300 rounded-lg px-4 py-2 w-[85%]">
                     <div className="flex items-center gap-2">
                       <i className="fas fa-info-circle text-primary"></i>
                       <p className="text-sm text-base-content/80 whitespace-pre-wrap break-words">
@@ -706,7 +706,7 @@ export default function Messages({
                 )}
                 {!showAvatar && !isSender && <div className="w-8"></div>}
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
+                  className={`rounded-lg p-3 ${
                     isSender
                       ? 'bg-primary text-primary-content'
                       : 'bg-base-100 text-base-content border border-base-300'

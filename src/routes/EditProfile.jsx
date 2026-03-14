@@ -108,7 +108,6 @@ export default function WorkerProfile() {
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
-    displayName: "",
     phone: "",
     workExperience: "",
     experienceYears: "",
@@ -136,7 +135,7 @@ export default function WorkerProfile() {
   const serviceCategories = ["Plumber", "Electrician", "Carpenter", "Painter", "Mechanic", "AC Repair", "Appliance Repair", "Mason", "Welder", "Other"];
   const languageOptions = ["Bengali", "English", "Hindi", "Urdu", "Arabic"];
 
-  const requiredFields = ["firstName", "lastName", "displayName", "email", "phone", "workExperience"];
+  const requiredFields = ["firstName", "lastName", "email", "phone", "workExperience"];
   const isValid = useMemo(() => {
     const basicValid = requiredFields.every((f) => String(profile[f] || "").trim() !== "");
     const hasPhoto = !!profile.profileCover;
@@ -313,7 +312,7 @@ export default function WorkerProfile() {
         // Update shared profile context immediately so Navbar shows new name
         setSharedProfile(prev => (prev ? { ...prev, ...updated } : updated));
         // Sync name to Firebase Auth so it updates everywhere (Navbar, etc.)
-        const newName = updated.displayName || [updated.firstName, updated.lastName].filter(Boolean).join(' ').trim();
+        const newName = [updated.firstName, updated.lastName].filter(Boolean).join(' ').trim();
         if (newName && updateProfileDisplayName) {
           try {
             await updateProfileDisplayName(newName);
@@ -341,7 +340,6 @@ export default function WorkerProfile() {
     setProfile({
       firstName: "",
       lastName: "",
-      displayName: "",
       phone: "",
       workExperience: "",
       experienceYears: "",
@@ -426,7 +424,7 @@ export default function WorkerProfile() {
   };
 
   /* ------------------------------ Derived fields ----------------------------- */
-  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || profile.displayName || "—";
+  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "—";
   const secondaryLine = profile.phone || uid || "—";
   const addressPretty = [profile.address1, profile.address2, profile.city, profile.country, profile.zip]
     .filter(Boolean).join(", ");
@@ -446,12 +444,12 @@ export default function WorkerProfile() {
 
       {/* Enhanced Header */}
       <div className="bg-gradient-to-r from-[#66BB6A] to-[#1E88E5] py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
               My Profile
             </h1>
-            <p className="text-xl text-base-content opacity-80 max-w-2xl mx-auto">
+            <p className="text-xl text-base-content opacity-80 mx-auto">
               Manage your professional information and showcase your skills to potential employers.
             </p>
           </div>
@@ -1121,7 +1119,7 @@ export default function WorkerProfile() {
 
               {/* ========================= CHANGE PASSWORD ========================= */}
               {tab === "password" && (
-                <div className="space-y-6 max-w-lg">
+                <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-base-content">Change Password</h3>
                   <div className="grid gap-4">
                     <div>

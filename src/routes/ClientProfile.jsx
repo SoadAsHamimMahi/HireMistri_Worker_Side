@@ -117,7 +117,7 @@ export default function ClientProfile() {
   if (loading) {
     return (
       <div className="min-h-screen page-bg">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="mx-auto p-6">
           <div className="flex items-center gap-3 mb-6">
             <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
               <i className="fas fa-arrow-left mr-2"></i>Back
@@ -137,7 +137,7 @@ export default function ClientProfile() {
   if (error) {
     return (
       <div className="min-h-screen page-bg">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="mx-auto p-6">
           <button className="btn btn-ghost btn-sm mb-6" onClick={() => navigate(-1)}>
             <i className="fas fa-arrow-left mr-2"></i>Back
           </button>
@@ -156,7 +156,7 @@ export default function ClientProfile() {
   if (!profile) {
     return (
       <div className="min-h-screen page-bg">
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="mx-auto p-6">
           <button className="btn btn-ghost btn-sm mb-6" onClick={() => navigate(-1)}>
             <i className="fas fa-arrow-left mr-2"></i>Back
           </button>
@@ -171,7 +171,7 @@ export default function ClientProfile() {
 
   return (
     <div className="min-h-screen page-bg">
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="mx-auto p-6">
         <div className="flex items-center justify-between gap-3 mb-6">
           <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
             <i className="fas fa-arrow-left mr-2"></i>Back
@@ -253,11 +253,11 @@ export default function ClientProfile() {
                     )}
                   </div>
                 ) : user ? (
-                  <p className="text-xs text-muted max-w-[180px]">
+                  <p className="text-xs text-muted ">
                     Contact details are shared after they accept your application.
                   </p>
                 ) : (
-                  <p className="text-xs text-muted max-w-[180px]">
+                  <p className="text-xs text-muted ">
                     Sign in and get your application accepted to view contact details.
                   </p>
                 )}
