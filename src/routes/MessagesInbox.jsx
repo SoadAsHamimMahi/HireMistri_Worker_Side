@@ -89,9 +89,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
         preloadMessages(conversationId);
       }
       // On mobile, hide conversations list when conversation is selected
-      if (window.innerWidth < 768) {
-        setShowMobileConversations(false);
-      }
+      setShowMobileConversations(false);
     } else if (clientId) {
       // Generate conversation ID for new conversation
       const ids = [clientId, user.uid].sort();
@@ -233,9 +231,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
   const handleConversationClick = (conv) => {
     setSelectedConversationId(conv.conversationId);
     navigate(`/${basePath}/${conv.conversationId}`);
-    if (window.innerWidth < 768) {
-      setShowMobileConversations(false);
-    }
+    setShowMobileConversations(false);
   };
 
   const selectedConversation = conversations.find(c => c.conversationId === conversationId);
@@ -243,16 +239,16 @@ export default function MessagesInbox({ basePath = 'messages' }) {
   const selectedJobDetail = selectedConversation?.jobId ? jobDetails[selectedConversation.jobId] : null;
 
   return (
-    <div className="min-h-screen page-bg">
+    <div className="min-h-screen text-white">
       <div className="flex h-screen">
         {/* Conversations Sidebar */}
         <div className={`${
           showMobileConversations ? 'flex' : 'hidden'
-        } md:flex flex-col w-full md:w-80 lg:w-96 border-r border-base-300 bg-base-200`}>
+        } md:flex flex-col w-full md:w-80 lg:w-96 border-r border-white/5 bg-[#0f0f0f]`}>
           {/* Header */}
-          <div className="p-4 border-b border-base-300 bg-base-100">
+          <div className="p-4 border-b border-white/5 bg-[#0a0a0a]">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-base-content">Messages</h1>
+              <h1 className="text-2xl font-bold text-white">Messages</h1>
               <Link
                 to="/browse-clients"
                 className="btn btn-sm btn-primary"
@@ -265,7 +261,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
 
             {/* Search */}
             <div className="relative mb-3">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content opacity-50" />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
               <input
                 type="text"
                 placeholder="Search conversations..."
@@ -295,17 +291,17 @@ export default function MessagesInbox({ basePath = 'messages' }) {
             {loadingConversations ? (
               <div className="p-4 text-center">
                 <span className="loading loading-spinner loading-md text-primary"></span>
-                <p className="text-sm text-base-content opacity-70 mt-2">Loading conversations...</p>
+                <p className="text-sm text-white/60 mt-2">Loading conversations...</p>
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-4 text-center text-base-content opacity-70">
+              <div className="p-4 text-center text-white/60">
                 <i className="fas fa-inbox text-4xl mb-2 opacity-30"></i>
                 <p className="text-sm">
                   {searchTerm || filter !== 'all' ? 'No conversations match your filters' : 'No conversations yet'}
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-base-300">
+              <div className="divide-y divide-white/5">
                 {filteredConversations.map((conv) => {
                   const profile = userProfiles[conv.clientId];
                   const jobDetail = jobDetails[conv.jobId];
@@ -316,7 +312,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                     <button
                       key={conv.conversationId}
                       onClick={() => handleConversationClick(conv)}
-                      className={`w-full p-4 text-left hover:bg-base-300 transition-colors ${
+                      className={`w-full p-4 text-left hover:bg-white/5 transition-colors ${
                         isSelected ? 'bg-primary/10 border-l-4 border-l-primary' : ''
                       }`}
                     >
@@ -344,7 +340,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold text-sm text-base-content truncate">
+                              <p className="font-semibold text-sm text-white truncate">
                                 {conv.clientName || 'Client'}
                               </p>
                               {profile?.emailVerified && (
@@ -353,7 +349,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                                 </div>
                               )}
                             </div>
-                            <span className="text-xs text-base-content opacity-60 flex-shrink-0 ml-2">
+                            <span className="text-xs text-white/50 flex-shrink-0 ml-2">
                               {formatRelativeTime(conv.lastMessageCreatedAt)}
                             </span>
                           </div>
@@ -370,7 +366,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                                         <i className="fas fa-briefcase mr-1"></i>
                                         New Job Offer
                                       </span>
-                                      <span className="text-xs font-semibold text-base-content truncate">
+                                      <span className="text-xs font-semibold text-white truncate">
                                         {jobOffer.title}
                                       </span>
                                       {jobOffer.budget && (
@@ -409,11 +405,11 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                                     <i className="fas fa-user-tie mr-1"></i>
                                     Request
                                   </span>
-                                  <span className="text-xs font-semibold text-base-content truncate">
+                                  <span className="text-xs font-semibold text-white truncate">
                                     {workerRequest.title}
                                   </span>
                                   {workerRequest.proposedPrice && (
-                                    <span className="text-xs text-base-content/70">
+                                    <span className="text-xs text-white/70">
                                       {workerRequest.proposedPrice} {workerRequest.currency || 'BDT'}
                                     </span>
                                   )}
@@ -422,7 +418,7 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                             </div>
                           )}
 
-                          <p className="text-xs text-base-content opacity-70 truncate">
+                          <p className="text-xs text-white/60 truncate">
                             {conv.lastMessageText || 'No messages yet'}
                           </p>
                         </div>
@@ -471,11 +467,11 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                     </div>
                   )}
                   <div>
-                    <h3 className="font-semibold text-base-content">
+                    <h3 className="font-semibold text-white">
                       {selectedConversation?.clientName || 'Client'}
                     </h3>
                     {selectedClientProfile && (
-                      <p className="text-xs text-base-content opacity-70">
+                      <p className="text-xs text-white/60">
                         {[selectedClientProfile.city, selectedClientProfile.country].filter(Boolean).join(', ') || 'Location not set'}
                       </p>
                     )}
@@ -498,9 +494,9 @@ export default function MessagesInbox({ basePath = 'messages' }) {
           ) : (
             <div className="flex-1 flex items-center justify-center bg-base-200">
               <div className="text-center p-8">
-                <i className="fas fa-comments text-6xl text-base-content opacity-30 mb-4"></i>
-                <h2 className="text-xl font-semibold text-base-content mb-2">Select a conversation</h2>
-                <p className="text-base-content opacity-70 mb-4">
+                <i className="fas fa-comments text-6xl text-white opacity-30 mb-4"></i>
+                <h2 className="text-xl font-semibold text-white mb-2">Select a conversation</h2>
+                <p className="text-white/60 mb-4">
                   Choose a conversation from the sidebar to start messaging
                 </p>
                 <Link to="/browse-clients" className="btn btn-primary">

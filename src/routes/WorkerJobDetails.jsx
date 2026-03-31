@@ -179,6 +179,13 @@ export default function WorkerJobDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authReady, uid, id]);
 
+  // Initialize worker location from profile if GPS not available
+  useEffect(() => {
+    if (!workerLocation && ctx?.profile?.locationGeo) {
+      setWorkerLocation(ctx.profile.locationGeo);
+    }
+  }, [ctx?.profile?.locationGeo, workerLocation]);
+
   // submit proposal → POST /api/applications
   const submitProposal = async () => {
     if (!authReady) return; // wait until we know
@@ -377,8 +384,15 @@ export default function WorkerJobDetails() {
       toast.error('Application details are missing.');
       return;
     }
+    const parseMoney = (v) => {
+      if (v == null || v === '') return NaN;
+      if (typeof v === 'number' && Number.isFinite(v)) return v;
+      if (typeof v === 'object' && v !== null && '$numberDecimal' in v) return parseFloat(v.$numberDecimal);
+      const n = parseFloat(String(v));
+      return Number.isFinite(n) ? n : NaN;
+    };
     if (decision === 'accept') {
-      const counter = Number(application.counterPrice);
+      const counter = parseMoney(application.counterPrice);
       if (!Number.isFinite(counter) || counter <= 0) {
         toast.error('Invalid counter offer amount.');
         return;
@@ -391,7 +405,7 @@ export default function WorkerJobDetails() {
           ? {
               jobId: application.jobId,
               workerId: uid,
-              finalPrice: Number(application.counterPrice),
+              finalPrice: parseMoney(application.counterPrice),
               negotiationStatus: 'accepted',
             }
           : {
@@ -436,9 +450,15 @@ export default function WorkerJobDetails() {
 
   const requestWorkerLocation = () => {
     if (!('geolocation' in navigator)) {
-      setGeoError('Geolocation is not supported on this device/browser.');
+      if (ctx?.profile?.locationGeo) {
+        setWorkerLocation(ctx.profile.locationGeo);
+        toast.success('Using your saved profile location.');
+      } else {
+        setGeoError('Geolocation is not supported. Please set your address in profile settings.');
+      }
       return;
     }
+
     setGeoLoading(true);
     setGeoError('');
     navigator.geolocation.getCurrentPosition(
@@ -452,16 +472,27 @@ export default function WorkerJobDetails() {
       (error) => {
         let message = 'Unable to get your location right now.';
         if (error?.code === 1) {
-          message = 'Location permission was denied. Please allow location access in browser/site settings.';
+          // Permission Denied - Fallback to profile
+          if (ctx?.profile?.locationGeo) {
+            setWorkerLocation(ctx.profile.locationGeo);
+            toast.success('Location permission denied. Using your saved profile address.');
+            message = ''; // Clear error so badge shows
+          } else {
+            message = 'Location permission was denied. Please allow access or set your address in profile settings.';
+          }
         } else if (error?.code === 2) {
-          message = 'Your location is currently unavailable. Turn on GPS/location services and try again.';
-        } else if (error?.code === 3) {
-          message = 'Location request timed out. Please try again.';
+          if (ctx?.profile?.locationGeo) {
+            setWorkerLocation(ctx.profile.locationGeo);
+            toast.success('GPS unavailable. Using your saved profile address.');
+            message = '';
+          } else {
+            message = 'Your location is currently unavailable. Turn on GPS and try again.';
+          }
         }
         setGeoError(message);
         setGeoLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
   };
 
@@ -535,11 +566,10 @@ export default function WorkerJobDetails() {
   const distanceKm = getDistanceKm(workerLocation, resolvedJobGeo);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans selection:bg-primary/30">
-      <Toaster />
+    <div className="min-h-screen text-[#e0e0e0] font-sans selection:bg-primary/30">
       
       {/* Top Navbar / Header area */}
-      <div className="sticky top-0 z-[100] bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
+      <div className="sticky top-0 z-[100] bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
@@ -599,7 +629,7 @@ export default function WorkerJobDetails() {
                  <div className="mt-6">
                     <span className="inline-flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-1.5 rounded-full text-xs font-bold border border-green-500/20 shadow-lg shadow-green-500/5">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                      {distanceKm} KM FROM YOU
+                      {distanceKm} KM FROM {workerLocation === ctx?.profile?.locationGeo ? 'SAVED ADDRESS' : 'YOU'}
                     </span>
                  </div>
                )}
@@ -954,7 +984,7 @@ export default function WorkerJobDetails() {
                       alt={poster.name}
                       className="w-16 h-16 rounded-full object-cover border-2 border-primary"
                     />
-                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#050505] flex items-center justify-center text-[10px] text-white">
+                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#0a0a0a] flex items-center justify-center text-[10px] text-white">
                        <i className="fas fa-check"></i>
                     </div>
                   </div>

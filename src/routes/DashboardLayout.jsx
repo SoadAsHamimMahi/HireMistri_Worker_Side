@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   MdDashboard,
@@ -6,7 +6,8 @@ import {
   MdWork,
   MdShoppingBag,
   MdAccountBalanceWallet,
-  MdConstruction,
+  MdMenu,
+  MdClose,
 } from 'react-icons/md';
 
 const sidebarLinks = [
@@ -18,14 +19,32 @@ const sidebarLinks = [
 ];
 
 export default function DashboardLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div className="flex bg-[#0A0A0A] min-h-[calc(100vh-4rem)] text-white font-['Inter']">
+    <div className="flex bg-[#0a0a0a] min-h-[calc(100vh-4rem)] text-white font-['Inter']">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0F0F0F] border-r border-white/5 flex flex-col p-6 shrink-0 sticky top-16">
-        <div className="flex items-center gap-3 mb-10 px-2 text-[#10b77f]">
-          <MdConstruction className="text-3xl" />
-          <h1 className="text-xl font-bold tracking-tight text-white">Hire Mistri</h1>
-        </div>
+      <aside className={`
+        fixed lg:static top-0 left-0 h-full z-30
+        w-64 bg-[#0f0f0f] border-r border-white/5 flex flex-col p-6 shrink-0
+        transform transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Close button – mobile only */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden self-end mb-6 p-1 text-white/40 hover:text-white transition-colors"
+        >
+          <MdClose className="text-2xl" />
+        </button>
 
         <nav className="flex-1 space-y-1">
           {sidebarLinks.map((item) => {
@@ -35,10 +54,11 @@ export default function DashboardLayout() {
                 key={item.path}
                 to={item.path}
                 end={item.path === '/dashboard'}
+                onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                     isActive
-                      ? 'bg-[#10b77f] text-white shadow-lg shadow-[#10b77f]/20'
+                      ? 'bg-[#1ec86d] text-white shadow-lg shadow-[#1ec86d]/20'
                       : 'text-white/50 hover:text-white hover:bg-white/5'
                   }`
                 }
@@ -52,7 +72,14 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto min-w-0">
+        {/* Mobile menu toggle */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden m-4 p-2 rounded-lg bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        >
+          <MdMenu className="text-xl" />
+        </button>
         <Outlet />
       </main>
     </div>

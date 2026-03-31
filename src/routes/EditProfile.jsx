@@ -1,15 +1,12 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
-import { useDropzone } from "react-dropzone";
-import { AuthContext } from "../Authentication/AuthProvider";
-import { useProfile } from "../contexts/ProfileContext";
-import PageContainer from "../components/layout/PageContainer";
+import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { AuthContext } from '../Authentication/AuthProvider';
+import { useProfile } from '../contexts/ProfileContext';
+import { useDropzone } from 'react-dropzone';
+import toast from 'react-hot-toast';
 
-const base = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-const normalizeProfileImageUrl = (value) => {
-  if (!value || typeof value !== "string") return "";
-  const raw = value.trim();
+const normalizeProfileImageUrl = (raw) => {
   if (!raw) return "";
   try {
     const parsed = new URL(raw);
@@ -22,6 +19,54 @@ const normalizeProfileImageUrl = (value) => {
     return raw;
   }
 };
+
+const SERVICE_CATEGORY_GROUPS = [
+  {
+    id: 'home-repair-trades',
+    title: 'Home Repair & Trades',
+    items: [
+      { id: 'electrician', label: 'Electrician' },
+      { id: 'plumber', label: 'Plumber' },
+      { id: 'ac-service', label: 'AC Service & Repair' },
+      { id: 'carpenter', label: 'Carpenter' },
+      { id: 'painter', label: 'Painter' },
+      { id: 'mason', label: 'Mason / Civil' },
+      { id: 'tile-marble', label: 'Tile & Marble Fix' },
+      { id: 'welder', label: 'Welder / Fabrication' },
+      { id: 'gypsum', label: 'Gypsum / False Ceiling' },
+      { id: 'glass-alum', label: 'Glass & Aluminium' },
+    ],
+  },
+  {
+    id: 'install-mounting',
+    title: 'Install & Mounting',
+    items: [
+      { id: 'general-install', label: 'Fan, Light & Appliance' },
+      { id: 'mounting-decor', label: 'Curtain, Mirror & Shelves' },
+      { id: 'tv-mount', label: 'TV Wall Mount' },
+      { id: 'water-filter', label: 'Water Filter / Geyser' },
+    ],
+  },
+  {
+    id: 'other',
+    title: 'Specialized / Other',
+    items: [
+      { id: 'cleaning', label: 'Cleaning Service' },
+      { id: 'security', label: 'Security Guard' },
+      { id: 'gardening', label: 'Gardening' },
+      { id: 'other', label: 'Other' },
+    ],
+  },
+];
+
+function decodeServiceSlug(slug) {
+  if (!slug || !slug.includes(':')) return slug;
+  const [gid, iid] = slug.split(':');
+  const group = SERVICE_CATEGORY_GROUPS.find(g => g.id === gid);
+  if (!group) return slug;
+  const item = group.items.find(i => i.id === iid);
+  return item ? item.label : slug;
+}
 
 /* ---------------------------- Tiny Tag Input ---------------------------- */
 function TagInput({ value = [], onChange, label, placeholder = "Type and press Enter" }) {
@@ -36,22 +81,22 @@ function TagInput({ value = [], onChange, label, placeholder = "Type and press E
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">{label}</label>
+      <label className="block text-sm font-medium mb-1 text-white/80">{label}</label>
       <div className="flex gap-2 mb-2">
         <input
-          className="input input-bordered w-full"
+          className="input input-bordered w-full bg-[#111111] border-white/10 text-white placeholder-white/30 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
           placeholder={placeholder}
           value={t}
           onChange={(e) => setT(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
         />
-        <button type="button" className="btn" onClick={add}>Add</button>
+        <button type="button" className="btn btn-primary rounded-xl" onClick={add}>Add</button>
       </div>
       <div className="flex flex-wrap gap-2">
         {value.map((s, i) => (
-          <span key={i} className="badge badge-outline gap-2">
+          <span key={i} className="badge badge-outline gap-2 border-white/20 text-white/80 px-3 py-3 rounded-xl bg-white/5">
             {s}
-            <button type="button" className="ml-1 text-xs" onClick={() => remove(i)}>✕</button>
+            <button type="button" className="ml-1 text-xs hover:text-red-400 cursor-pointer" onClick={() => remove(i)}>×</button>
           </span>
         ))}
       </div>
@@ -71,13 +116,13 @@ function MultiSelect({ value = [], onChange, label, options, placeholder = "Sele
 
   return (
     <div>
-      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">{label}</label>
+      <label className="block text-sm font-medium mb-1 text-white/80">{label}</label>
       <div className="flex flex-wrap gap-2">
         {options.map(opt => (
           <button
             key={opt}
             type="button"
-            className={`btn btn-sm ${value.includes(opt) ? 'btn-primary' : 'btn-outline'}`}
+            className={`btn btn-sm rounded-xl py-1 px-4 border ${value.includes(opt) ? 'bg-primary/20 border-primary text-primary hover:bg-primary/30' : 'bg-[#111111] border-white/10 text-white/70 hover:bg-white/5 hover:text-white'}`}
             onClick={() => toggle(opt)}
           >
             {opt}
@@ -85,7 +130,7 @@ function MultiSelect({ value = [], onChange, label, options, placeholder = "Sele
         ))}
       </div>
       {value.length > 0 && (
-        <div className="mt-2 text-sm text-base-content opacity-70">
+        <div className="mt-2 text-sm text-white/50">
           Selected: {value.join(", ")}
         </div>
       )}
@@ -93,8 +138,26 @@ function MultiSelect({ value = [], onChange, label, options, placeholder = "Sele
   );
 }
 
+/* ----------------------------- Detail Item -------------------------------- */
+function DetailItem({ label, value, icon, bold, chip }) {
+  if (!value) value = "—";
+  return (
+    <div className="flex flex-col gap-1 text-left">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">{label}</p>
+      <div className="flex items-center gap-2">
+        {icon && <span className="material-symbols-outlined text-base text-white/30">{icon}</span>}
+        {chip ? (
+           <span className="bg-[#1ec86d]/10 border border-[#1ec86d]/20 px-3 py-1 rounded-lg text-[10px] font-bold text-[#1ec86d] uppercase tracking-wider">{value}</span>
+        ) : (
+           <p className={`text-sm ${bold ? "font-bold text-white" : "text-white/80"}`}>{value}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ----------------------------- Main Component ----------------------------- */
-export default function WorkerProfile() {
+export default function EditProfile() {
   const { user, sendVerificationEmail, reloadUser, updateProfileDisplayName } = useContext(AuthContext) || {};
   const { setProfile: setSharedProfile } = useProfile();
   const uid = user?.uid || null;
@@ -108,38 +171,47 @@ export default function WorkerProfile() {
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
+    fullLegalName: "",
     phone: "",
     workExperience: "",
     experienceYears: "",
     email: "",
     headline: "",
     bio: "",
-    skills: [],
     isAvailable: true,
     profileCover: null,
+    nidFrontImageUrl: "",
+    nidBackImageUrl: "",
+    nidNumber: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    emergencyContactNidNumber: "",
+    emergencyContactNidFrontUrl: "",
+    emergencyContactNidBackUrl: "",
+    payoutWalletProvider: "",
+    payoutWalletNumber: "",
     address1: "",
     address2: "",
     city: "",
+    district: "",
     country: "Bangladesh",
     zip: "",
-    // New trust fields
-    servicesOffered: { categories: [], tags: [] },
+    servicesOffered: [],
     serviceArea: { cities: [], radiusKm: null },
     certifications: [],
-    languages: [],
-    pricing: { hourlyRate: null, startingPrice: null, minimumCharge: null, currency: "BDT" },
     portfolio: [],
     emailVerified: false,
+    locationGeo: null,
+    workerAccountStatus: "draft"
   });
 
   const serviceCategories = ["Plumber", "Electrician", "Carpenter", "Painter", "Mechanic", "AC Repair", "Appliance Repair", "Mason", "Welder", "Other"];
-  const languageOptions = ["Bengali", "English", "Hindi", "Urdu", "Arabic"];
 
   const requiredFields = ["firstName", "lastName", "email", "phone", "workExperience"];
   const isValid = useMemo(() => {
     const basicValid = requiredFields.every((f) => String(profile[f] || "").trim() !== "");
     const hasPhoto = !!profile.profileCover;
-    return basicValid && hasPhoto; // Require profile photo
+    return basicValid && hasPhoto;
   }, [profile]);
 
   const update = (k, v) => setProfile((p) => ({ ...p, [k]: v }));
@@ -183,9 +255,7 @@ export default function WorkerProfile() {
     try {
       setSaving(true);
       const url = await uploadAvatar(file);
-      // Update local state
       update("profileCover", url);
-      // Refresh profile to ensure sync (server already saved it)
       const res = await fetch(`${base}/api/users/${uid}`);
       if (res.ok) {
         const updated = await res.json();
@@ -242,16 +312,15 @@ export default function WorkerProfile() {
                 ...prev,
                 ...data,
                 profileCover: normalizeProfileImageUrl(data.profileCover) || "",
-                skills: Array.isArray(data.skills) ? data.skills : [],
-                languages: Array.isArray(data.languages) ? data.languages : [],
-                servicesOffered: data.servicesOffered || { categories: [], tags: [] },
+                servicesOffered: Array.isArray(data.servicesOffered) ? data.servicesOffered : (data.servicesOffered?.categories || []),
                 serviceArea: data.serviceArea || { cities: [], radiusKm: null },
                 certifications: Array.isArray(data.certifications) ? data.certifications : [],
                 portfolio: Array.isArray(data.portfolio) ? data.portfolio : [],
-                pricing: data.pricing || { hourlyRate: null, startingPrice: null, minimumCharge: null, currency: "BDT" },
-                experienceYears: data.experienceYears || data.workExperience || "",
+                experienceYears: data.experienceYears ?? data.workExperience ?? "",
                 isAvailable: data.isAvailable ?? true,
                 emailVerified: data.emailVerified || false,
+                locationGeo: data.locationGeo || null,
+                workerAccountStatus: data.workerAccountStatus || "draft",
               }));
               setStats(data.stats || null);
             }
@@ -281,8 +350,6 @@ export default function WorkerProfile() {
       role: "worker",
       email: String(profile.email || "").toLowerCase(),
       isAvailable: !!profile.isAvailable,
-      skills: Array.isArray(profile.skills) ? profile.skills : [],
-      languages: Array.isArray(profile.languages) ? profile.languages : [],
       experienceYears: Number(profile.experienceYears || profile.workExperience || 0) || null,
       updatedAt: new Date(),
     };
@@ -309,9 +376,7 @@ export default function WorkerProfile() {
         const updated = await saveToServer();
         setProfile(prev => ({ ...prev, ...updated }));
         setStats(updated.stats || null);
-        // Update shared profile context immediately so Navbar shows new name
         setSharedProfile(prev => (prev ? { ...prev, ...updated } : updated));
-        // Sync name to Firebase Auth so it updates everywhere (Navbar, etc.)
         const newName = [updated.firstName, updated.lastName].filter(Boolean).join(' ').trim();
         if (newName && updateProfileDisplayName) {
           try {
@@ -321,7 +386,6 @@ export default function WorkerProfile() {
             console.warn('Could not sync name to Firebase Auth:', e);
           }
         }
-        // Notify other listeners (e.g. Navbar event fallback)
         window.dispatchEvent(new CustomEvent('profileUpdated', { detail: { ...updated, stats: updated.stats } }));
       } else {
         localStorage.setItem("workerProfile", JSON.stringify(profile));
@@ -338,31 +402,12 @@ export default function WorkerProfile() {
 
   const handleReset = () => {
     setProfile({
-      firstName: "",
-      lastName: "",
-      phone: "",
-      workExperience: "",
-      experienceYears: "",
-      email: "",
-      headline: "",
-      bio: "",
-      skills: [],
-      isAvailable: true,
-      profileCover: null,
-      address1: "",
-      address2: "",
-      city: "",
-      country: "Bangladesh",
-      zip: "",
-      servicesOffered: { categories: [], tags: [] },
-      serviceArea: { cities: [], radiusKm: null },
-      certifications: [],
-      languages: [],
-      pricing: { hourlyRate: null, startingPrice: null, minimumCharge: null, currency: "BDT" },
-      portfolio: [],
-      emailVerified: false,
+      firstName: "", lastName: "", phone: "", workExperience: "", experienceYears: "", email: "",
+      headline: "", bio: "", isAvailable: true, profileCover: null, address1: "", address2: "",
+      city: "", country: "Bangladesh", zip: "", servicesOffered: { categories: [], tags: [] },
+      serviceArea: { cities: [], radiusKm: null }, certifications: [], portfolio: [], emailVerified: false,
     });
-    toast("Profile cleared.", { icon: "🧹" });
+    toast("Profile cleared.");
   };
 
   const addCertification = () => {
@@ -406,7 +451,6 @@ export default function WorkerProfile() {
     try {
       await reloadUser();
       if (user?.emailVerified) {
-        // Sync to server
         await fetch(`${base}/api/users/${uid}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -425,727 +469,439 @@ export default function WorkerProfile() {
 
   /* ------------------------------ Derived fields ----------------------------- */
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "—";
-  const secondaryLine = profile.phone || uid || "—";
-  const addressPretty = [profile.address1, profile.address2, profile.city, profile.country, profile.zip]
-    .filter(Boolean).join(", ");
+  const aboutText = (profile.bio && profile.bio.trim()) || "This worker hasn't written an about section yet.";
 
-  const aboutText =
-    (profile.bio && profile.bio.trim()) ||
-    (profile.headline && profile.headline.trim()) ||
-    "This worker hasn't written an about section yet. Add a short intro in Edit Profile.";
-
-  const fieldOfInterest = profile.skills?.[0] || "—";
-
-  if (loading) return <div className="p-10 text-center">Loading…</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070b14] p-10 text-center text-white flex flex-col items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen page-bg">
-      <Toaster />
-
-      {/* Enhanced Header */}
-      <div className="bg-gradient-to-r from-[#66BB6A] to-[#1E88E5] py-12">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-base-content mb-4">
-              My Profile
-            </h1>
-            <p className="text-xl text-base-content opacity-80 mx-auto">
-              Manage your professional information and showcase your skills to potential employers.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <PageContainer className="py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Enhanced Profile Card */}
-          <div className="bg-base-200 shadow-2xl rounded-3xl p-6 flex flex-col items-center border border-base-300">
-            <div className="relative mb-4">
+    <div className="min-h-screen bg-[#0a0a0a] px-4 py-8 lg:py-12 text-[#e0e0e0] font-sans selection:bg-[#1ec86d]/30">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8">
+          
+          {/* ===================== LEFT SIDEBAR 30% ===================== */}
+          <aside className="w-full lg:w-[30%] space-y-8 animate-in fade-in slide-in-from-left-4 duration-700">
+            {/* Main Profile Card */}
+            <div className="bg-[#151515] p-8 rounded-2xl border border-white/5 flex flex-col items-center text-center relative overflow-hidden shadow-2xl">
+              {/* Background glow */}
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 bg-[#1ec86d]/10" />
+              
+              {/* Avatar section */}
               <div
                 {...getRootProps()}
-                className={`relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary-200 dark:ring-primary-800 cursor-pointer group transition-all duration-300 hover:ring-primary-400 dark:hover:ring-primary-600 ${!profile.profileCover ? 'ring-red-300 dark:ring-red-700' : ''}`}
-                title="Click or drag to upload photo"
+                className={`relative w-32 h-32 rounded-full mb-6 border-4 cursor-pointer overflow-hidden group transition-all duration-300 ${
+                  isDragActive ? "border-[#1ec86d]" : "border-white/10 hover:border-white/30"
+                }`}
               >
                 <input {...getInputProps()} />
-                <img
-                  src={profile.profileCover || "/default-profile.png"}
-                  alt="profile"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e)=> (e.currentTarget.src="/default-profile.png")}
-                />
-                <div className={`absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white`}>
+                {!profile.profileCover && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a] text-white/30">
+                    <span className="material-symbols-outlined text-5xl">person</span>
+                  </div>
+                )}
+                {profile.profileCover && (
+                  <img src={profile.profileCover} alt="Profile" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white">
                   <div className="text-center">
-                    <i className="fas fa-camera text-2xl mb-2"></i>
-                    <p className="text-sm font-medium">
-                      {isDragActive ? "Drop to upload" : "Click to upload"}
-                    </p>
+                    <span className="material-symbols-outlined text-3xl mb-1 block">photo_camera</span>
+                    <p className="text-xs font-medium">{isDragActive ? "Drop here" : "Upload"}</p>
                   </div>
                 </div>
               </div>
-              
-              {/* Status Indicator */}
-              {profile.profileCover && (
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 rounded-full border-4 border-base-200 flex items-center justify-center">
-                  <i className="fas fa-check text-white text-sm"></i>
-                </div>
-              )}
-            </div>
 
-            <div className="text-center">
-              <h2 className="text-2xl font-heading font-bold text-base-content mb-2">{fullName}</h2>
-              <p className="text-base-content opacity-70 mb-4">{secondaryLine}</p>
-              
-              {/* Trust Badges */}
-              <div className="flex flex-wrap gap-2 justify-center mb-4">
+              {/* Online dot */}
+              <div
+                className="absolute top-[138px] left-1/2 ml-10 w-4 h-4 rounded-full border-4 border-[#151515]"
+                style={{ backgroundColor: profile.isAvailable ? "#1DC66C" : "#6b7280" }}
+              />
+
+              {/* Name & badge */}
+              <h1 className="text-2xl font-bold text-white mb-2">{fullName}</h1>
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-8 bg-[#1ec86d]/10 text-[#1ec86d] border border-[#1ec86d]/20">
+                Premium Worker
+              </div>
+
+              {/* Trust badges */}
+              <div className="space-y-3 w-full mb-8">
                 {user?.emailVerified || profile.emailVerified ? (
-                  <span className="badge badge-success gap-1">
-                    <i className="fas fa-check-circle"></i>Email Verified
-                  </span>
+                  <div className="flex items-center gap-3 bg-white/[0.03] px-4 py-3 rounded-xl border border-white/5">
+                    <span className="material-symbols-outlined text-xl text-[#1ec86d]">verified</span>
+                    <span className="text-sm font-medium text-white/70">Email Verified</span>
+                  </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="badge badge-warning gap-1">
-                      <i className="fas fa-exclamation-triangle"></i>Email Not Verified
-                    </span>
+                  <div className="flex items-center justify-between gap-3 bg-red-500/5 px-4 py-3 rounded-xl border border-red-500/10">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-xl text-red-500/60">warning</span>
+                      <span className="text-sm font-medium text-red-200/70">Not Verified</span>
+                    </div>
                     <button
                       type="button"
-                      className="btn btn-xs btn-primary"
+                      className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                       onClick={handleSendVerificationEmail}
                       disabled={sendingVerification}
-                      title="Send verification email"
                     >
-                      {sendingVerification ? (
-                        <>
-                          <i className="fas fa-spinner fa-spin"></i> Sending...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-envelope"></i> Verify
-                        </>
-                      )}
+                      {sendingVerification ? "Sending…" : "Verify"}
                     </button>
                   </div>
                 )}
-                {profile.createdAt && (
-                  <span className="badge badge-outline gap-1 text-xs">
-                    <i className="fas fa-calendar"></i>Member since {new Date(profile.createdAt).getFullYear()}
-                  </span>
-                )}
+                <div className="flex items-center gap-3 bg-white/[0.03] px-4 py-3 rounded-xl border border-white/5">
+                  <span className="material-symbols-outlined text-xl text-[#1ec86d]">security</span>
+                  <span className="text-sm font-medium text-white/70">Background Checked</span>
+                </div>
               </div>
-              
-              {/* Profile Stats */}
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="bg-base-300 rounded-xl p-4 text-center">
-                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
-                    {stats?.averageRating?.toFixed(1) || "0.0"}
-                  </div>
-                  <div className="text-xs text-base-content opacity-70">Rating</div>
+
+              {/* Rating / Jobs Done grid */}
+              <div className="grid grid-cols-2 gap-4 w-full mb-8">
+                <div className="bg-white/[0.03] p-4 rounded-2xl text-left border border-white/5 group hover:border-[#1ec86d]/30 transition-all">
+                  <p className="text-2xl font-bold text-white">{stats?.averageRating?.toFixed(1) ?? "—"}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mt-1">Rating</p>
                 </div>
-                <div className="bg-base-300 rounded-xl p-4 text-center">
-                  <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
-                    {stats?.workerCompletedJobs || 0}
-                  </div>
-                  <div className="text-xs text-base-content opacity-70">Jobs Done</div>
+                <div className="bg-white/[0.03] p-4 rounded-2xl text-left border border-white/5 group hover:border-[#1ec86d]/30 transition-all">
+                  <p className="text-2xl font-bold text-white">{stats?.workerCompletedJobs ?? 0}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mt-1">Jobs Done</p>
                 </div>
-                {stats?.workerResponseRate !== undefined && (
-                  <div className="bg-base-300 rounded-xl p-4 text-center col-span-2">
-                    <div className="text-lg font-heading font-bold text-primary-600 dark:text-primary-400">
-                      {stats.workerResponseRate}%
+              </div>
+
+              {/* Availability toggle */}
+              <div className="w-full pt-6 border-t border-white/5">
+                <div className="flex items-center justify-between bg-white/[0.03] p-4 rounded-2xl border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{
+                        backgroundColor: profile.isAvailable ? "#1DC66C" : "#6b7280",
+                        boxShadow: profile.isAvailable ? "0 0 12px rgba(29,198,108,0.6)" : "none",
+                        animation: profile.isAvailable ? "pulse 2s infinite" : "none",
+                    }} />
+                    <span className="text-sm font-bold text-white/70 uppercase tracking-wide">{profile.isAvailable ? "Available" : "Away"}</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={!!profile.isAvailable} onChange={(e) => update("isAvailable", e.target.checked)} />
+                    <div className="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all relative bg-gray-600 peer-checked:bg-[#1ec86d]" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* ===================== RIGHT MAIN 70% ===================== */}
+          <main className="w-full lg:w-[70%] space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-150">
+            {/* KPI Row */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+              {[
+                { icon: "task_alt",       value: stats?.workerCompletedJobs ?? 0,                  label: "Completed Jobs" },
+                { icon: "pending_actions",value: stats?.workerActiveOrders  ?? 0,                  label: "Active Orders"  },
+                { icon: "bolt",           value: (stats?.workerResponseRate ?? 0) + "%",            label: "Response Rate"  },
+                { icon: "schedule",       value: stats?.workerResponseTimeHours ? stats.workerResponseTimeHours + "h" : "0h", label: "Avg Response" },
+              ].map(({ icon, value, label }) => (
+                <div key={label} className="bg-[#151515] p-5 rounded-2xl flex flex-col justify-between h-32 border border-white/5 hover:border-[#1ec86d]/30 transition-all group">
+                  <span className="material-symbols-outlined text-2xl text-[#1ec86d] group-hover:scale-110 transition-transform">{icon}</span>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{value}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">{label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tab Nav */}
+            <nav className="flex items-center p-1.5 bg-[#151515] rounded-2xl w-fit gap-1 border border-white/5">
+              {[
+                { key: "overview", label: "Overview" },
+                { key: "edit",     label: "Edit Profile" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${tab === key ? "bg-[#1ec86d] text-black shadow-lg shadow-[#1ec86d]/20" : "text-white/40 hover:text-white hover:bg-white/5"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {/* ============================================================== */}
+            {/* OVERVIEW TAB                                                    */}
+            {/* ============================================================== */}
+            {tab === "overview" && (
+              <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                
+                {/* 1. About Me Section */}
+                <section className="bg-[#151515] p-8 rounded-2xl border border-white/5 relative overflow-hidden group text-left">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#1ec86d]/5 rounded-full blur-[80px] -mr-32 -mt-32 transition-colors group-hover:bg-[#1ec86d]/10"></div>
+                  <div className="flex items-center gap-3 mb-6 relative z-10">
+                    <div className="w-10 h-10 rounded-xl bg-[#1ec86d]/10 flex items-center justify-center text-[#1ec86d] shadow-inner shadow-[#1ec86d]/20">
+                      <span className="material-symbols-outlined font-bold">person</span>
                     </div>
-                    <div className="text-xs text-base-content opacity-70">Response Rate</div>
+                    <h2 className="text-xl font-bold text-white tracking-tight">Professional Overview</h2>
                   </div>
-                )}
-              </div>
-              
-              {/* Availability Status */}
-              <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                profile.isAvailable 
-                  ? 'badge-success' 
-                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-              }`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${
-                  profile.isAvailable ? 'bg-primary' : 'bg-error'
-                }`}></div>
-                {profile.isAvailable ? 'Available for work' : 'Not available'}
-              </div>
-            </div>
-          </div>
+                  <p className="text-white/60 leading-relaxed text-sm max-w-4xl relative z-10 font-medium">{aboutText}</p>
+                </section>
 
-          {/* Enhanced Tabs + Content */}
-          <div className="lg:col-span-2 bg-base-200 shadow-2xl rounded-3xl border border-base-300 overflow-hidden">
-            {/* Enhanced Tabs */}
-            <div className="bg-base-300 px-6 py-4">
-              <div className="flex space-x-1">
-                <button 
-                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    tab === "overview" 
-                      ? "bg-primary-500 text-white shadow-lg" 
-                      : "text-base-content opacity-80 hover:bg-base-200 hover:text-primary"
-                  }`} 
-                  onClick={() => setTab("overview")}
-                >
-                  <i className="fas fa-eye mr-2"></i>
-                  Overview
-                </button>
-                <button 
-                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    tab === "edit" 
-                      ? "bg-primary-500 text-white shadow-lg" 
-                      : "text-base-content opacity-80 hover:bg-base-200 hover:text-primary"
-                  }`} 
-                  onClick={() => setTab("edit")}
-                >
-                  <i className="fas fa-edit mr-2"></i>
-                  Edit Profile
-                </button>
-                <button 
-                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    tab === "password" 
-                      ? "bg-primary-500 text-white shadow-lg" 
-                      : "text-base-content opacity-80 hover:bg-base-200 hover:text-primary"
-                  }`} 
-                  onClick={() => setTab("password")}
-                >
-                  <i className="fas fa-key mr-2"></i>
-                  Change Password
-                </button>
-              </div>
-            </div>
-
-            {/* Tab bodies */}
-            <div className="px-6 py-6">
-              {/* =============== OVERVIEW =============== */}
-              {tab === "overview" && (
-                <div className="space-y-8">
-                  {/* Performance Signals */}
-                  {stats && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 text-base-content">Performance Metrics</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-base-300 rounded-lg p-4">
-                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerCompletedJobs || 0}</div>
-                          <div className="text-sm text-base-content opacity-70">Completed Jobs</div>
-                        </div>
-                        <div className="bg-base-300 rounded-lg p-4">
-                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerActiveOrders || 0}</div>
-                          <div className="text-sm text-base-content opacity-70">Active Orders</div>
-                        </div>
-                        <div className="bg-base-300 rounded-lg p-4">
-                          <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerResponseRate || 0}%</div>
-                          <div className="text-sm text-base-content opacity-70">Response Rate</div>
-                        </div>
-                        {stats.workerResponseTimeHours && (
-                          <div className="bg-base-300 rounded-lg p-4">
-                            <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats.workerResponseTimeHours}h</div>
-                            <div className="text-sm text-base-content opacity-70">Avg Response</div>
-                          </div>
-                        )}
+                {/* 2. Registration & Identity (New) */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Personal Contact Card */}
+                  <section className="bg-[#151515] p-8 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                        <span className="material-symbols-outlined font-bold">badge</span>
                       </div>
-                    </section>
-                  )}
-
-                  {/* About */}
-                  <section>
-                    <h3 className="text-lg font-semibold mb-4 text-base-content">About</h3>
-                    <p className="leading-relaxed text-base-content opacity-80">{aboutText}</p>
+                      <h2 className="text-lg font-bold text-white">Identity & Contact</h2>
+                    </div>
+                    <div className="space-y-4">
+                      <DetailItem label="Full Legal Name" value={profile.fullLegalName || fullName} />
+                      <DetailItem label="Phone Number" value={profile.phone} icon="call" />
+                      <DetailItem label="Email Address" value={profile.email} icon="mail" />
+                      <DetailItem label="Work Location" value={[profile.city, profile.district].filter(v => v && v !== 'N/A').join(', ') || 'Dhaka, Bangladesh'} icon="location_on" />
+                    </div>
                   </section>
 
-                  {/* Services Offered */}
-                  {(profile.servicesOffered?.categories?.length > 0 || profile.servicesOffered?.tags?.length > 0) && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 text-base-content">Services Offered</h3>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {profile.servicesOffered.categories.map((cat, i) => (
-                          <span key={i} className="badge badge-primary">{cat}</span>
-                        ))}
-                        {profile.servicesOffered.tags.map((tag, i) => (
-                          <span key={i} className="badge badge-outline">{tag}</span>
-                        ))}
+                  {/* Skills & Experience Card */}
+                  <section className="bg-[#151515] p-8 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                        <span className="material-symbols-outlined font-bold">engineering</span>
                       </div>
-                      {profile.serviceArea?.cities?.length > 0 && (
-                        <p className="text-sm text-base-content opacity-70">
-                          <i className="fas fa-map-marker-alt mr-2"></i>
-                          Service Area: {profile.serviceArea.cities.join(", ")}
-                          {profile.serviceArea.radiusKm && ` (within ${profile.serviceArea.radiusKm} km)`}
-                        </p>
-                      )}
-                    </section>
-                  )}
-
-                  {/* Pricing */}
-                  {(profile.pricing?.hourlyRate || profile.pricing?.startingPrice || profile.pricing?.minimumCharge) && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 text-base-content">Pricing</h3>
-                      <div className="bg-base-300 rounded-lg p-4">
-                        {profile.pricing.hourlyRate && (
-                          <div className="mb-2">
-                            <span className="text-sm text-base-content opacity-70">Hourly Rate: </span>
-                            <span className="font-semibold text-base-content">{profile.pricing.currency} {profile.pricing.hourlyRate}</span>
-                          </div>
-                        )}
-                        {profile.pricing.startingPrice && (
-                          <div className="mb-2">
-                            <span className="text-sm text-base-content opacity-70">Starting Price: </span>
-                            <span className="font-semibold text-base-content">{profile.pricing.currency} {profile.pricing.startingPrice}</span>
-                          </div>
-                        )}
-                        {profile.pricing.minimumCharge && (
-                          <div>
-                            <span className="text-sm text-base-content opacity-70">Minimum Charge: </span>
-                            <span className="font-semibold text-base-content">{profile.pricing.currency} {profile.pricing.minimumCharge}</span>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Portfolio */}
-                  {profile.portfolio?.length > 0 && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 text-base-content">Portfolio</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {profile.portfolio.map((item, i) => (
-                          <div key={i} className="relative group">
-                            <img
-                              src={item.url}
-                              alt={item.caption || `Portfolio ${i + 1}`}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                            {item.caption && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 rounded-b-lg">
-                                {item.caption}
-                              </div>
+                      <h2 className="text-lg font-bold text-white">Skills & Experience</h2>
+                    </div>
+                      <div className="space-y-6">
+                        <DetailItem label="Years of Experience" value={profile.experienceYears ? `${profile.experienceYears} Years` : 'Not specified'} />
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#1ec86d] mb-4 flex items-center gap-2">
+                             <span className="w-1 h-1 rounded-full bg-[#1ec86d]"></span>
+                             Services Offered
+                          </p>
+                          <div className="flex flex-wrap gap-2 text-left">
+                            {Array.isArray(profile.servicesOffered) && profile.servicesOffered.length > 0 ? (
+                              profile.servicesOffered.map((slug, i) => (
+                                <div key={i} className="flex items-center gap-2 bg-[#1ec86d]/10 border border-[#1ec86d]/20 px-3.5 py-2 rounded-xl group hover:border-[#1ec86d]/40 transition-all">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#1ec86d] opacity-50"></span>
+                                  <span className="text-[11px] font-bold uppercase tracking-widest text-[#1ec86d]/90">
+                                    {decodeServiceSlug(slug)}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-xs text-white/10 italic font-medium uppercase tracking-widest">No services listed</span>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Certifications */}
-                  {profile.certifications?.length > 0 && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 text-base-content">Certifications</h3>
-                      <div className="space-y-2">
-                        {profile.certifications.map((cert, i) => (
-                          <div key={i} className="bg-base-300 rounded-lg p-3">
-                            <div className="font-semibold text-base-content">{cert.title}</div>
-                            {cert.issuer && <div className="text-sm text-base-content opacity-70">Issued by: {cert.issuer}</div>}
-                            {cert.year && <div className="text-sm text-base-content opacity-70">Year: {cert.year}</div>}
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Languages */}
-                  {profile.languages?.length > 0 && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 text-base-content">Languages</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.languages.map((lang, i) => (
-                          <span key={i} className="badge badge-outline">{lang}</span>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Profile details */}
-                  <section>
-                    <h3 className="text-lg font-semibold mb-4 text-base-content">Profile Details</h3>
-                    <div className="rounded-xl border border-base-300 bg-base-100 overflow-hidden">
-                      {[
-                        ["Full Name", fullName],
-                        ["Phone", profile.phone || "—"],
-                        ["Email", profile.email || "—"],
-                        ["Address", addressPretty || "—"],
-                        ["Work Experience", (profile.experienceYears || profile.workExperience) ? `${profile.experienceYears || profile.workExperience} year${Number(profile.experienceYears || profile.workExperience) > 1 ? "s" : ""}` : "—"],
-                        ["Availability", profile.isAvailable ? "Available for work" : "Not available"],
-                        ["Headline", profile.headline || "—"],
-                        [
-                          "Skills",
-                          Array.isArray(profile.skills) && profile.skills.length
-                            ? (
-                                <div className="flex flex-wrap gap-2">
-                                  {profile.skills.map((s, i) => (
-                                    <span key={i} className="badge badge-outline">{s}</span>
-                                  ))}
-                                </div>
-                              )
-                            : "—"
-                        ],
-                        ["Field of Interest", fieldOfInterest],
-                      ].map(([label, value], i) => (
-                        <div key={i} className={`grid grid-cols-1 sm:grid-cols-3 gap-2 py-3 px-4 ${i ? "border-t border-base-300" : ""}`}>
-                          <span className="text-base-content opacity-70">{label}</span>
-                          <span className="sm:col-span-2 font-medium text-base-content break-words">
-                            {typeof value === "string" || typeof value === "number" ? value : value}
-                          </span>
                         </div>
-                      ))}
+                      </div>
+                    </section>
+                </div>
+
+                {/* 3. Emergency & Payout (New Section) */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Emergency Contact */}
+                  <section className="bg-[#151515] p-8 rounded-2xl border border-white/5 bg-gradient-to-br from-[#151515] to-red-500/[0.02]">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400">
+                        <span className="material-symbols-outlined font-bold">emergency_share</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-white">Emergency Contact</h2>
+                    </div>
+                    <div className="space-y-4">
+                      <DetailItem label="Contact Person" value={profile.emergencyContactName} bold />
+                      <DetailItem label="Phone Number" value={profile.emergencyContactPhone} icon="call" />
+                      <div className="flex gap-4 mt-6 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all cursor-help" title="Registration ID Docs">
+                         <span className="text-[9px] uppercase font-black text-white/30 border border-white/10 px-2 py-1.5 rounded-lg">NID Front Uploaded</span>
+                         <span className="text-[9px] uppercase font-black text-white/30 border border-white/10 px-2 py-1.5 rounded-lg">NID Back Uploaded</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Payout Details */}
+                  <section className="bg-[#151515] p-8 rounded-2xl border border-white/5 bg-gradient-to-br from-[#151515] to-[#1ec86d]/[0.02]">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-[#1ec86d]/10 flex items-center justify-center text-[#1ec86d]">
+                        <span className="material-symbols-outlined font-bold">account_balance_wallet</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-white">Payout Method</h2>
+                    </div>
+                    <div className="space-y-4">
+                      <DetailItem label="Wallet Provider" value={profile.payoutWalletProvider} chip />
+                      <DetailItem label="Wallet Number" value={profile.payoutWalletNumber} icon="account_circle" />
+                      <div className="p-3 bg-white/[0.03] rounded-xl border border-white/5 mt-2">
+                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-wider leading-relaxed">Payments are settled within 24-48h of job completion to your verified mobile wallet.</p>
+                      </div>
                     </div>
                   </section>
                 </div>
-              )}
 
-              {/* ========================= EDIT PROFILE ========================= */}
-              {tab === "edit" && (
-                <div className="space-y-8">
-                  {/* Email Verification Warning */}
-                  {!(user?.emailVerified || profile.emailVerified) && (
-                    <div className="alert alert-warning mb-4">
-                      <i className="fas fa-exclamation-triangle"></i>
-                      <div className="flex-1">
-                        <span className="font-semibold">Email not verified.</span>
-                        <p className="text-sm mt-1">Please verify your email to unlock all features.</p>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-primary"
-                            onClick={handleSendVerificationEmail}
-                            disabled={sendingVerification}
-                          >
-                            {sendingVerification ? "Sending..." : "Send Verification Email"}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline"
-                            onClick={handleCheckVerification}
-                          >
-                            Check Status
-                          </button>
-                        </div>
+                {/* Portfolio Preview */}
+                <section className="bg-[#151515] p-8 rounded-2xl border border-white/5">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#1ec86d]/10 flex items-center justify-center text-[#1ec86d]">
+                        <span className="material-symbols-outlined font-bold">photo_library</span>
                       </div>
+                      <h2 className="text-xl font-bold text-white tracking-tight">Work Portfolio</h2>
                     </div>
-                  )}
-
-                  {/* Profile Photo Requirement Warning */}
-                  {!profile.profileCover && (
-                    <div className="alert alert-warning">
-                      <i className="fas fa-exclamation-triangle"></i>
-                      <span>Profile photo is required. Please upload a photo to save your profile.</span>
-                    </div>
-                  )}
-
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-base-content">Account</h3>
-                      <label className="label cursor-pointer gap-3">
-                        <span className="label-text text-base-content opacity-80">Available for work</span>
-                        <input
-                          type="checkbox"
-                          className="toggle toggle-success"
-                          checked={!!profile.isAvailable}
-                          onChange={(e) => update("isAvailable", e.target.checked)}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                    {[
-                      { label: "First Name", name: "firstName" },
-                      { label: "Last Name", name: "lastName" },
-                      { label: "Display Name", name: "displayName" },
-                      { label: "Work Experience (years)", name: "workExperience", type: "number" },
-                      { label: "Phone Number", name: "phone", type: "tel" },
-                      { label: "Email", name: "email", type: "email" },
-                    ].map(({ label, name, type = "text" }) => (
-                      <div key={name}>
-                        <label className="block text-sm font-medium mb-1 text-base-content opacity-80">{label}</label>
-                        <input
-                          type={type}
-                          name={name}
-                          value={profile[name]}
-                          onChange={handleChange}
-                          className="input input-bordered w-full"
-                          required
-                        />
-                      </div>
-                    ))}
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Headline (optional)</label>
-                      <input
-                        type="text"
-                        name="headline"
-                        value={profile.headline}
-                        onChange={handleChange}
-                        placeholder="e.g., Certified Electrician | 5+ years"
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Bio (optional)</label>
-                      <textarea
-                        name="bio"
-                        value={profile.bio}
-                        onChange={handleChange}
-                        placeholder="Tell clients about your experience and specialties…"
-                        className="textarea textarea-bordered w-full min-h-[110px]"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <TagInput
-                        label="Skills (optional)"
-                        value={profile.skills}
-                        onChange={(v) => update("skills", v)}
-                        placeholder="e.g., Wiring, Installation, Troubleshooting"
-                      />
-                    </div>
-                  </div>
+                    <button onClick={() => setTab("edit")} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-[#1ec86d] hover:gap-3 transition-all">
+                      Manage <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                    </button>
                   </div>
 
-                  <div className="divider text-base-content opacity-80">Services Offered</div>
-
-                  <div className="space-y-6">
-                    <MultiSelect
-                      label="Service Categories"
-                      value={profile.servicesOffered?.categories || []}
-                      onChange={(cats) => update("servicesOffered", { ...profile.servicesOffered, categories: cats })}
-                      options={serviceCategories}
-                    />
-                    <TagInput
-                      label="Service Tags (optional)"
-                      value={profile.servicesOffered?.tags || []}
-                      onChange={(tags) => update("servicesOffered", { ...profile.servicesOffered, tags })}
-                      placeholder="e.g., Emergency, 24/7, Commercial"
-                    />
-                  </div>
-
-                  <div className="divider text-base-content opacity-80">Service Area</div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <TagInput
-                      label="Cities (add cities you serve)"
-                      value={profile.serviceArea?.cities || []}
-                      onChange={(cities) => update("serviceArea", { ...profile.serviceArea, cities })}
-                      placeholder="e.g., Dhaka, Chittagong"
-                    />
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Service Radius (km, optional)</label>
-                      <input
-                        type="number"
-                        value={profile.serviceArea?.radiusKm || ""}
-                        onChange={(e) => update("serviceArea", { ...profile.serviceArea, radiusKm: e.target.value ? Number(e.target.value) : null })}
-                        placeholder="e.g., 10"
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="divider text-base-content opacity-80">Experience & Credentials</div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Years of Experience</label>
-                      <input
-                        type="number"
-                        value={profile.experienceYears || profile.workExperience || ""}
-                        onChange={(e) => {
-                          update("experienceYears", e.target.value);
-                          update("workExperience", e.target.value);
-                        }}
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-medium text-base-content opacity-80">Certifications</label>
-                        <button type="button" className="btn btn-sm btn-outline" onClick={addCertification}>
-                          <i className="fas fa-plus mr-1"></i>Add Certification
-                        </button>
-                      </div>
-                      {profile.certifications?.map((cert, i) => (
-                        <div key={i} className="bg-base-300 p-4 rounded-lg mb-2">
-                          <div className="grid md:grid-cols-2 gap-4 mb-2">
-                            <input
-                              type="text"
-                              placeholder="Certification Title"
-                              value={cert.title || ""}
-                              onChange={(e) => updateCertification(i, "title", e.target.value)}
-                              className="input input-bordered input-sm"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Issuer"
-                              value={cert.issuer || ""}
-                              onChange={(e) => updateCertification(i, "issuer", e.target.value)}
-                              className="input input-bordered input-sm"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Year"
-                              value={cert.year || ""}
-                              onChange={(e) => updateCertification(i, "year", e.target.value ? Number(e.target.value) : null)}
-                              className="input input-bordered input-sm"
-                            />
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Proof URL (optional)"
-                                value={cert.proofUrl || ""}
-                                onChange={(e) => updateCertification(i, "proofUrl", e.target.value)}
-                                className="input input-bordered input-sm flex-1"
-                              />
-                              <button type="button" className="btn btn-sm btn-error" onClick={() => removeCertification(i)}>
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            </div>
+                  {profile.portfolio?.length > 0 ? (
+                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                      {profile.portfolio.slice(0, 4).map((item, i) => (
+                        <div key={i} className="aspect-square bg-[#1a1a1a] rounded-2xl overflow-hidden group relative border border-white/5">
+                          <img src={item.url} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                             <div className="absolute bottom-4 left-4 right-4 text-white text-[10px] font-bold line-clamp-2">
+                               {item.caption || "View Work"}
+                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center py-16 border-2 border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+                      <span className="material-symbols-outlined text-5xl text-white/5 mb-4">add_photo_alternate</span>
+                      <h3 className="text-base font-bold text-white/30 mb-2">No portfolio items yet</h3>
+                      <p className="text-[10px] text-white/10 mb-8 max-w-xs uppercase tracking-widest font-black">Showcase your expert craftsmanship to win more clients.</p>
+                      <button onClick={() => setTab("edit")} className="btn btn-sm rounded-xl px-8 bg-[#1ec86d] text-black font-black uppercase tracking-widest text-[10px] hover:bg-[#19b363]">Upload Work Now</button>
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
 
-                    <MultiSelect
-                      label="Languages Spoken"
-                      value={profile.languages || []}
-                      onChange={(langs) => update("languages", langs)}
-                      options={languageOptions}
-                    />
+            {/* ============================================================== */}
+            {/* EDIT PROFILE TAB                                                */}
+            {/* ============================================================== */}
+            {tab === "edit" && (
+              <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                <div className="bg-[#151515] rounded-2xl border border-white/5 overflow-hidden">
+                  <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                    <h3 className="font-bold text-white text-lg">Edit Information</h3>
+                    <button onClick={handleSave} disabled={saving} className="bg-[#1ec86d] text-black font-black uppercase tracking-widest text-[10px] py-2.5 px-8 rounded-xl shadow-lg shadow-[#1ec86d]/20 hover:scale-[1.02] active:scale-95 transition-all">
+                      {saving ? <span className="loading loading-spinner loading-xs"></span> : "Save Changes"}
+                    </button>
                   </div>
-
-                  <div className="divider my-1 text-base-content opacity-80">Pricing</div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Hourly Rate ({profile.pricing?.currency || "BDT"})</label>
-                      <input
-                        type="number"
-                        value={profile.pricing?.hourlyRate || ""}
-                        onChange={(e) => update("pricing", { ...profile.pricing, hourlyRate: e.target.value ? Number(e.target.value) : null })}
-                        placeholder="e.g., 500"
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Starting Price ({profile.pricing?.currency || "BDT"})</label>
-                      <input
-                        type="number"
-                        value={profile.pricing?.startingPrice || ""}
-                        onChange={(e) => update("pricing", { ...profile.pricing, startingPrice: e.target.value ? Number(e.target.value) : null })}
-                        placeholder="e.g., 1000"
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Minimum Charge ({profile.pricing?.currency || "BDT"})</label>
-                      <input
-                        type="number"
-                        value={profile.pricing?.minimumCharge || ""}
-                        onChange={(e) => update("pricing", { ...profile.pricing, minimumCharge: e.target.value ? Number(e.target.value) : null })}
-                        placeholder="e.g., 500"
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="divider my-1 text-base-content opacity-80">Portfolio</div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-base-content opacity-80">Portfolio Images</label>
-                    <div
-                      {...getPortfolioRootProps()}
-                      className="border-2 border-dashed border-base-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-                    >
-                      <input {...getPortfolioInputProps()} />
-                      <i className="fas fa-cloud-upload-alt text-4xl text-base-content opacity-60 mb-2"></i>
-                      <p className="text-base-content opacity-70">Drag & drop images here, or click to select</p>
-                      <p className="text-sm text-base-content opacity-50 mt-1">Multiple images supported</p>
-                    </div>
-                    {profile.portfolio?.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                        {profile.portfolio.map((item, i) => (
-                          <div key={i} className="relative group">
-                            <img src={item.url} alt={`Portfolio ${i + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                            <button
-                              type="button"
-                              className="absolute top-1 right-1 btn btn-xs btn-error opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removePortfolioItem(i)}
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                            <input
-                              type="text"
-                              placeholder="Caption (optional)"
-                              value={item.caption || ""}
-                              onChange={(e) => updatePortfolioCaption(i, e.target.value)}
-                              className="input input-xs input-bordered w-full mt-1"
-                            />
-                          </div>
-                        ))}
+                  <div className="p-8 space-y-8 text-left">
+                    
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {[
+                        { label: "First Name", name: "firstName" },
+                        { label: "Last Name", name: "lastName" },
+                        { label: "Full Legal Name", name: "fullLegalName" },
+                        { label: "Email", name: "email", type: "email" },
+                        { label: "Phone", name: "phone", type: "tel" },
+                        { label: "District / area", name: "district" },
+                        { label: "City", name: "city" },
+                        { label: "Headline", name: "headline" },
+                        { label: "Years Experience", name: "experienceYears", type: "number" },
+                      ].map(({ label, name, type = "text" }) => (
+                        <div key={name}>
+                          <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">{label}</label>
+                          <input type={type} name={name} value={profile[name]} onChange={handleChange} className="input w-full bg-[#0a0a0a] border-white/10 text-white rounded-xl focus:border-[#1ec86d] focus:ring-1 focus:ring-[#1ec86d] outline-none transition-all text-sm h-11" />
+                        </div>
+                      ))}
+                      
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Bio</label>
+                        <textarea name="bio" value={profile.bio} onChange={handleChange} className="textarea w-full bg-[#0a0a0a] border-white/10 text-white rounded-xl focus:border-[#1ec86d] focus:ring-1 focus:ring-[#1ec86d] outline-none transition-all min-h-[120px] text-sm py-3" />
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="divider my-1 text-base-content opacity-80">Address</div>
+                    <div className="h-px bg-white/5 w-full my-8" />
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Address Line 1</label>
-                      <input type="text" name="address1" value={profile.address1} onChange={handleChange} className="input input-bordered w-full" />
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div>
+                        <h4 className="font-bold text-white mb-6 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500">
+                             <span className="material-symbols-outlined text-base">emergency_share</span>
+                          </div>
+                          Emergency Contact
+                        </h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Contact Name</label>
+                            <input type="text" name="emergencyContactName" value={profile.emergencyContactName} onChange={handleChange} className="input w-full bg-[#0a0a0a] border-white/10 text-white rounded-xl focus:border-[#1ec86d] focus:ring-1 text-sm h-11" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Contact Phone</label>
+                            <input type="tel" name="emergencyContactPhone" value={profile.emergencyContactPhone} onChange={handleChange} className="input w-full bg-[#0a0a0a] border-white/10 text-white rounded-xl focus:border-[#1ec86d] focus:ring-1 text-sm h-11" />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white mb-6 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#1ec86d]/10 flex items-center justify-center text-[#1ec86d]">
+                            <span className="material-symbols-outlined text-base">account_balance_wallet</span>
+                          </div>
+                          Payout Wallet
+                        </h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Provider (Bkash, Nagad, etc)</label>
+                            <input type="text" name="payoutWalletProvider" value={profile.payoutWalletProvider} onChange={handleChange} className="input w-full bg-[#0a0a0a] border-white/10 text-white rounded-xl focus:border-[#1ec86d] focus:ring-1 text-sm h-11" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Wallet Number</label>
+                            <input type="tel" name="payoutWalletNumber" value={profile.payoutWalletNumber} onChange={handleChange} className="input w-full bg-[#0a0a0a] border-white/10 text-white rounded-xl focus:border-[#1ec86d] focus:ring-1 text-sm h-11" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Address Line 2</label>
-                      <input type="text" name="address2" value={profile.address2} onChange={handleChange} className="input input-bordered w-full" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">City</label>
-                      <input type="text" name="city" value={profile.city} onChange={handleChange} className="input input-bordered w-full" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Country/Region</label>
-                      <select name="country" value={profile.country} onChange={handleChange} className="select select-bordered w-full">
-                        <option>Bangladesh</option>
-                        <option>India</option>
-                        <option>USA</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Zip/Postal Code</label>
-                      <input type="text" name="zip" value={profile.zip} onChange={handleChange} className="input input-bordered w-full" />
-                    </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-3 justify-end pt-2">
-                    <button onClick={handleReset} className="btn btn-outline btn-error" type="button">❌ Reset</button>
-                    <button onClick={handleSave} disabled={!isValid || saving} className="btn btn-primary">
-                      {saving ? "Saving…" : "💾 Save Changes"}
-                    </button>
+                    <div className="h-px bg-white/5 w-full my-8" />
+                    
+                    <div>
+                      <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-[10px] text-white/40">Services Offered</h4>
+                      <div className="space-y-6">
+                        {/* Grouped Service Selector */}
+                        <div className="space-y-4">
+                          {SERVICE_CATEGORY_GROUPS.map((group) => (
+                            <div key={group.id} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                              <h5 className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4">{group.title}</h5>
+                              <div className="flex flex-wrap gap-2">
+                                {group.items.map((item) => {
+                                  const val = `${group.id}:${item.id}`;
+                                  const isSelected = Array.isArray(profile.servicesOffered) && profile.servicesOffered.includes(val);
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      type="button"
+                                      onClick={() => {
+                                        const current = Array.isArray(profile.servicesOffered) ? profile.servicesOffered : [];
+                                        const next = isSelected ? current.filter(v => v !== val) : [...current, val];
+                                        update("servicesOffered", next);
+                                      }}
+                                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                        isSelected
+                                          ? 'bg-[#1ec86d]/10 border-[#1ec86d] text-[#1ec86d] shadow-lg shadow-[#1ec86d]/10'
+                                          : 'bg-[#0a0a0a] border-white/10 text-white/40 hover:border-white/30 hover:text-white'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-4">
+                           <TagInput label="Additional Skills / Tags" value={profile.certifications?.tags || []} onChange={(tags) => update("certifications", { ...profile.certifications, tags })} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {/* ========================= CHANGE PASSWORD ========================= */}
-              {tab === "password" && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-base-content">Change Password</h3>
-                  <div className="grid gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Current Password</label>
-                      <input type="password" className="input input-bordered w-full" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">New Password</label>
-                      <input type="password" className="input input-bordered w-full" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-base-content opacity-80">Confirm New Password</label>
-                      <input type="password" className="input input-bordered w-full" />
-                    </div>
-                  </div>
-                  <div>
-                    <button className="btn btn-primary" type="button" onClick={() => toast("Hook this up to your auth.", { icon: "🔐" })}>
-                      Update Password
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
+          </main>
         </div>
-      </PageContainer>
+      </div>
     </div>
   );
 }

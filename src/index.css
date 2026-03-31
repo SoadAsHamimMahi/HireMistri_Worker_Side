@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -35,15 +35,15 @@
 .dark { color-scheme: dark; }
 
 body {
-  background-color: #0A0B0E;
+  background-color: #0a0a0a;
   @apply text-base-content transition-colors duration-300;
 }
 [data-theme="light"] body { background-color: #E8F6ED; }
 [data-theme="light"] .app-root { background-color: #E8F6ED; }
-[data-theme="dark"] .app-root { background-color: #0A0B0E; }
-.page-bg { background-color: #0A0B0E; }
+[data-theme="dark"] .app-root { background-color: #0a0a0a; }
+.page-bg { background-color: #0a0a0a; }
 [data-theme="light"] .page-bg { background-color: #E8F6ED; }
-[data-theme="dark"] .page-bg { background-color: #0A0B0E; }
+[data-theme="dark"] .page-bg { background-color: #0a0a0a; }
 
 [data-theme="dark"] .footer-main-bg,
 [data-theme="dark"] .footer-cta-bg {
@@ -59,5 +59,45 @@ body {
 [data-theme="light"] .text-muted { color: #666666; }
 
 .is-dashboard-page {
-  background-color: #0A0A0A !important;
+  background-color: #0a0a0a !important;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-morphism {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.mask-squircle {
+  mask-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M100 0C20 0 0 20 0 100s20 100 100 100 100-20 100-100S180 0 100 0z'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
+.squircle {
+  mask-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M0,50 C0,5 5,0 50,0 C95,0 100,5 100,50 C100,95 95,100 50,100 C5,100 0,95 0,50" fill="black"/></svg>');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M0,50 C0,5 5,0 50,0 C95,0 100,5 100,50 C100,95 95,100 50,100 C5,100 0,95 0,50" fill="black"/></svg>');
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import {
   BriefcaseIcon,
   MapPinIcon,
@@ -333,6 +333,20 @@ export default function Applications() {
       toast.error('Missing application details.');
       return;
     }
+    const parseMoney = (v) => {
+      if (v == null || v === '') return NaN;
+      if (typeof v === 'number' && Number.isFinite(v)) return v;
+      if (typeof v === 'object' && v !== null && '$numberDecimal' in v) return parseFloat(v.$numberDecimal);
+      const n = parseFloat(String(v));
+      return Number.isFinite(n) ? n : NaN;
+    };
+    if (decision === 'accept') {
+      const counter = parseMoney(application.counterPrice);
+      if (!Number.isFinite(counter) || counter <= 0) {
+        toast.error('Invalid counter offer amount.');
+        return;
+      }
+    }
     try {
       setNegotiatingApplicationId(application._id);
       const payload =
@@ -340,7 +354,7 @@ export default function Applications() {
           ? {
               jobId: application.jobId,
               workerId: user.uid,
-              finalPrice: Number(application.counterPrice),
+              finalPrice: parseMoney(application.counterPrice),
               negotiationStatus: 'accepted',
             }
           : {
@@ -368,8 +382,7 @@ export default function Applications() {
   const statuses = ['All', 'Pending', 'Accepted', 'Completed', 'Rejected'];
 
   return (
-    <div className="min-h-screen page-bg">
-      <Toaster />
+    <div className="min-h-screen text-white">
 
       <PageContainer>
         <PageHeader
@@ -378,7 +391,7 @@ export default function Applications() {
           icon={<BriefcaseIcon className="w-6 h-6" />}
           actions={
             <button
-              className="md:hidden flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
+              className="md:hidden flex items-center px-4 py-2 bg-[#1ec86d] hover:bg-[#19b363] text-white rounded-lg transition-colors"
               onClick={() => setFiltersOpen(o => !o)}
               aria-expanded={filtersOpen}
               aria-controls="filters"
@@ -391,42 +404,42 @@ export default function Applications() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10">
+            <div className="p-4 rounded-xl border border-[#1ec86d]/20 bg-[#1ec86d]/5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-base-content/70 font-medium">Total</p>
-                  <p className="text-2xl font-bold text-base-content">{applications.length}</p>
+                  <p className="text-sm text-white/60 font-medium">Total</p>
+                  <p className="text-2xl font-bold text-white">{applications.length}</p>
                 </div>
                 <i className="fas fa-briefcase text-2xl text-primary"></i>
               </div>
             </div>
-            <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+            <div className="p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-base-content/70 font-medium">Pending</p>
-                  <p className="text-2xl font-bold text-base-content">
+                  <p className="text-sm text-white/60 font-medium">Pending</p>
+                  <p className="text-2xl font-bold text-white">
                     {applications.filter(a => a.status === 'pending').length}
                   </p>
                 </div>
                 <i className="fas fa-clock text-2xl text-amber-600 dark:text-amber-400"></i>
               </div>
             </div>
-            <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">
+            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-base-content/70 font-medium">Accepted</p>
-                  <p className="text-2xl font-bold text-base-content">
+                  <p className="text-sm text-white/60 font-medium">Accepted</p>
+                  <p className="text-2xl font-bold text-white">
                     {applications.filter(a => a.status === 'accepted').length}
                   </p>
                 </div>
                 <i className="fas fa-check-circle text-2xl text-emerald-600 dark:text-emerald-400"></i>
               </div>
             </div>
-            <div className="p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+            <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-base-content/70 font-medium">Rejected</p>
-                  <p className="text-2xl font-bold text-base-content">
+                  <p className="text-sm text-white/60 font-medium">Rejected</p>
+                  <p className="text-2xl font-bold text-white">
                     {applications.filter(a => a.status === 'rejected').length}
                   </p>
                 </div>
@@ -440,17 +453,17 @@ export default function Applications() {
           <aside
             id="filters"
             className={`
-              space-y-6 rounded-2xl border border-base-300/60 border-l-4 border-l-primary bg-primary/5 dark:bg-primary/10 p-6
+              space-y-6 rounded-2xl border border-white/5 border-l-4 border-l-[#1ec86d] bg-[#1ec86d]/5 p-6
               ${filtersOpen ? 'block' : 'hidden'}
               lg:block lg:col-span-1
             `}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-heading font-bold text-base-content">
+              <h3 className="text-xl font-heading font-bold text-white">
                 🔍 Filters
               </h3>
               <button
-                className="lg:hidden text-base-content opacity-60 hover:opacity-80"
+                className="lg:hidden text-white opacity-60 hover:opacity-80"
                 onClick={() => setFiltersOpen(false)}
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -459,11 +472,11 @@ export default function Applications() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
+                <label className="block text-sm font-medium text-white opacity-80 mb-3">
                   Status
                 </label>
                 <select
-                  className="w-full px-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
+                  className="w-full px-4 py-3 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#1ec86d] focus:border-transparent bg-[#1e1e1e] text-white"
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
                 >
@@ -472,11 +485,11 @@ export default function Applications() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
+                <label className="block text-sm font-medium text-white opacity-80 mb-3">
                   Category
                 </label>
                 <select
-                  className="w-full px-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
+                  className="w-full px-4 py-3 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#1ec86d] focus:border-transparent bg-[#1e1e1e] text-white"
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
                 >
@@ -485,14 +498,14 @@ export default function Applications() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-base-content opacity-80 mb-3">
+                <label className="block text-sm font-medium text-white opacity-80 mb-3">
                   Search by Title
                 </label>
                 <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content opacity-60" />
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white opacity-60" />
                   <input
                     type="text"
-                    className="w-full pl-10 pr-4 py-3 border border-base-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-base-300"
+                    className="w-full pl-10 pr-4 py-3 border border-white/10 rounded-xl focus:ring-2 focus:ring-[#1ec86d] focus:border-transparent bg-[#1e1e1e] text-white"
                     placeholder="e.g. AC Repair"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -505,26 +518,26 @@ export default function Applications() {
           {/* Applications List */}
           <main className="lg:col-span-3 space-y-6">
             {!authReady ? (
-              <div className="rounded-2xl border border-base-300/60 p-8 text-center">
+              <div className="rounded-2xl border border-white/10 p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-base-content/70">Checking sign-in…</p>
+                <p className="text-white/60">Checking sign-in…</p>
               </div>
             ) : loading ? (
-              <div className="rounded-2xl border border-base-300/60 p-8 text-center">
+              <div className="rounded-2xl border border-white/10 p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-base-content/70">Loading applications…</p>
+                <p className="text-white/60">Loading applications…</p>
               </div>
             ) : err ? (
               <div className="rounded-2xl border border-error/30 p-8 text-center">
                 <i className="fas fa-exclamation-triangle text-4xl text-error mb-4"></i>
-                <h3 className="text-lg font-semibold text-base-content mb-2">Error Loading Applications</h3>
-                <p className="text-base-content/80">{err}</p>
+                <h3 className="text-lg font-semibold text-white mb-2">Error Loading Applications</h3>
+                <p className="text-white/80">{err}</p>
               </div>
             ) : filteredApps.length === 0 ? (
-              <div className="rounded-2xl border border-base-300/60 p-12 text-center">
-                <i className="fas fa-inbox text-6xl text-base-content/30 mb-6"></i>
-                <h3 className="text-xl font-semibold text-base-content mb-2">No Applications Found</h3>
-                <p className="text-base-content/70 mb-6">
+              <div className="rounded-2xl border border-white/10 p-12 text-center">
+                <i className="fas fa-inbox text-6xl text-white/30 mb-6"></i>
+                <h3 className="text-xl font-semibold text-white mb-2">No Applications Found</h3>
+                <p className="text-white/60 mb-6">
                   {searchTerm || statusFilter !== 'All' || categoryFilter !== 'All'
                     ? 'No applications match your current filters.'
                     : 'You haven\'t applied to any jobs yet.'}
@@ -538,27 +551,27 @@ export default function Applications() {
               <>
                 {/* Active Orders - Quick access when there are accepted applications */}
                 {acceptedAppsCount > 0 && statusFilter === 'All' && (
-                  <div className="mb-8 p-6 rounded-2xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">
+                  <div className="mb-8 p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-500/20 text-emerald-400">
                         <i className="fas fa-user-check text-xl"></i>
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-base-content">Active Orders</h2>
-                        <p className="text-sm text-base-content/70">Call your clients to coordinate</p>
+                        <h2 className="text-xl font-bold text-white">Active Orders</h2>
+                        <p className="text-sm text-white/60">Call your clients to coordinate</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {groupedApps.accepted.slice(0, 5).map((app) => {
                         const info = clientDetails[app.clientId] || { name: 'Client', phone: '', email: '' };
                         return (
-                          <div key={app._id} className="flex items-center gap-3 rounded-xl p-4 border border-base-300/60 min-w-[200px]">
-                            <div className="w-10 h-10 rounded-full bg-base-300/50 flex items-center justify-center text-base-content font-bold">
+                          <div key={app._id} className="flex items-center gap-3 rounded-xl p-4 border border-white/10 min-w-[200px]">
+                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white font-bold">
                               {info.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-base-content truncate">{info.name}</p>
-                              <p className="text-xs text-base-content/60 truncate">{app.title || 'Job'}</p>
+                              <p className="font-semibold text-white truncate">{info.name}</p>
+                              <p className="text-xs text-white/50 truncate">{app.title || 'Job'}</p>
                               {info.phone && (
                                 <a href={`tel:${info.phone.replace(/\s/g, '')}`} className="btn btn-success btn-sm mt-2">
                                   <i className="fas fa-phone mr-1"></i>Call
@@ -596,12 +609,12 @@ export default function Applications() {
                 return (
                   <div
                     key={app._id}
-                    className={`rounded-xl overflow-hidden border border-base-300/60 ${borderAccent} transition-all`}
+                    className={`rounded-xl overflow-hidden border border-white/10 ${borderAccent} transition-all`}
                   >
                     <div className="p-4 lg:p-6 space-y-4">
                       {/* Header: Title + Status */}
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                        <h3 className="text-lg font-semibold text-base-content break-words pr-2">
+                        <h3 className="text-lg font-semibold text-white break-words pr-2">
                           {app.title || 'Untitled Job'}
                         </h3>
                         <span className={`shrink-0 px-3 py-1 rounded-full text-sm font-medium inline-flex items-center w-fit ${tone}`}>
@@ -611,7 +624,7 @@ export default function Applications() {
                       </div>
 
                       {/* Meta row: Location (short), Category, Budget, Date */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-base-content/80">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/80">
                         <span className="flex items-center gap-1.5 min-w-0" title={app.location || undefined}>
                           <MapPinIcon className="w-4 h-4 text-primary shrink-0" />
                           <span className="truncate">{app.location || 'N/A'}</span>
@@ -621,7 +634,7 @@ export default function Applications() {
                             {app.category}
                           </span>
                         )}
-                        <span className="flex items-center gap-1.5 font-medium text-base-content">
+                        <span className="flex items-center gap-1.5 font-medium text-white">
                           <CurrencyBangladeshiIcon className="w-4 h-4 text-primary" />
                           {typeof app.budget === 'number' ? `৳${app.budget.toLocaleString()}` : (app.budget || '৳N/A')}
                         </span>
@@ -719,12 +732,12 @@ export default function Applications() {
                       {app.proposalText && (
                         <div className="space-y-2">
                           {expandedProposal[app._id] ? (
-                            <div className="rounded-lg bg-base-200 p-4">
+                            <div className="rounded-lg bg-[#151515] p-4">
                               <div className="flex items-center justify-between gap-2 mb-2">
-                                <span className="text-sm font-medium text-base-content/80">Your proposal</span>
+                                <span className="text-sm font-medium text-white/80">Your proposal</span>
                                 <button type="button" className="btn btn-ghost btn-xs" onClick={() => toggleProposal(app._id)}>Collapse</button>
                               </div>
-                              <p className="text-sm text-base-content/90 leading-relaxed whitespace-pre-wrap">{app.proposalText}</p>
+                              <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap">{app.proposalText}</p>
                             </div>
                           ) : (
                             <button type="button" className="btn btn-ghost btn-sm gap-2 text-primary" onClick={() => toggleProposal(app._id)}>
@@ -736,9 +749,9 @@ export default function Applications() {
                       )}
 
                       {(app.proposedPrice || app.counterPrice || app.finalPrice || app.negotiationStatus) && (
-                        <div className="rounded-lg border border-base-300 bg-base-200 p-4 space-y-2">
+                        <div className="rounded-lg border border-white/10 bg-[#151515] p-4 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-base-content/80">Price Negotiation</span>
+                            <span className="text-sm font-medium text-white/80">Price Negotiation</span>
                             <span className="text-xs badge badge-outline">
                               {(app.negotiationStatus || (app.counterPrice ? 'countered' : 'pending')).toString()}
                             </span>
@@ -746,21 +759,21 @@ export default function Applications() {
 
                           {app.proposedPrice ? (
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-base-content/70">Your Proposed</span>
+                              <span className="text-white/60">Your Proposed</span>
                               <span className="font-semibold text-primary">৳{Number(app.proposedPrice).toLocaleString()}</span>
                             </div>
                           ) : null}
 
                           {app.counterPrice ? (
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-base-content/70">Client Counter</span>
+                              <span className="text-white/60">Client Counter</span>
                               <span className="font-semibold text-warning">৳{Number(app.counterPrice).toLocaleString()}</span>
                             </div>
                           ) : null}
 
                           {app.finalPrice ? (
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-base-content/70">Final Agreed</span>
+                              <span className="text-white/60">Final Agreed</span>
                               <span className="font-semibold text-success">৳{Number(app.finalPrice).toLocaleString()}</span>
                             </div>
                           ) : null}
@@ -768,7 +781,7 @@ export default function Applications() {
                           {app.status === 'pending' &&
                           app.counterPrice &&
                           !['accepted', 'cancelled'].includes((app.negotiationStatus || '').toLowerCase()) ? (
-                            <div className="pt-2 mt-2 border-t border-base-300 flex flex-wrap gap-2">
+                            <div className="pt-2 mt-2 border-t border-white/10 flex flex-wrap gap-2">
                               <button
                                 className="btn btn-success btn-sm gap-1.5"
                                 disabled={negotiatingApplicationId === app._id}
@@ -795,7 +808,7 @@ export default function Applications() {
                       )}
 
                       {/* Notes */}
-                      <div className="pt-4 border-t border-base-300">
+                      <div className="pt-4 border-t border-white/10">
                         <ApplicationNotes
                           applicationId={app._id}
                           userId={user?.uid}
@@ -820,37 +833,37 @@ export default function Applications() {
       {showEditModal && editingApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleEditCancel}></div>
-          <div className="relative bg-base-200 rounded-xl shadow-2xl w-full p-6">
-            <h3 className="text-xl font-bold mb-4 text-base-content">Edit Proposal</h3>
-            <p className="text-sm text-base-content opacity-70 mb-4">
+          <div className="relative bg-[#151515] rounded-xl shadow-2xl w-full p-6">
+            <h3 className="text-xl font-bold mb-4 text-white">Edit Proposal</h3>
+            <p className="text-sm text-white opacity-70 mb-4">
               Job: <strong>{editingApplication.title || 'Untitled Job'}</strong>
             </p>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-base-content mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Your Proposal <span className="text-error">*</span>
               </label>
               <textarea
-                className="w-full p-3 border border-base-300 rounded-lg bg-base-300 text-base-content resize-none"
+                className="w-full p-3 border border-white/10 rounded-lg bg-[#1e1e1e] text-white resize-none"
                 rows={8}
                 value={editProposalText}
                 onChange={(e) => setEditProposalText(e.target.value)}
                 placeholder="Describe your skills, experience, and why you're the right fit for this job..."
                 disabled={isSaving}
               />
-              <div className="mt-2 text-xs text-base-content opacity-60">
+              <div className="mt-2 text-xs text-white opacity-60">
                 {editProposalText.length} characters (minimum 50)
               </div>
             </div>
             <div className="flex gap-3 justify-end">
               <button
-                className="px-4 py-2 bg-base-300 hover:bg-base-200 text-base-content font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-[#1e1e1e] hover:bg-[#151515] text-white font-medium rounded-lg transition-colors"
                 onClick={handleEditCancel}
                 disabled={isSaving}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#1ec86d] hover:bg-[#19b363] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSaveProposal}
                 disabled={isSaving || editProposalText.trim().length < 50}
               >
@@ -875,15 +888,15 @@ export default function Applications() {
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleCancelCancel}></div>
-          <div className="relative bg-base-200 rounded-xl shadow-2xl w-full p-6">
-            <h3 className="text-xl font-bold mb-4 text-base-content">Withdraw Application</h3>
-            <p className="text-base-content opacity-70 mb-6">
+          <div className="relative bg-[#151515] rounded-xl shadow-2xl w-full p-6">
+            <h3 className="text-xl font-bold mb-4 text-white">Withdraw Application</h3>
+            <p className="text-white opacity-70 mb-6">
               Are you sure you want to withdraw your application for <strong>"{cancellingApplicationTitle}"</strong>? 
               This action cannot be undone, and the client will be notified.
             </p>
             <div className="flex gap-3 justify-end">
               <button
-                className="px-4 py-2 bg-base-300 hover:bg-base-200 text-base-content font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-[#1e1e1e] hover:bg-[#151515] text-white font-medium rounded-lg transition-colors"
                 onClick={handleCancelCancel}
                 disabled={isCancelling}
               >

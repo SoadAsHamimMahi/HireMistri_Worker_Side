@@ -254,14 +254,14 @@ const Jobs = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#050505] text-slate-100 font-['Inter'] selection:bg-primary/30">
+    <div className="flex flex-col min-h-screen text-slate-100 font-['Inter'] selection:bg-primary/30">
       {/* Hero Section */}
       <section className="relative h-[320px] w-full overflow-hidden shrink-0">
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=2070&auto=format&fit=crop')` }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-[#050505]/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/80 to-[#0a0a0a]/20"></div>
         <div className="relative flex h-full flex-col justify-center px-6 md:px-12 mx-auto w-full">
           <button
             onClick={() => navigate('/dashboard')}
@@ -283,7 +283,7 @@ const Jobs = () => {
       </section>
 
       {/* Toolbar */}
-      <div className="z-10 bg-[#050505]/80 backdrop-blur-md sticky top-0 border-b border-white/5">
+      <div className="z-10 bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 border-b border-white/5">
         <div className="mx-auto flex flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-12">
           <div className="flex items-center gap-1 rounded-3xl border border-white/10 bg-[#1ec86d]/30 p-1">
             <button
@@ -316,7 +316,7 @@ const Jobs = () => {
       <div className="mx-auto flex w-full gap-8 px-6 py-10 md:px-12 flex-1">
         {/* Sidebar Filters */}
         <aside className={`fixed inset-0 z-50 lg:relative lg:inset-auto lg:block lg:w-72 shrink-0 transition-transform duration-300 ${showMobileFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-          <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm lg:hidden" onClick={() => setShowMobileFilters(false)}></div>
+          <div className="absolute inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm lg:hidden" onClick={() => setShowMobileFilters(false)}></div>
           <div className="relative h-full lg:h-auto lg:sticky lg:top-24 flex flex-col gap-6 rounded-2xl border border-white/5 bg-[#121212] p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between lg:hidden mb-2">
               <h3 className="text-lg font-bold">Filters</h3>
@@ -335,7 +335,7 @@ const Jobs = () => {
                 <input
                   type="text"
                   placeholder="e.g. Electrician, Roofer"
-                  className="w-full rounded-3xl border-white/5 bg-[#050505] pl-10 pr-4 py-3 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary placeholder-slate-300 transition-all font-medium"
+                  className="w-full rounded-3xl border-white/5 bg-[#0a0a0a] pl-10 pr-4 py-3 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary placeholder-slate-300 transition-all font-medium"
                   value={filters.search}
                   onChange={e => handleChange('search', e.target.value)}
                 />
@@ -367,14 +367,14 @@ const Jobs = () => {
                 <input
                   type="number"
                   placeholder="Min"
-                  className="w-1/2 rounded-3xl border-white/5 bg-[#050505] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary placeholder-slate-300 font-medium"
+                  className="w-1/2 rounded-3xl border-white/5 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary placeholder-slate-300 font-medium"
                   value={filters.budgetMin}
                   onChange={e => handleChange('budgetMin', e.target.value)}
                 />
                 <input
                   type="number"
                   placeholder="Max"
-                  className="w-1/2 rounded-3xl border-white/5 bg-[#050505] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary placeholder-slate-300 font-medium"
+                  className="w-1/2 rounded-3xl border-white/5 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary placeholder-slate-300 font-medium"
                   value={filters.budgetMax}
                   onChange={e => handleChange('budgetMax', e.target.value)}
                 />
@@ -385,7 +385,7 @@ const Jobs = () => {
               <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-100">Location</h3>
               <div className="relative">
                 <select
-                  className="w-full rounded-3xl border-white/5 bg-[#050505] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary font-medium appearance-none cursor-pointer"
+                  className="w-full rounded-3xl border-white/5 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary font-medium appearance-none cursor-pointer"
                   value={filters.location}
                   onChange={e => handleChange('location', e.target.value)}
                 >
@@ -401,7 +401,7 @@ const Jobs = () => {
               <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-100">Sort By</h3>
               <div className="relative">
                 <select
-                  className="w-full rounded-3xl border-white/5 bg-[#050505] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary font-medium appearance-none cursor-pointer"
+                  className="w-full rounded-3xl border-white/5 bg-[#0a0a0a] px-4 py-2.5 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary font-medium appearance-none cursor-pointer"
                   value={filters.sortBy}
                   onChange={e => handleChange('sortBy', e.target.value)}
                 >

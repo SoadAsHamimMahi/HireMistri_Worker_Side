@@ -23,6 +23,8 @@ import WorkerLogin from './Authentication/WorkerLogin';
 import WorkerRegister from './Authentication/WorkerRegister';
 import AuthProvider from './Authentication/AuthProvider';
 import WorkerJobDetails from './routes/WorkerJobDetails';
+import RegistrationGuard from './components/RegistrationGuard';
+import RegistrationPending from './routes/RegistrationPending';
 import JobOffers from './routes/JobOffers';
 import SavedJobs from './routes/SavedJobs';
 import ClientProfile from './routes/ClientProfile';
@@ -47,7 +49,7 @@ const router = createBrowserRouter([
       { path: '', element: <Navigate to="/dashboard" replace /> },
       {
         path: 'dashboard',
-        element: <DashboardLayout />,
+        element: <RegistrationGuard><DashboardLayout /></RegistrationGuard>,
         children: [
           { index: true, element: <Dashboard /> },
           { path: 'applications', element: <Applications /> },
@@ -61,7 +63,9 @@ const router = createBrowserRouter([
       { path: 'edit-profile', element: <EditProfile /> },
       { path: 'job/:jobId', element: <JobDetails /> },
       { path: 'login', element: <WorkerLogin /> },
+      { path: 'register', element: <WorkerRegister /> },
       { path: 'registration', element: <WorkerRegister /> },
+      { path: 'registration/pending', element: <RegistrationPending /> },
       { path: 'jobs/:id', element: <WorkerJobDetails /> },
       { path: 'client/:clientId', element: <ClientProfile /> },
       { path: 'browse-clients', element: <BrowseClients /> },

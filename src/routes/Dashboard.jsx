@@ -43,7 +43,7 @@ export default function Dashboard() {
   const [reportRange, setReportRange] = useState('weekly'); 
   const [isAvailable, setIsAvailable] = useState(true);
 
-  const JOBS_PER_PAGE = 4;
+  const JOBS_PER_PAGE = 6;
 
   useEffect(() => {
     if (!uid) return;
@@ -260,63 +260,100 @@ export default function Dashboard() {
           {/* Recommended Jobs */}
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">Recommended Jobs</h3>
-              <Link to="/jobs" className="text-[#10b77f] text-xs font-bold hover:underline">View All Jobs</Link>
+              <div>
+                <h3 className="text-xl font-bold">Recommended Jobs</h3>
+                <p className="text-white/30 text-xs mt-0.5">{filteredJobs.length} jobs available for you</p>
+              </div>
+              <Link to="/jobs" className="text-[#1ec86d] text-xs font-bold hover:underline flex items-center gap-1">
+                View All Jobs <MdChevronRight className="text-base" />
+              </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {paginatedJobs.map((job) => {
                 const jobId = job._id?.$oid || job._id || job.id;
+                const coverImage = Array.isArray(job.images) && job.images.length > 0 ? job.images[0] : null;
                 return (
-                <div key={jobId} className="bg-[#151515] border border-white/5 rounded-[1.5rem] p-6 hover:border-[#10b77f]/20 transition-all flex flex-col h-full group">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="bg-[#10b77f]/10 text-[#10b77f] text-[9px] font-bold uppercase px-2 py-0.5 rounded tracking-wider">{job.category}</span>
-                    <span className="text-lg font-black text-white">৳ {job.budget?.toLocaleString() || job.budget}</span>
+                  <div key={jobId} className="bg-[#151515] border border-white/5 rounded-2xl overflow-hidden hover:border-[#1ec86d]/30 hover:shadow-lg hover:shadow-[#1ec86d]/5 transition-all flex flex-col group">
+
+                    {/* Cover image / placeholder banner */}
+                    <div className="relative h-36 overflow-hidden bg-[#0f0f0f] shrink-0">
+                      {coverImage ? (
+                        <img
+                          src={coverImage}
+                          alt={job.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1ec86d]/10 via-[#0f0f0f] to-[#0a0a0a]">
+                          <MdConstruction className="text-5xl text-[#1ec86d]/20" />
+                        </div>
+                      )}
+                      {/* Budget badge */}
+                      <span className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs font-black px-2.5 py-1 rounded-lg">
+                        ৳ {Number(job.budget)?.toLocaleString() || job.budget}
+                      </span>
+                      {/* Category badge */}
+                      <span className="absolute bottom-3 left-3 bg-[#1ec86d]/20 text-[#1ec86d] text-[9px] font-bold uppercase px-2 py-0.5 rounded tracking-wider backdrop-blur-sm border border-[#1ec86d]/20">
+                        {job.category}
+                      </span>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="p-5 flex flex-col flex-1">
+                      <h4 className="text-sm font-bold mb-3 flex-1 group-hover:text-[#1ec86d] transition-colors line-clamp-2 leading-snug">
+                        {job.title}
+                      </h4>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-white/30 text-[10px] mb-4">
+                        <span className="flex items-center gap-1">
+                          <MdLocationOn className="text-xs shrink-0" />
+                          <span className="truncate max-w-[120px]">{job.location || 'N/A'}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MdGroup className="text-xs shrink-0" />
+                          {job.applicants?.length || 0} applied
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MdSchedule className="text-xs shrink-0" />
+                          2h ago
+                        </span>
+                      </div>
+                      <Link
+                        to={`/jobs/${jobId}`}
+                        className="w-full bg-[#1ec86d] text-black font-black py-2.5 rounded-xl text-center hover:bg-[#19b363] transition-all text-[10px] uppercase tracking-widest"
+                      >
+                        Apply Now
+                      </Link>
+                    </div>
                   </div>
-                  <h4 className="text-base font-bold mb-6 flex-1 group-hover:text-[#10b77f] transition-colors">{job.title}</h4>
-                  <div className="flex items-center gap-4 text-white/30 text-[10px] mb-6">
-                    <div className="flex items-center gap-1.5">
-                      <MdLocationOn className="text-xs" /> {job.location}
-                    </div>
-                    <div className="flex items-center gap-1.5 border-x border-white/5 px-4 h-3">
-                      <MdGroup className="text-xs" /> {job.applicants?.length || 0} applicants
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <MdSchedule className="text-xs" /> 2h ago
-                    </div>
-                  </div>
-                  <Link to={`/jobs/${jobId}`} className="w-full bg-[#10b77f] text-white font-black py-3 rounded-xl text-center hover:bg-[#0da06f] transition-all text-xs uppercase tracking-widest">
-                    Apply Now
-                  </Link>
-                </div>
                 );
               })}
             </div>
 
             {/* Pagination Controls */}
             {pageCount > 1 && (
-              <div className="mt-12 flex items-center justify-center gap-2">
-                <button 
+              <div className="mt-10 flex items-center justify-center gap-2">
+                <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
-                  className="h-8 w-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 disabled:opacity-20"
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 disabled:opacity-20 transition-all"
                   disabled={page === 1}
                 >
                   <MdChevronLeft className="text-xl" />
                 </button>
                 <div className="flex items-center gap-1.5">
                   {[...Array(pageCount)].map((_, i) => (
-                    <button 
+                    <button
                       key={i}
                       onClick={() => setPage(i + 1)}
-                      className={`h-8 w-8 text-xs font-bold rounded-full transition-all ${page === i + 1 ? 'bg-[#10b77f] text-white' : 'text-white/30 hover:text-white'}`}
+                      className={`h-8 w-8 text-xs font-bold rounded-full transition-all ${page === i + 1 ? 'bg-[#1ec86d] text-black' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
                     >
                       {i + 1}
                     </button>
                   ))}
                 </div>
-                <button 
+                <button
                   onClick={() => setPage(p => Math.min(pageCount, p + 1))}
-                  className="h-8 w-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 disabled:opacity-20"
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 disabled:opacity-20 transition-all"
                   disabled={page === pageCount}
                 >
                   <MdChevronRight className="text-xl" />
@@ -328,7 +365,7 @@ export default function Dashboard() {
           {/* Footer */}
           <footer className="pt-8 border-t border-white/5 flex items-center justify-between text-white/20 text-[9px] uppercase tracking-widest font-bold">
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 text-[#10b77f]">
+              <div className="flex items-center gap-2 text-[#1ec86d]">
                 <MdConstruction className="text-xs" />
                 <span>Hire Mistri Worker Portal</span>
               </div>

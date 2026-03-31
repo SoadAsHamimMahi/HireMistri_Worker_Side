@@ -1,15 +1,19 @@
 import { useState, useEffect, useContext } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { AuthContext } from '../Authentication/AuthProvider';
 import { useProfile } from '../contexts/ProfileContext';
 import DarkModeToggle from './DarkModeToggle';
+import Notifications from './Notifications';
 
 export default function WorkerNavbar() {
   const ctx = useContext(AuthContext) || {};
   const { profile, setProfile, fetchProfile } = useProfile();
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = getAuth();
+  const isDashboardArea = location.pathname === '/dashboard' || location.pathname.startsWith('/dashboard/');
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -51,6 +55,23 @@ export default function WorkerNavbar() {
     return () => window.removeEventListener('profileUpdated', onProfileUpdated);
   }, [setProfile, fetchProfile]);
 
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  // Poll for notifications count
+  useEffect(() => {
+    if (!uid) return;
+    const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const fetchCount = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/notifications/${uid}`);
+        setNotificationCount(res.data.unreadCount || 0);
+      } catch (err) { }
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 15000);
+    return () => clearInterval(interval);
+  }, [uid]);
+
   const handleLogout = async () => { await signOut(auth); navigate('/login'); };
 
   const isAuthed = !!uid;
@@ -63,11 +84,9 @@ export default function WorkerNavbar() {
     'My Account';
   const secondaryLine = profile?.phone || uid || '';
 
-  const notifCount = 2; // TODO wire real counts
-
   return (
     <div className="w-full">
-      <div className="bg-base-200 shadow-sm border-b border-base-300 px-4 sm:px-6 lg:px-8">
+      <div className={`shadow-sm border-b px-4 sm:px-6 lg:px-8 ${isDashboardArea ? 'bg-[#0f0f0f] border-white/5' : 'bg-base-200 border-base-300'}`}>
           <div className="flex justify-between items-center h-16">
             {/* Enhanced Logo */}
             <Link to="/" className="flex items-center space-x-3">
@@ -121,42 +140,25 @@ export default function WorkerNavbar() {
                     Messages
                   </NavLink>
 
-                  {/* Notifications Popover */}
+                  {/* Notifications Popover Trigger */}
                   <div className="relative notifications-dropdown">
                     <button 
-                      onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                      onClick={() => setIsNotificationsOpen(true)}
                       className="btn btn-ghost btn-circle relative"
                     >
                       <i className="far fa-bell text-lg text-base-content"></i>
-                      {notifCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-error text-error-content text-xs rounded-full flex items-center justify-center">
-                          {notifCount}
+                      {notificationCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-error text-error-content text-[10px] font-bold rounded-full flex items-center justify-center">
+                          {notificationCount > 9 ? '9+' : notificationCount}
                         </span>
                       )}
                     </button>
-                    {isNotificationsOpen && (
-                      <div className="absolute right-0 mt-2 w-72 bg-base-200 rounded-xl shadow-xl border border-base-300 p-3 z-50">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-semibold text-base-content text-sm">Notifications</span>
-                          {notifCount > 0 && (
-                            <button className="text-xs text-primary hover:underline">Mark all read</button>
-                          )}
-                        </div>
-                        {notifCount > 0 ? (
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 text-sm">
-                              <p className="font-medium text-base-content">New job offer received</p>
-                              <p className="text-xs text-base-content/60 mt-1">2 hours ago</p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-base-300/50 text-sm">
-                              <p className="font-medium text-base-content">Application status updated</p>
-                              <p className="text-xs text-base-content/60 mt-1">1 day ago</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-base-content/60 py-4 text-center">No new notifications</p>
-                        )}
-                      </div>
+                    {isNotificationsOpen && createPortal(
+                      <Notifications 
+                        onClose={() => setIsNotificationsOpen(false)} 
+                        onUpdateCount={setNotificationCount} 
+                      />,
+                      document.body
                     )}
                   </div>
 

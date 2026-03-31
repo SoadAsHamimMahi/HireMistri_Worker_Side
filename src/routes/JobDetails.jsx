@@ -646,7 +646,6 @@ const JobDetails = () => {
 
   return (
     <div className="min-h-screen page-bg">
-      <Toaster />
       
       {/* Header Section */}
       <div className="bg-base-200 shadow-sm border-b border-base-300">

@@ -59,7 +59,7 @@ export default function Earnings() {
 
       {/* Summary Card */}
       <div className="bg-[#151515] border border-white/5 rounded-[1.5rem] p-8 mb-8 flex items-center gap-6">
-        <div className="p-4 rounded-2xl bg-[#10b77f]/10 text-[#10b77f]">
+        <div className="p-4 rounded-2xl bg-[#1ec86d]/10 text-[#1ec86d]">
           <MdAccountBalanceWallet className="text-3xl" />
         </div>
         <div>
@@ -90,7 +90,7 @@ export default function Earnings() {
                 className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-xl bg-[#10b77f]/10 text-[#10b77f]">
+                  <div className="p-2 rounded-xl bg-[#1ec86d]/10 text-[#1ec86d]">
                     <MdCalendarToday className="text-lg" />
                   </div>
                   <div>
@@ -98,7 +98,7 @@ export default function Earnings() {
                     <p className="text-sm text-white/50">{e.clientName} • {formatDate(e.date)}</p>
                   </div>
                 </div>
-                <p className="font-bold text-[#10b77f]">৳ {Number(e.amount).toLocaleString()}</p>
+                <p className="font-bold text-[#1ec86d]">৳ {Number(e.amount).toLocaleString()}</p>
               </div>
             ))}
           </div>

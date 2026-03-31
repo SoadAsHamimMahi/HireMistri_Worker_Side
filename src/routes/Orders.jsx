@@ -100,6 +100,35 @@ const Orders = () => {
           if (jobData) detailsMap[jobId] = jobData;
         });
         setJobDetailsMap(detailsMap);
+
+        // Fetch real client profiles (name + avatar) for each order
+        const uniqueClientIds = [...new Set(transformedOrders.map(o => o.clientId).filter(Boolean))];
+        const clientProfileMap = {};
+        await Promise.all(
+          uniqueClientIds.map(async (clientId) => {
+            try {
+              const { data: clientData } = await axios.get(`${API_BASE}/api/users/${clientId}/public`, {
+                headers: { Accept: 'application/json' },
+              });
+              clientProfileMap[clientId] = {
+                name: [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') || clientData.displayName || 'Client',
+                avatar: clientData.profileCover || clientData.photoURL || null,
+              };
+            } catch {
+              clientProfileMap[clientId] = { name: 'Client', avatar: null };
+            }
+          })
+        );
+
+        // Patch orders with real client data
+        setOrders(prev =>
+          prev.map(order => {
+            const cp = order.clientId ? clientProfileMap[order.clientId] : null;
+            return cp
+              ? { ...order, clientName: cp.name || order.clientName, clientAvatar: cp.avatar || order.clientAvatar }
+              : order;
+          })
+        );
       } catch (err) {
         console.error('Failed to load orders:', err?.response?.data || err.message);
         setError('Failed to load orders');
@@ -323,48 +352,12 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans pb-20">
+    <div className="min-h-screen text-white font-sans pb-20">
       <Toaster position="top-right" />
       
-      {/* Search & Top Bar */}
-      <div className="sticky top-0 z-40 bg-[#050505]/80 backdrop-blur-md border-b border-white/5 px-6 py-4">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#1ec86d] rounded-lg flex items-center justify-center">
-              <i className="fas fa-tools text-black text-sm"></i>
-            </div>
-            <span className="text-xl font-bold tracking-tight">Hire Mistri</span>
-          </div>
-
-          <div className="flex-1 max-w-2xl relative">
-            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm"></i>
-            <input 
-              type="text" 
-              placeholder="Search orders, clients, or jobs..." 
-              className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#1ec86d]/50 transition-all"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center relative hover:bg-white/10 transition-colors">
-              <i className="far fa-bell text-white/60"></i>
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#050505]"></span>
-            </button>
-            <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-              <i className="far fa-cog text-white/60"></i>
-            </button>
-            <img 
-              src={user?.photoURL || '/default-profile.png'} 
-              alt="Profile" 
-              className="w-10 h-10 rounded-full border border-white/10"
-            />
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-[1600px] mx-auto px-6 py-10">
         {/* Hero + Stats - Single div with black to green gradient */}
-        <div className="bg-gradient-to-r from-[#050505] via-[#0a1a0a] to-[#1ec86d]/30 -mx-6 px-6 py-10 rounded-2xl mb-12">
+        <div className="bg-gradient-to-r from-[#0a0a0a] via-[#0a1a0a] to-[#1ec86d]/30 -mx-6 px-6 py-10 rounded-2xl mb-12">
           {/* Hero Section */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div>
@@ -486,7 +479,12 @@ const Orders = () => {
                 <div className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <img src={order.clientAvatar} alt="" className="w-12 h-12 rounded-full object-cover border border-white/10" />
+                      {order.clientAvatar ? (
+                        <img src={order.clientAvatar} alt={order.clientName} className="w-12 h-12 rounded-full object-cover border border-white/10" onError={e => { e.currentTarget.style.display='none'; e.currentTarget.nextSibling.style.display='flex'; }} />
+                      ) : null}
+                      <div className={`w-12 h-12 rounded-full border border-white/10 bg-white/10 items-center justify-center text-white font-bold text-lg ${order.clientAvatar ? 'hidden' : 'flex'}`}>
+                        {(order.clientName || 'C')[0].toUpperCase()}
+                      </div>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-4 border-[#090909] flex items-center justify-center">
                         <i className="fas fa-check text-[6px] text-white"></i>
                       </div>
@@ -575,7 +573,7 @@ const Orders = () => {
                             </Marker>
                           )}
                         </MapContainer>
-                        <div className="absolute bottom-4 left-4 z-[1000] bg-[#050505] border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                        <div className="absolute bottom-4 left-4 z-[1000] bg-[#0a0a0a] border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase">
                           {distance !== null ? `${distance} km away` : 'Calculating distance...'}
                         </div>
                       </div>
