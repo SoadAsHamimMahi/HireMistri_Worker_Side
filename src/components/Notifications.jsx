@@ -47,10 +47,10 @@ export default function Notifications({ onClose, onUpdateCount }) {
     try {
       await axios.patch(`${API_BASE}/api/notifications/${notificationId}/read`, { userId: user?.uid });
       setNotifications(prev => prev.map(n => n._id === notificationId ? { ...n, read: true } : n));
-      setUnreadCount(prev => { 
-        const next = Math.max(0, prev - 1); 
-        if (onUpdateCount) onUpdateCount(next); 
-        return next; 
+      setUnreadCount(prev => {
+        const next = Math.max(0, prev - 1);
+        if (onUpdateCount) onUpdateCount(next);
+        return next;
       });
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
@@ -221,7 +221,7 @@ function getIconProps(notification, isUnread) {
   const type = (notification.type || '').toLowerCase();
   const title = (notification.title || '').toLowerCase();
   const msg = (notification.message || '').toLowerCase();
-  
+
   if (title.includes('warning') || title.includes('alert') || title.includes('failed') || msg.includes('warned')) {
     return { icon: 'fas fa-exclamation-triangle', cls: isUnread ? 'bg-red-500/20 text-red-500' : 'bg-zinc-800 text-zinc-400' };
   }
@@ -257,11 +257,10 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, formatTime, ge
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 ${
-        isUnread
+      className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 ${isUnread
           ? 'border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10'
           : 'border-zinc-800/60 bg-zinc-800/30 hover:bg-zinc-800/50'
-      }`}
+        }`}
     >
       {isUnread && (
         <div className="absolute left-0 top-0 h-full w-[3px] bg-emerald-500 rounded-l-xl"></div>
@@ -274,27 +273,27 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, formatTime, ge
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
-             <div className="min-w-0">
-                <h4 className={`truncate text-sm font-semibold ${isUnread ? 'text-white' : 'text-zinc-300'}`}>
-                  {notification.title}
-                </h4>
-             </div>
-             {/* Delete Button (visible on hover) */}
-             <button
-                className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-zinc-700 text-zinc-400 hover:bg-red-500/20 hover:text-red-400 transition-all ml-auto"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(notification._id);
-                }}
-                title="Remove"
-              >
-                <i className="fas fa-times text-[10px]"></i>
-              </button>
+            <div className="min-w-0">
+              <h4 className={`truncate text-sm font-semibold ${isUnread ? 'text-white' : 'text-zinc-300'}`}>
+                {notification.title}
+              </h4>
+            </div>
+            {/* Delete Button (visible on hover) */}
+            <button
+              className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-zinc-700 text-zinc-400 hover:bg-red-500/20 hover:text-red-400 transition-all ml-auto"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(notification._id);
+              }}
+              title="Remove"
+            >
+              <i className="fas fa-times text-[10px]"></i>
+            </button>
           </div>
           <p className={`mt-1.5 text-[13px] leading-relaxed ${isUnread ? 'text-zinc-300' : 'text-zinc-400'}`}>
             {notification.message}
           </p>
-          
+
           <div className="mt-3 flex items-center justify-between">
             <span className="text-[11px] font-medium text-zinc-500">
               {formatTime(notification.createdAt)}

@@ -43,6 +43,92 @@ export default function WorkerJobDetails() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [clientPublic, setClientPublic] = useState(null);
 
+  // extra charges state
+  const [showExtraModal, setShowExtraModal] = useState(false);
+  const [extraType, setExtraType] = useState('EXTRA_COST');
+  const [extraAmount, setExtraAmount] = useState('');
+  const [extraDesc, setExtraDesc] = useState('');
+  const [extraReceipts, setExtraReceipts] = useState([]);
+  const [submittingExtra, setSubmittingExtra] = useState(false);
+  const [extraChargesList, setExtraChargesList] = useState([]);
+  const [feeStats, setFeeStats] = useState(null);
+  const [isFeeLoading, setIsFeeLoading] = useState(false);
+
+  // fetch fees
+  const fetchFees = async () => {
+    const laborAmount = Number(application?.finalPrice || application?.proposedPrice || 0);
+    if (laborAmount <= 0) return;
+    
+    setIsFeeLoading(true);
+    try {
+      const res = await fetch(`${base}/api/fees/calculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ laborAmount }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFeeStats(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch fee estimate:', e);
+    } finally {
+      setIsFeeLoading(false);
+    }
+  };
+
+  // fetch extra charges if applied
+  const fetchCharges = async () => {
+    if (!application?._id) return;
+    try {
+      const res = await fetch(`${base}/api/applications/${application._id}/additional-charges`);
+      if (res.ok) {
+        const data = await res.json();
+        setExtraChargesList(data);
+      }
+    } catch(e) {}
+  };
+
+  useEffect(() => {
+    fetchCharges();
+    fetchFees();
+  }, [application?._id, application?.finalPrice, application?.proposedPrice]);
+
+  const submitExtraCharge = async (e) => {
+    e.preventDefault();
+    if (!extraAmount || parseFloat(extraAmount) <= 0) return toast.error('Enter valid amount');
+    if (extraType === 'EXTRA_COST' && extraReceipts.length === 0) return toast.error('Receipts are required for extra costs');
+    setSubmittingExtra(true);
+    try {
+      const formData = new FormData();
+      formData.append('workerId', uid);
+      formData.append('amount', extraAmount);
+      formData.append('type', extraType);
+      formData.append('description', extraDesc);
+      Array.from(extraReceipts).forEach(f => formData.append('receipts', f));
+
+      const res = await fetch(`${base}/api/applications/${application._id}/additional-charges`, {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        toast.success(`Successfully requested ${extraType === 'TIP' ? 'tip' : 'extra cost'}`);
+        setShowExtraModal(false);
+        setExtraAmount('');
+        setExtraDesc('');
+        setExtraReceipts([]);
+        fetchCharges();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to submit request');
+      }
+    } catch(err) {
+      toast.error('Network error');
+    } finally {
+      setSubmittingExtra(false);
+    }
+  };
+
   // keep uid in sync with AuthContext
   useEffect(() => {
     setUid(ctx?.user?.uid || null);
@@ -68,6 +154,24 @@ export default function WorkerJobDetails() {
     return () => unsub && unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [profile, setProfile] = useState(null);
+
+  // load user profile for restrictions
+  useEffect(() => {
+    if (!uid) return;
+    (async () => {
+      try {
+        const res = await fetch(`${base}/api/users/${uid}`, { headers: { Accept: 'application/json' } });
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(data);
+        }
+      } catch (e) {
+        console.warn('Could not load user profile:', e);
+      }
+    })();
+  }, [uid, base]);
 
   // load job
   useEffect(() => {
@@ -864,6 +968,63 @@ export default function WorkerJobDetails() {
                         )}
                      </div>
 
+                     {/* Estimated Platform Fee Card - only show when accepted and price is known */}
+                     {(application.status === 'accepted' || application.status === 'pending' || application.status === 'in-progress') && (application.finalPrice || application.proposedPrice) && (
+                       <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 w-full mt-4 relative overflow-hidden group">
+                         {isFeeLoading && (
+                           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex items-center justify-center">
+                             <div className="loading loading-spinner loading-sm text-primary"></div>
+                           </div>
+                         )}
+                         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-2xl -mr-12 -mt-12 rounded-full"></div>
+                         
+                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-4 flex items-center justify-between">
+                           <span>Estimated Earnings Breakdown</span>
+                           {feeStats?.tier && (
+                             <span className="text-primary/60 bg-primary/10 px-2 py-0.5 rounded text-[8px] border border-primary/20">
+                               {feeStats.tier.replace('_', ' ')}
+                             </span>
+                           )}
+                         </p>
+                         
+                         {feeStats ? (
+                           <div className="space-y-3">
+                             <div className="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                               <span className="text-sm text-white/60">Agreed Labor Price</span>
+                               <span className="text-base font-bold text-white">৳{(Number(application.finalPrice || application.proposedPrice || 0)).toLocaleString()}</span>
+                             </div>
+                             
+                             <div className="flex justify-between items-center px-3">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-sm text-white/40">Platform Fee</span>
+                                 <div className="tooltip tooltip-right" data-tip="PLATFORM_FIXED_FEE + TIERED_LABOR_PERCENTAGE">
+                                   <i className="fas fa-info-circle text-[10px] text-white/20 cursor-help"></i>
+                                 </div>
+                               </div>
+                               <span className="text-sm font-bold text-red-500/80">- ৳{feeStats.fee?.toLocaleString()}</span>
+                             </div>
+                             
+                             <div className="mt-2 pt-3 border-t border-white/5 flex justify-between items-center px-3">
+                               <span className="text-base font-black text-white/90">Net Earnings</span>
+                               <div className="text-right">
+                                 <span className="text-2xl font-black text-[#1ec86d]">৳{(Number(application.finalPrice || application.proposedPrice || 0) - feeStats.fee).toLocaleString()}</span>
+                                 <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest mt-1">Expected Payout</p>
+                               </div>
+                             </div>
+                           </div>
+                         ) : (
+                           <p className="text-xs text-white/30 italic py-2">Calculating earnings projection...</p>
+                         )}
+                         
+                         <div className="mt-5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex gap-3 items-start">
+                           <i className="fas fa-shield-alt text-amber-500 text-[10px] mt-1"></i>
+                           <p className="text-[10px] text-amber-500/70 leading-relaxed">
+                             This fee is only charged upon <span className="font-bold">successful completion</span> and will be added to your account's due balance.
+                           </p>
+                         </div>
+                       </div>
+                     )}
+
                      {/* Action Buttons */}
                      <div className="pt-4 flex gap-4">
                         <button className="flex-1 py-4 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-white/90 transition-all">
@@ -873,6 +1034,54 @@ export default function WorkerJobDetails() {
                            Withdraw Application
                         </button>
                      </div>
+
+                     {/* Additional Charges Section */}
+                     {(application.status === 'accepted' || application.status === 'completed') && (
+                        <div className="bg-[#111] border border-white/5 p-5 rounded-2xl w-full mt-4">
+                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest">Additional Charges & Tips</span>
+                              <button onClick={() => setShowExtraModal(true)} disabled={application.status === 'completed'} className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 transition-colors rounded-lg text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
+                                 + Request Extra
+                              </button>
+                           </div>
+                           
+                           {extraChargesList.length > 0 ? (
+                              <div className="space-y-3 mt-4">
+                                 {extraChargesList.map(charge => (
+                                    <div key={charge._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
+                                       <div>
+                                          <div className="flex items-center gap-2 mb-1">
+                                             <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${charge.type === 'TIP' ? 'bg-purple-500/10 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                                {charge.type.replace('_', ' ')}
+                                             </span>
+                                             <span className="font-bold text-white text-sm">৳{Number(charge.amount).toLocaleString()}</span>
+                                          </div>
+                                          <p className="text-xs text-white/50">{charge.description || 'No description provided'}</p>
+                                          {charge.receiptUrls && charge.receiptUrls.length > 0 && (
+                                            <div className="flex gap-2 mt-2">
+                                              {charge.receiptUrls.map((url, i) => (
+                                                <a key={i} href={base + url} target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline">View Receipt {i+1}</a>
+                                              ))}
+                                            </div>
+                                          )}
+                                       </div>
+                                       <div className="shrink-0">
+                                          <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${
+                                             charge.status === 'APPROVED' ? 'bg-green-500/10 text-green-500' :
+                                             charge.status === 'REJECTED' ? 'bg-red-500/10 text-red-500' :
+                                             'bg-amber-500/10 text-amber-500'
+                                          }`}>
+                                             {charge.status}
+                                          </span>
+                                       </div>
+                                    </div>
+                                 ))}
+                              </div>
+                           ) : (
+                              <p className="text-xs text-white/30 italic mt-4">No additional charges requested.</p>
+                           )}
+                        </div>
+                     )}
                   </div>
                </div>
             ) : !hasApplied && (
@@ -915,17 +1124,34 @@ export default function WorkerJobDetails() {
                     </div>
                     
                     <div className="flex gap-4 pt-4">
-                       <button
-                         onClick={submitProposal}
-                         disabled={saving || proposal.trim().length < 50 || !proposedPrice}
-                         className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#00C853] to-[#64DD17] text-black font-black uppercase tracking-widest text-sm shadow-xl shadow-green-500/10 hover:shadow-green-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
-                       >
-                         {saving ? 'Processing...' : 'Submit Proposal'}
-                       </button>
-                       <button className="flex-1 py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-sm hover:bg-white/90 active:scale-95 transition-all">
-                         Message Client
-                       </button>
-                    </div>
+                        {profile?.isApplyBlocked ? (
+                          <div className="w-full bg-red-500/10 border border-red-500/20 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
+                            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
+                              <MdLock className="text-xl" />
+                            </div>
+                            <div>
+                              <h4 className="text-red-500 font-bold mb-1">Account Restricted</h4>
+                              <p className="text-white/60 text-xs">You cannot apply for new jobs until your due balance is cleared. Please visit your earnings page.</p>
+                            </div>
+                            <Link to="/earnings" className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-red-500/20">
+                              Clear Dues & Resume Applying
+                            </Link>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={submitProposal}
+                              disabled={saving || proposal.trim().length < 50 || !proposedPrice}
+                              className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#00C853] to-[#64DD17] text-black font-black uppercase tracking-widest text-sm shadow-xl shadow-green-500/10 hover:shadow-green-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                            >
+                              {saving ? 'Processing...' : 'Submit Proposal'}
+                            </button>
+                            <button className="flex-1 py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-sm hover:bg-white/90 active:scale-95 transition-all">
+                              Message Client
+                            </button>
+                          </>
+                        )}
+                     </div>
                   </div>
                </div>
             )}
@@ -1085,6 +1311,47 @@ export default function WorkerJobDetails() {
           © 2024 Hire Mistri • Professional Services Marketplace
         </p>
       </footer>
+
+      {/* Extra Charge Request Modal */}
+      {showExtraModal && (
+        <div className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-md p-6 relative">
+            <h3 className="text-xl font-bold mb-6">Request Additional Charge</h3>
+            <form onSubmit={submitExtraCharge} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-white/60 mb-2">Charge Type</label>
+                <select value={extraType} onChange={e => setExtraType(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white">
+                   <option value="EXTRA_COST">Materials / Parts / Transport</option>
+                   <option value="TIP">Discretionary Tip</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-white/60 mb-2">Amount (৳)</label>
+                <input type="number" value={extraAmount} onChange={e => setExtraAmount(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" required />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-white/60 mb-2">Description</label>
+                <textarea value={extraDesc} onChange={e => setExtraDesc(e.target.value)} placeholder="What is this charge for?" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" required></textarea>
+              </div>
+              {extraType === 'EXTRA_COST' && (
+                <div>
+                  <label className="block text-xs font-bold text-white/60 mb-2">Receipts (Mandatory)</label>
+                  <input type="file" multiple accept="image/*" onChange={e => setExtraReceipts(Array.from(e.target.files))} className="w-full file:bg-primary file:border-none file:px-4 file:py-2 file:rounded-xl file:text-black file:font-bold file:mr-4 file:cursor-pointer text-white/70" required />
+                </div>
+              )}
+              <div className="flex gap-3 pt-4">
+                 <button type="submit" disabled={submittingExtra} className="flex-1 py-3 bg-primary text-black font-bold uppercase tracking-widest text-xs rounded-xl disabled:opacity-50">
+                    {submittingExtra ? 'Submitting...' : 'Submit Request'}
+                 </button>
+                 <button type="button" onClick={() => setShowExtraModal(false)} className="px-6 py-3 bg-white/10 text-white font-bold uppercase tracking-widest text-xs rounded-xl border border-white/10">
+                    Cancel
+                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

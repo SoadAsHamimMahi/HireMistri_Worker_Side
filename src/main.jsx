@@ -35,6 +35,7 @@ import SupportInbox from './routes/Support/SupportInbox';
 import DashboardLayout from './routes/DashboardLayout';
 import Earnings from './routes/Earnings';
 import Settings from './routes/Settings';
+import PaymentStatus from './routes/PaymentStatus';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 import { MessagesProvider } from './contexts/MessagesContext';
@@ -56,11 +57,13 @@ const router = createBrowserRouter([
           { path: 'job-offers', element: <JobOffers /> },
           { path: 'orders', element: <Orders /> },
           { path: 'earnings', element: <Earnings /> },
+          { path: 'settings', element: <Settings /> },
         ],
       },
       { path: 'jobs', element: <Jobs /> },
       { path: 'saved-jobs', element: <SavedJobs /> },
       { path: 'edit-profile', element: <EditProfile /> },
+      { path: 'payment-status', element: <PaymentStatus /> },
       { path: 'job/:jobId', element: <JobDetails /> },
       { path: 'login', element: <WorkerLogin /> },
       { path: 'register', element: <WorkerRegister /> },

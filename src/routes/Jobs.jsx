@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../Authentication/AuthProvider';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -25,7 +26,8 @@ import {
   MdConstruction,
   MdNotifications,
   MdCheck,
-  MdArrowBack
+  MdArrowBack,
+  MdLock
 } from 'react-icons/md';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
@@ -81,6 +83,22 @@ const Jobs = () => {
   const [page, setPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [profile, setProfile] = useState(null);
+
+  const { user } = useContext(AuthContext) || {};
+  const uid = user?.uid || null;
+
+  useEffect(() => {
+    if (!uid) return;
+    (async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE}/api/users/${uid}`);
+        setProfile(data || {});
+      } catch (e) {
+        console.warn('Could not load user profile:', e);
+      }
+    })();
+  }, [uid]);
 
   useEffect(() => {
     if (viewMode === 'map') {
@@ -524,12 +542,22 @@ const Jobs = () => {
                       </div>
 
                       {/* CTA - solid green like Stitch design */}
-                      <Link
-                        to={`/jobs/${jobId}`}
-                        className="mt-4 w-full rounded-3xl border border-[#1ec86d] py-3 font-bold text-[#1ec86d] hover:bg-[#1ec86d]/10 active:scale-[0.98] transition-all text-center text-sm block"
-                      >
-                        View Details
-                      </Link>
+                      {profile?.isApplyBlocked ? (
+                        <Link
+                          to="/earnings"
+                          className="mt-4 w-full rounded-3xl bg-red-500/10 border border-red-500/30 py-3 font-bold text-red-500 hover:bg-red-500/20 active:scale-[0.98] transition-all text-center text-sm block flex items-center justify-center gap-2"
+                        >
+                          <MdLock className="text-base" />
+                          Clear Dues to Apply
+                        </Link>
+                      ) : (
+                        <Link
+                          to={`/jobs/${jobId}`}
+                          className="mt-4 w-full rounded-3xl border border-[#1ec86d] py-3 font-bold text-[#1ec86d] hover:bg-[#1ec86d]/10 active:scale-[0.98] transition-all text-center text-sm block"
+                        >
+                          View Details
+                        </Link>
+                      )}
                     </div>
                   );
                 })}

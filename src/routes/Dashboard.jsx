@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [reportRange, setReportRange] = useState('weekly'); 
   const [isAvailable, setIsAvailable] = useState(true);
+  const [reviews, setReviews] = useState([]);
 
   const JOBS_PER_PAGE = 6;
 
@@ -80,6 +81,16 @@ export default function Dashboard() {
         setMyApps([]);
       }
     })();
+
+    // Fetch reviews
+    (async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE}/api/reviews/worker/${uid}`);
+        setReviews(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.warn('Could not fetch reviews:', err);
+      }
+    })();
   }, [uid]);
 
   const kpis = useMemo(() => {
@@ -115,6 +126,44 @@ export default function Dashboard() {
   return (
     <div className="text-white font-['Inter']">
         <div className="p-8">
+          {/* Due Balance Warning & Block Banners */}
+          {profile?.isApplyBlocked ? (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-2xl p-4 mb-6 flex items-start gap-4 animate-pulse">
+              <div className="p-2 bg-red-500/20 text-red-500 rounded-full shrink-0">
+                <MdNotifications className="text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-500 font-bold mb-1">Account Blocked — Action Required</h3>
+                <p className="text-sm text-red-200/70 mb-3">Your due balance (৳{profile.dueBalance}) has exceeded the limit and your grace period has expired. You <strong>cannot apply to new jobs</strong> until dues are cleared.</p>
+                <Link to="/earnings" className="inline-block bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">Pay Dues Now →</Link>
+              </div>
+            </div>
+          ) : profile?.dueBalance >= 200 ? (
+            <div className="bg-amber-500/10 border border-amber-500/50 rounded-2xl p-4 mb-6 flex items-start gap-4">
+              <div className="p-2 bg-amber-500/20 text-amber-500 rounded-full shrink-0">
+                <MdNotifications className="text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-amber-500 font-bold mb-1">⚠️ High Due Balance Warning</h3>
+                <p className="text-sm text-amber-200/70 mb-3">Your due balance of <strong>৳{profile.dueBalance}</strong> is nearing the limit. Pay within 48 hours to avoid account restriction.</p>
+                <Link to="/earnings" className="inline-block bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold px-4 py-2 rounded-lg transition-colors">Clear Dues →</Link>
+              </div>
+            </div>
+          ) : profile?.dueBalance > 0 ? (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 mb-6 flex items-start gap-4">
+              <div className="p-2 bg-blue-500/20 text-blue-400 rounded-full shrink-0">
+                <MdAccountBalanceWallet className="text-xl" />
+              </div>
+              <div className="flex-1 flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-blue-300 font-bold mb-0.5">Pending Platform Due</h3>
+                  <p className="text-sm text-white/50">You have an outstanding balance of <strong className="text-white">৳{profile.dueBalance}</strong>. Pay anytime from your Earnings page.</p>
+                </div>
+                <Link to="/earnings" className="shrink-0 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 text-xs font-bold px-4 py-2 rounded-lg transition-colors">View →</Link>
+              </div>
+            </div>
+          ) : null}
+
           {/* Welcome Card */}
           <section className="bg-[#151515] border border-white/5 rounded-[1.5rem] p-8 mb-8 flex items-center justify-between gap-8 relative overflow-hidden">
             <div className="absolute top-[-50%] right-[-10%] w-96 h-96 bg-[#10b77f]/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -132,9 +181,12 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-[#10b77f]/20 text-[#10b77f] text-[10px] font-bold uppercase px-2 py-0.5 rounded">Top Rated</span>
-                  <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
-                    <MdStar className="text-xs" /> 4.9 (120 reviews)
-                  </div>
+                  {reviews.length > 0 && (
+                    <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
+                      <MdStar className="text-xs" /> 
+                      {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} ({reviews.length} reviews)
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -150,6 +202,45 @@ export default function Dashboard() {
               </label>
             </div>
           </section>
+          
+          {/* Due Balance & Restrictions Banners */}
+          {(profile?.dueBalance > 0 || profile?.isApplyBlocked) && (
+            <div className="mb-8 space-y-4">
+              {profile?.isApplyBlocked ? (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-red-500/10 transition-all"></div>
+                  <div className="flex items-center gap-5 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-500 shrink-0 shadow-lg shadow-red-500/10">
+                      <MdConstruction className="text-2xl animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-red-500 font-bold text-lg">Account Restricted</h4>
+                      <p className="text-white/60 text-sm mt-1 max-w-md">Your ability to apply for new jobs has been blocked because your due balance exceeds ৳1,000. Please clear your dues to resume working.</p>
+                    </div>
+                  </div>
+                  <Link to="/earnings" className="bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-xl shadow-red-500/20 hover:scale-[1.02] active:scale-95 shrink-0 relative z-10">
+                    Clear Dues Now
+                  </Link>
+                </div>
+              ) : profile?.dueBalance > 0 && (
+                <div className="bg-[#10b77f]/5 border border-[#10b77f]/10 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#10b77f]/5 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-[#10b77f]/10 transition-all"></div>
+                  <div className="flex items-center gap-5 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-[#10b77f]/10 flex items-center justify-center text-[#10b77f] shrink-0">
+                      <MdAccountBalanceWallet className="text-2xl" />
+                    </div>
+                    <div>
+                      <h4 className="text-[#10b77f] font-bold text-lg">Outstanding Dues</h4>
+                      <p className="text-white/60 text-sm mt-1 max-w-md">You have an outstanding balance of <span className="text-white font-bold">৳ {profile.dueBalance.toLocaleString()}</span>. Keep it below ৳1,000 to avoid account restrictions.</p>
+                    </div>
+                  </div>
+                  <Link to="/earnings" className="bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 font-bold py-3 px-6 rounded-xl transition-all shrink-0 relative z-10">
+                    View Wallet & Pay
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stats Grid */}
           <section className="grid grid-cols-4 gap-4 mb-8">
@@ -255,6 +346,45 @@ export default function Dashboard() {
                 <span className="text-[11px] font-bold text-white/70">My Orders</span>
               </Link>
             </div>
+          </section>
+
+          {/* Client Reviews Section */}
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold">Client Reviews & Ratings</h3>
+                <p className="text-white/30 text-xs mt-0.5">What people are saying about your service</p>
+              </div>
+            </div>
+            {reviews.length === 0 ? (
+              <div className="bg-[#151515] border border-white/5 rounded-2xl p-8 text-center">
+                <MdStar className="text-4xl text-white/10 mx-auto mb-3" />
+                <p className="font-bold text-white/50 mb-1">No reviews yet</p>
+                <p className="text-xs text-white/30">Complete jobs to start collecting client ratings.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {reviews.slice(0, 6).map((rev, idx) => (
+                  <div key={idx} className="bg-[#151515] border border-white/5 rounded-2xl p-5 hover:border-[#10b77f]/20 transition-all">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <MdStar key={s} className={`text-sm ${s <= rev.rating ? 'text-amber-500' : 'text-white/10'}`} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] text-white/30">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm text-white/70 italic mb-4 line-clamp-3">"{rev.comment}"</p>
+                    <div className="flex items-center gap-2 text-xs text-white/40">
+                      <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[8px] font-bold uppercase">
+                        {rev.clientName ? rev.clientName[0] : 'C'}
+                      </div>
+                      <span className="truncate">{rev.clientName || 'Anonymous Client'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* Recommended Jobs */}

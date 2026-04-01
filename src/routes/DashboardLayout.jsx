@@ -6,6 +6,7 @@ import {
   MdWork,
   MdShoppingBag,
   MdAccountBalanceWallet,
+  MdSettings,
   MdMenu,
   MdClose,
 } from 'react-icons/md';
@@ -16,6 +17,7 @@ const sidebarLinks = [
   { name: 'Job Offers', path: '/dashboard/job-offers', icon: MdWork },
   { name: 'My Orders', path: '/dashboard/orders', icon: MdShoppingBag },
   { name: 'Earnings', path: '/dashboard/earnings', icon: MdAccountBalanceWallet },
+  { name: 'Settings', path: '/dashboard/settings', icon: MdSettings },
 ];
 
 export default function DashboardLayout() {
