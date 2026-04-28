@@ -804,7 +804,7 @@ export default function WorkerJobDetails() {
                               className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
                            />
                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                              <span className="text-[10px] font-bold text-white uppercase tracking-widest">View Full Image</span>
+                              <span className="text-xs font-bold text-white uppercase tracking-widest">View Full Image</span>
                            </div>
                         </div>
                      ))}
@@ -893,7 +893,7 @@ export default function WorkerJobDetails() {
                       <i className="fas fa-file-alt text-primary"></i>
                       Your Application Status
                     </h2>
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${
                       application.status === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
                       application.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
                       'bg-primary/10 text-primary border-primary/20'
@@ -962,7 +962,7 @@ export default function WorkerJobDetails() {
 
                         {application.finalPrice && (
                            <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl col-span-full">
-                              <span className="block text-[10px] font-bold text-green-500/70 uppercase tracking-widest mb-2">Final Agreed Price</span>
+                              <span className="block text-xs font-bold text-green-500/70 uppercase tracking-widest mb-2">Final Agreed Price</span>
                               <span className="text-2xl font-black text-green-500">৳{Number(application.finalPrice).toLocaleString()}</span>
                            </div>
                         )}
@@ -1039,8 +1039,8 @@ export default function WorkerJobDetails() {
                      {(application.status === 'accepted' || application.status === 'completed') && (
                         <div className="bg-[#111] border border-white/5 p-5 rounded-2xl w-full mt-4">
                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest">Additional Charges & Tips</span>
-                              <button onClick={() => setShowExtraModal(true)} disabled={application.status === 'completed'} className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 transition-colors rounded-lg text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
+                              <span className="block text-xs font-bold text-white/40 uppercase tracking-widest">Additional Charges & Tips</span>
+                              <button onClick={() => setShowExtraModal(true)} disabled={application.status === 'completed'} className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 transition-colors rounded-lg text-xs font-black uppercase tracking-widest disabled:opacity-50">
                                  + Request Extra
                               </button>
                            </div>

@@ -42,10 +42,11 @@ export default function JobOfferAcceptModal({
       // Task 2.4: Retry mechanism
       const response = await retryRequest(() => 
         axios.post(
-          `${API_BASE}/api/job-offers/${job._id}/accept`,
+          `${API_BASE}/api/job-offers/${job._id}/respond`,
           { 
             workerId,
-            proposal: proposal.trim() || undefined,
+            action: 'accept',
+            reason: proposal.trim() || undefined,
             proposedPrice: priceNum != null && priceNum > 0 ? priceNum : undefined,
             currency: job.currency || 'BDT'
           }
@@ -56,7 +57,7 @@ export default function JobOfferAcceptModal({
       setProposal('');
       setProposedPrice('');
       if (onSuccess) {
-        onSuccess(response.data.application);
+        onSuccess(response.data);
       }
       onClose();
     } catch (err) {

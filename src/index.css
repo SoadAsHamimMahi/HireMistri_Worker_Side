@@ -4,6 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --brand-primary: #10b981; /* Emerald 500 */
+    --brand-hover: #059669; /* Emerald 600 */
+    --brand-light: #ecfdf5; /* Emerald 50 */
+  }
+}
+
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined' !important;
   font-weight: normal;
@@ -33,16 +41,27 @@
 .animate-fadeSlideIn { animation: fadeSlideIn 0.4s ease-out forwards; }
 
 .dark { color-scheme: dark; }
+[data-theme="light"] { color-scheme: light; }
 
 body {
   background-color: #0a0a0a;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   @apply text-base-content transition-colors duration-300;
 }
-[data-theme="light"] body { background-color: #E8F6ED; }
-[data-theme="light"] .app-root { background-color: #E8F6ED; }
+
+/* Global Typography Scaling */
+.text-xs { font-size: 0.75rem !important; } /* 12px instead of 11px */
+.text-\[10px\] { font-size: 11px !important; }
+.text-\[9px\] { font-size: 10px !important; }
+/* Emerald Ledger warm zinc base for light mode */
+[data-theme="light"] body { background-color: #f9f9f7; }
+[data-theme="light"] .app-root { background-color: #f9f9f7; }
 [data-theme="dark"] .app-root { background-color: #0a0a0a; }
 .page-bg { background-color: #0a0a0a; }
-[data-theme="light"] .page-bg { background-color: #E8F6ED; }
+[data-theme="light"] .page-bg { background-color: #f9f9f7; }
 [data-theme="dark"] .page-bg { background-color: #0a0a0a; }
 
 [data-theme="dark"] .footer-main-bg,
@@ -56,13 +75,16 @@ body {
 }
 
 [data-theme="dark"] .text-muted { color: #A0A0A0; }
-[data-theme="light"] .text-muted { color: #666666; }
+[data-theme="light"] .text-muted { color: #71717a; } /* zinc-500 — Emerald Ledger muted */
 
 .is-dashboard-page {
   background-color: #0a0a0a !important;
 }
+[data-theme="light"] .is-dashboard-page {
+  background-color: #f4f4f1 !important; /* base-200 in light */
+}
 
-/* Glassmorphism Utilities */
+/* Glassmorphism Utilities — dark defaults */
 .glass {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -84,6 +106,24 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Glassmorphism Utilities — light mode overrides */
+[data-theme="light"] .glass {
+  background: rgba(249, 249, 247, 0.75);
+  border: 1px solid rgba(24, 24, 27, 0.08);
+}
+
+[data-theme="light"] .glass-morphism {
+  background: rgba(244, 244, 241, 0.80);
+  border: 1px solid rgba(24, 24, 27, 0.10);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(232, 232, 227, 0.9); /* base-300 */
+  box-shadow: 0 4px 24px -4px rgba(16, 185, 129, 0.08), 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .mask-squircle {

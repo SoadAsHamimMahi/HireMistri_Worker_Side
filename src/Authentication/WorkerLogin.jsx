@@ -141,7 +141,7 @@ const WorkerLogin = () => {
 
             <p className="text-sm text-base-content opacity-60 mt-6">
               New worker?{' '}
-              <Link to="/registration" className="text-blue-500 hover:underline">
+              <Link to="/registration" className="text-primary hover:underline font-semibold">
                 Create an account
               </Link>
             </p>
@@ -231,9 +231,9 @@ const WorkerLogin = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex items-center justify-center w-full px-6 py-3 text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                className="flex items-center justify-center w-full px-6 py-3 text-primary-content bg-primary hover:bg-primary/90 rounded-xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
               >
-                <span className="font-medium">
+                <span className="font-bold uppercase tracking-widest text-sm">
                   {submitting ? 'Logging in…' : 'Log in'}
                 </span>
               </button>

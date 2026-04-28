@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
 import JobOfferAcceptModal from './JobOfferAcceptModal';
 import JobOfferRejectModal from './JobOfferRejectModal';
 import JobOfferRemindLaterModal from './JobOfferRemindLaterModal';
@@ -67,7 +65,6 @@ export default function JobOfferCard({
   onAccept,
   onReject
 }) {
-  const [loading, setLoading] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showRemindLaterModal, setShowRemindLaterModal] = useState(false);
@@ -185,7 +182,7 @@ export default function JobOfferCard({
         <div className="flex gap-2">
           <button
             onClick={handleAcceptClick}
-            disabled={loading || isExpired}
+            disabled={isExpired}
             className="btn btn-success flex-1"
             title={isExpired ? 'This job offer has expired' : ''}
           >
@@ -194,17 +191,13 @@ export default function JobOfferCard({
           </button>
           <button
             onClick={handleReject}
-            disabled={loading}
+            disabled={false}
             className="btn btn-error flex-1"
           >
-            {loading ? (
-              <span className="loading loading-spinner loading-sm"></span>
-            ) : (
-              <>
-                <i className="fas fa-times mr-2"></i>
-                Reject
-              </>
-            )}
+            <>
+              <i className="fas fa-times mr-2"></i>
+              Reject
+            </>
           </button>
         </div>
         {/* Task 6.1: Accept Later / Remind me later */}
@@ -212,7 +205,7 @@ export default function JobOfferCard({
           <button
             type="button"
             onClick={() => setShowRemindLaterModal(true)}
-            disabled={loading}
+            disabled={false}
             className="btn btn-ghost btn-sm w-full text-base-content/70"
           >
             <i className="fas fa-bell mr-2"></i>

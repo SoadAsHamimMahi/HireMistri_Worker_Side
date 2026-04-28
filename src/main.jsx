@@ -16,7 +16,6 @@ import ErrorPage from './routes/ErrorPage';
 import Dashboard from './routes/Dashboard';
 import Jobs from './routes/Jobs';
 import Applications from './routes/Applications';
-import Orders from './routes/Orders';
 import EditProfile from './routes/EditProfile';
 import JobDetails from './routes/JobDetails'; // dynamic job preview
 import WorkerLogin from './Authentication/WorkerLogin';
@@ -28,7 +27,7 @@ import RegistrationPending from './routes/RegistrationPending';
 import JobOffers from './routes/JobOffers';
 import SavedJobs from './routes/SavedJobs';
 import ClientProfile from './routes/ClientProfile';
-import BrowseClients from './routes/BrowseClients';
+
 import MessagesPaused from './routes/MessagesPaused';
 import MessagesInbox from './routes/MessagesInbox';
 import SupportInbox from './routes/Support/SupportInbox';
@@ -55,7 +54,6 @@ const router = createBrowserRouter([
           { index: true, element: <Dashboard /> },
           { path: 'applications', element: <Applications /> },
           { path: 'job-offers', element: <JobOffers /> },
-          { path: 'orders', element: <Orders /> },
           { path: 'earnings', element: <Earnings /> },
           { path: 'settings', element: <Settings /> },
         ],
@@ -71,7 +69,7 @@ const router = createBrowserRouter([
       { path: 'registration/pending', element: <RegistrationPending /> },
       { path: 'jobs/:id', element: <WorkerJobDetails /> },
       { path: 'client/:clientId', element: <ClientProfile /> },
-      { path: 'browse-clients', element: <BrowseClients /> },
+
       { path: 'messages', element: <MessagesPaused /> },
       { path: 'messages/:conversationId', element: <MessagesPaused /> },
       { path: 'chats', element: <MessagesInbox basePath="chats" /> },

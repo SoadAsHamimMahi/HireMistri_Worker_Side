@@ -239,69 +239,70 @@ export default function MessagesInbox({ basePath = 'messages' }) {
   const selectedJobDetail = selectedConversation?.jobId ? jobDetails[selectedConversation.jobId] : null;
 
   return (
-    <div className="min-h-screen text-white">
-      <div className="flex h-screen">
+    <div className="min-h-[100dvh] bg-base-100 overflow-hidden">
+      <div className="flex h-[100dvh]">
         {/* Conversations Sidebar */}
         <div className={`${
           showMobileConversations ? 'flex' : 'hidden'
-        } md:flex flex-col w-full md:w-80 lg:w-96 border-r border-white/5 bg-[#0f0f0f]`}>
+        } md:flex flex-col w-full md:w-80 lg:w-[400px] border-r border-base-300 bg-base-200/50 backdrop-blur-xl`}>
           {/* Header */}
-          <div className="p-4 border-b border-white/5 bg-[#0a0a0a]">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-white">Messages</h1>
-              <Link
-                to="/browse-clients"
-                className="btn btn-sm btn-primary"
-                onClick={() => setShowMobileConversations(false)}
-              >
-                <i className="fas fa-plus mr-2"></i>
-                Browse Clients
-              </Link>
+          <div className="p-6 border-b border-base-300 bg-base-100/50">
+            <div className="flex items-center justify-between mb-6">
+               <div className="space-y-1">
+                  <h1 className="text-2xl font-heading font-black text-base-content tracking-tight">Comms</h1>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-base-content/30">Intelligence Center</p>
+               </div>
+
             </div>
 
             {/* Search */}
-            <div className="relative mb-3">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-              <input
-                type="text"
-                placeholder="Search conversations..."
-                className="input input-bordered w-full pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="relative group">
+               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                  <span className="material-symbols-outlined text-base-content/30 text-xl group-focus-within:text-primary transition-colors">search</span>
+               </div>
+               <input
+                 type="text"
+                 placeholder="SCAN CONVERSATIONS..."
+                 className="w-full bg-base-200 border-2 border-transparent focus:border-primary/20 focus:bg-base-100 rounded-2xl py-3.5 pl-12 pr-4 text-[10px] font-black uppercase tracking-widest text-base-content placeholder:text-base-content/20 transition-all outline-none"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+               />
             </div>
 
-            {/* Filter */}
-            <div className="flex gap-2">
-              <select
-                className="select select-bordered select-sm flex-1"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
-                <option value="all">All</option>
-                <option value="unread">Unread</option>
-                <option value="job-related">Job Related</option>
-                <option value="general">General</option>
-              </select>
+            {/* Filter Pills */}
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
+               {['all', 'unread', 'job-related'].map((f) => (
+                 <button
+                   key={f}
+                   onClick={() => setFilter(f)}
+                   className={`shrink-0 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                     filter === f ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-base-200 text-base-content/40 hover:bg-base-300'
+                   }`}
+                 >
+                   {f.replace('-', ' ')}
+                 </button>
+               ))}
             </div>
           </div>
 
           {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-hide py-4">
             {loadingConversations ? (
-              <div className="p-4 text-center">
-                <span className="loading loading-spinner loading-md text-primary"></span>
-                <p className="text-sm text-white/60 mt-2">Loading conversations...</p>
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                 <span className="loading loading-ring loading-lg text-primary mb-4"></span>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Synchronizing Decryptors...</p>
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-4 text-center text-white/60">
-                <i className="fas fa-inbox text-4xl mb-2 opacity-30"></i>
-                <p className="text-sm">
-                  {searchTerm || filter !== 'all' ? 'No conversations match your filters' : 'No conversations yet'}
-                </p>
+              <div className="p-12 text-center">
+                 <div className="w-16 h-16 bg-base-300/50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <span className="material-symbols-outlined text-3xl text-base-content/20">chat_bubble</span>
+                 </div>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-base-content/30 leading-relaxed">
+                   {searchTerm || filter !== 'all' ? 'No intelligence found for query' : 'No active frequency detected'}
+                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="space-y-1 px-3">
                 {filteredConversations.map((conv) => {
                   const profile = userProfiles[conv.clientId];
                   const jobDetail = jobDetails[conv.jobId];
@@ -312,122 +313,67 @@ export default function MessagesInbox({ basePath = 'messages' }) {
                     <button
                       key={conv.conversationId}
                       onClick={() => handleConversationClick(conv)}
-                      className={`w-full p-4 text-left hover:bg-white/5 transition-colors ${
-                        isSelected ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                      className={`w-full group relative p-4 rounded-3xl text-left transition-all duration-300 ${
+                        isSelected 
+                          ? 'bg-primary text-white shadow-xl shadow-primary/20' 
+                          : 'hover:bg-base-300 text-base-content'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      {conv.unreadCount > 0 && !isSelected && (
+                        <div className="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full animate-pulse shadow-sm shadow-primary/40"></div>
+                      )}
+                      
+                      <div className="flex items-start gap-4">
                         {/* Profile Picture */}
-                        <div className="avatar flex-shrink-0">
-                          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                            {profile?.profileCover ? (
-                              <img
-                                src={profile.profileCover}
-                                alt={conv.clientName}
-                                className="w-full h-full rounded-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextSibling.style.display = 'flex';
-                                }}
-                              />
-                            ) : null}
-                            <div className={`w-full h-full rounded-full flex items-center justify-center ${profile?.profileCover ? 'hidden' : ''}`}>
-                              <i className="fas fa-user text-primary text-lg"></i>
-                            </div>
-                          </div>
+                        <div className="shrink-0">
+                           <div className={`w-14 h-14 rounded-2xl overflow-hidden p-0.5 border ${isSelected ? 'border-white/20 bg-white/10' : 'border-base-300 bg-base-100'} shadow-sm`}>
+                             {profile?.profileCover ? (
+                               <img
+                                 src={profile.profileCover}
+                                 alt={conv.clientName}
+                                 className="w-full h-full rounded-[0.9rem] object-cover"
+                                 onError={(e) => {
+                                   e.currentTarget.style.display = 'none';
+                                   e.currentTarget.nextSibling.style.display = 'flex';
+                                 }}
+                               />
+                             ) : null}
+                             <div className={`w-full h-full rounded-[0.9rem] flex items-center justify-center ${profile?.profileCover ? 'hidden' : 'flex'} ${isSelected ? 'text-white' : 'text-primary'}`}>
+                               <span className="text-xl font-heading font-black">{(conv.clientName || 'C')[0]}</span>
+                             </div>
+                           </div>
                         </div>
 
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 py-1">
                           <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold text-sm text-white truncate">
-                                {conv.clientName || 'Client'}
-                              </p>
-                              {profile?.emailVerified && (
-                                <div className="badge badge-success badge-xs">
-                                  <i className="fas fa-check-circle"></i>
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-xs text-white/50 flex-shrink-0 ml-2">
-                              {formatRelativeTime(conv.lastMessageCreatedAt)}
-                            </span>
+                             <h3 className={`text-sm font-black uppercase tracking-tight truncate ${isSelected ? 'text-white' : 'text-base-content'}`}>
+                               {conv.clientName || 'Unknown Entity'}
+                             </h3>
+                             <span className={`text-[8px] font-black uppercase tracking-widest ${isSelected ? 'text-white/60' : 'text-base-content/30'}`}>
+                               {formatRelativeTime(conv.lastMessageCreatedAt)}
+                             </span>
                           </div>
                           
-                          {/* Job Offer - Compact View (Priority - show before regular job details) */}
-                          {(() => {
-                            const jobOffer = conv.conversationId ? jobOffers[conv.conversationId] : null;
-                            if (jobOffer) {
-                              return (
-                                <div className="mb-2">
-                                  <div className="bg-gradient-to-r from-primary/20 to-secondary/20 p-2 rounded border-2 border-primary/30">
-                                    <div className="flex items-center gap-2">
-                                      <span className="badge badge-success badge-xs">
-                                        <i className="fas fa-briefcase mr-1"></i>
-                                        New Job Offer
-                                      </span>
-                                      <span className="text-xs font-semibold text-white truncate">
-                                        {jobOffer.title}
-                                      </span>
-                                      {jobOffer.budget && (
-                                        <span className="text-xs font-semibold text-primary">
-                                          {jobOffer.budget} {jobOffer.currency || 'BDT'}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
+                          <div className="space-y-2">
+                             {/* Contextual Badges */}
+                             <div className="flex flex-wrap gap-2">
+                                {conv.jobId && (
+                                   <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${isSelected ? 'bg-white/10 border-white/20' : 'bg-primary/5 border-primary/20 text-primary'}`}>
+                                      JOB: {jobDetail?.title?.slice(0, 15)}...
+                                   </span>
+                                )}
+                                {workerRequest && (
+                                   <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${isSelected ? 'bg-white/10 border-white/20' : 'bg-info/10 border-info/20 text-info'}`}>
+                                      PENDING OFFER
+                                   </span>
+                                )}
+                             </div>
 
-                          {/* Job Details - Compact View */}
-                          {(() => {
-                            const jobOffer = conv.conversationId ? jobOffers[conv.conversationId] : null;
-                            // Only show regular job details if there's no job offer
-                            if (!jobOffer && jobDetail && jobDetail !== null) {
-                              return (
-                                <div className="mb-2">
-                                  <JobDetailsCard job={jobDetail} compact={true} />
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
-
-                          {/* Worker Job Request - Compact View */}
-                          {workerRequest && (
-                            <div className="mb-2">
-                              <div className="bg-base-100 p-2 rounded border border-base-300">
-                                <div className="flex items-center gap-2">
-                                  <span className="badge badge-info badge-xs">
-                                    <i className="fas fa-user-tie mr-1"></i>
-                                    Request
-                                  </span>
-                                  <span className="text-xs font-semibold text-white truncate">
-                                    {workerRequest.title}
-                                  </span>
-                                  {workerRequest.proposedPrice && (
-                                    <span className="text-xs text-white/70">
-                                      {workerRequest.proposedPrice} {workerRequest.currency || 'BDT'}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <p className="text-xs text-white/60 truncate">
-                            {conv.lastMessageText || 'No messages yet'}
-                          </p>
+                             <p className={`text-[10px] font-medium leading-normal line-clamp-2 ${isSelected ? 'text-white/80' : 'text-base-content/50'}`}>
+                               {conv.lastMessageText || 'Protocol initiated. Waiting for transmission...'}
+                             </p>
+                          </div>
                         </div>
-
-                        {conv.unreadCount > 0 && (
-                          <span className="badge badge-primary badge-sm flex-shrink-0">
-                            {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
-                          </span>
-                        )}
                       </div>
                     </button>
                   );
@@ -437,50 +383,57 @@ export default function MessagesInbox({ basePath = 'messages' }) {
           </div>
         </div>
 
-        {/* Message View */}
+        {/* Message View Area */}
         <div className={`${
           showMobileConversations ? 'hidden' : 'flex'
-        } md:flex flex-1 flex-col bg-base-100`}>
+        } md:flex flex-1 flex-col bg-base-100 overflow-hidden relative`}>
           {conversationId ? (
             <>
-              {/* Mobile back button */}
-              <div className="md:hidden p-4 border-b border-base-300 bg-base-100 flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setShowMobileConversations(true);
-                    navigate(`/${basePath}`);
-                  }}
-                  className="btn btn-sm btn-ghost"
-                >
-                  <FaArrowLeft />
-                </button>
-                <div className="flex items-center gap-3 flex-1">
-                  {selectedClientProfile?.profileCover && (
-                    <div className="avatar">
-                      <div className="w-10 h-10 rounded-full">
-                        <img
-                          src={selectedClientProfile.profileCover}
-                          alt={selectedConversation?.clientName}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-white">
-                      {selectedConversation?.clientName || 'Client'}
-                    </h3>
-                    {selectedClientProfile && (
-                      <p className="text-xs text-white/60">
-                        {[selectedClientProfile.city, selectedClientProfile.country].filter(Boolean).join(', ') || 'Location not set'}
-                      </p>
-                    )}
+              {/* Desktop/Mobile Common Header */}
+              <div className="p-6 border-b border-base-300 bg-base-100/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      setShowMobileConversations(true);
+                      navigate(`/${basePath}`);
+                    }}
+                    className="md:hidden btn btn-sm btn-ghost btn-circle"
+                  >
+                    <span className="material-symbols-outlined">arrow_back</span>
+                  </button>
+                  
+                  <div className="flex items-center gap-4">
+                     <div className="w-14 h-14 rounded-2xl overflow-hidden p-0.5 border border-base-300 bg-base-200">
+                        {selectedClientProfile?.profileCover ? (
+                           <img src={selectedClientProfile.profileCover} alt={selectedConversation?.clientName} className="w-full h-full rounded-[0.9rem] object-cover" />
+                        ) : (
+                           <div className="w-full h-full flex items-center justify-center font-black text-primary text-xl">{(selectedConversation?.clientName || 'C')[0]}</div>
+                        )}
+                     </div>
+                     <div>
+                        <h3 className="text-lg font-heading font-black text-base-content leading-none mb-1">
+                           {selectedConversation?.clientName || 'Authorized User'}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 bg-success rounded-full"></span>
+                           <span className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Secure Connection</span>
+                        </div>
+                     </div>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                   <button className="btn btn-ghost btn-circle hover:bg-base-200">
+                      <span className="material-symbols-outlined text-base-content/60">shield_lock</span>
+                   </button>
+                   <button className="btn btn-ghost btn-circle hover:bg-base-200">
+                      <span className="material-symbols-outlined text-base-content/60">more_vert</span>
+                   </button>
                 </div>
               </div>
 
-              {/* Messages Component */}
-              <div className="flex-1 overflow-hidden">
+              {/* Messages Component Injection */}
+              <div className="flex-1 overflow-hidden bg-base-200/30">
                 <Messages
                   conversationId={conversationId}
                   jobId={selectedConversation?.jobId || jobId || null}
@@ -492,18 +445,18 @@ export default function MessagesInbox({ basePath = 'messages' }) {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-base-200">
-              <div className="text-center p-8">
-                <i className="fas fa-comments text-6xl text-white opacity-30 mb-4"></i>
-                <h2 className="text-xl font-semibold text-white mb-2">Select a conversation</h2>
-                <p className="text-white/60 mb-4">
-                  Choose a conversation from the sidebar to start messaging
-                </p>
-                <Link to="/browse-clients" className="btn btn-primary">
-                  <i className="fas fa-plus mr-2"></i>
-                  Browse Clients
-                </Link>
-              </div>
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-base-200/20">
+               <div className="relative mb-8">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
+                  <div className="w-24 h-24 bg-base-100 rounded-[2.5rem] border border-base-300 flex items-center justify-center relative z-10 shadow-xl">
+                     <span className="material-symbols-outlined text-5xl text-primary">sensors</span>
+                  </div>
+               </div>
+               <h2 className="text-3xl font-heading font-black text-base-content mb-4 tracking-tight">Intelligence Feed</h2>
+               <p className="text-sm font-medium text-base-content/40 max-w-sm mb-10 leading-relaxed">
+                  Select an encrypted frequency from the directory to establish a communication bridge.
+               </p>
+
             </div>
           )}
         </div>

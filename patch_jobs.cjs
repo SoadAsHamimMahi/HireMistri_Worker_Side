@@ -1,297 +1,52 @@
-import React, { useEffect, useMemo, useState, useRef, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { AuthContext } from '../Authentication/AuthProvider';
-import { useDarkMode } from '../contexts/DarkModeContext';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import BookmarkButton from '../components/BookmarkButton';
-import ShareButton from '../components/ShareButton';
-import SearchHistory from '../components/SearchHistory';
-import { useSearchHistory } from '../hooks/useSearchHistory';
-import {
-  MdSearch,
-  MdFilterList,
-  MdList,
-  MdMap,
-  MdLocationOn,
-  MdPayments,
-  MdShare,
-  MdBookmark,
-  MdBookmarkBorder,
-  MdGroup,
-  MdSchedule,
-  MdChevronLeft,
-  MdChevronRight,
-  MdConstruction,
-  MdNotifications,
-  MdCheck,
-  MdArrowBack,
-  MdLock
-} from 'react-icons/md';
+const fs = require('fs');
+const path = require('path');
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const filePath = path.join(__dirname, 'src/routes/Jobs.jsx');
+let content = fs.readFileSync(filePath, 'utf8');
 
-// Relative time: "2 hours ago", "3 days ago"
-function formatRelativeTime(dateStr) {
-  if (!dateStr) return 'Recently';
-  const d = new Date(dateStr);
-  if (isNaN(d)) return 'Recently';
-  const now = new Date();
-  const sec = Math.floor((now - d) / 1000);
-  if (sec < 60) return 'Just now';
-  if (sec < 3600) return `${Math.floor(sec / 60)} min ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} hours ago`;
-  if (sec < 604800) return `${Math.floor(sec / 86400)} days ago`;
-  return d.toLocaleDateString();
+const returnStartMarker = '  return (\r\n    <div className="flex flex-col min-h-screen bg-base-100';
+let startIndex = content.indexOf(returnStartMarker);
+
+if (startIndex === -1) {
+  startIndex = content.indexOf('  return (\n    <div className="flex flex-col min-h-screen bg-base-100');
 }
 
-// Fix default marker icons for Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+const returnEndMarker = '  );\r\n};\r\n\r\n// Isolated Map Component';
+let endIndex = content.indexOf(returnEndMarker);
 
-const Jobs = () => {
-  const navigate = useNavigate();
-  const { isDarkMode } = useDarkMode();
+if (endIndex === -1) {
+  endIndex = content.indexOf('  );\n};\n\n// Isolated Map Component');
+}
 
-  const [jobData, setJobData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
-  const [workerLocation, setWorkerLocation] = useState(null);
-  const [filters, setFilters] = useState({
-    category: 'All',
-    categories: [],
-    location: 'All',
-    budgetMin: '',
-    budgetMax: '',
-    applicants: 'All',
-    search: '',
-    status: 'all',
-    skills: [],
-    dateFrom: '',
-    dateTo: '',
-    sortBy: 'newest',
-    useRadius: false,
-    radius: 10,
-    radiusLat: null,
-    radiusLng: null,
-  });
-  const [page, setPage] = useState(1);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [profile, setProfile] = useState(null);
 
-  const { user } = useContext(AuthContext) || {};
-  const uid = user?.uid || null;
+if (startIndex === -1 || endIndex === -1) {
+  console.error('Could not find the return block in Jobs.jsx');
+  console.log('Start Index:', startIndex);
+  console.log('End Index:', endIndex);
+  process.exit(1);
+}
 
-  useEffect(() => {
-    if (!uid) return;
-    (async () => {
-      try {
-        const { data } = await axios.get(`${API_BASE}/api/users/${uid}`);
-        setProfile(data || {});
-      } catch (e) {
-        console.warn('Could not load user profile:', e);
-      }
-    })();
-  }, [uid]);
-
-  useEffect(() => {
-    if (viewMode === 'map') {
-      const t = setTimeout(() => setShowMap(true), 150);
-      return () => {
-        clearTimeout(t);
-        setShowMap(false);
-      };
-    } else {
-      setShowMap(false);
-    }
-  }, [viewMode]);
-
-  const JOBS_PER_PAGE = 8;
-
-  // Get all unique skills from job data
-  const allSkills = useMemo(() => {
-    const skillSet = new Set();
-    jobData.forEach(job => {
-      if (Array.isArray(job.skills)) {
-        job.skills.forEach(skill => skillSet.add(skill));
-      }
-    });
-    return Array.from(skillSet).sort();
-  }, [jobData]);
-
-  // Filters to params helper
-  const buildQueryParams = () => {
-    const params = {};
-    if (filters.category && filters.category !== 'All') params.category = filters.category;
-    if (filters.categories && filters.categories.length > 0) {
-      params.categories = filters.categories.join(',');
-    }
-    if (filters.location && filters.location !== 'All') params.location = filters.location;
-    if (filters.budgetMin) params.budgetMin = filters.budgetMin;
-    if (filters.budgetMax) params.budgetMax = filters.budgetMax;
-    if (filters.applicants && filters.applicants !== 'All') params.applicants = filters.applicants;
-    if (filters.search && filters.search.trim() !== '') params.search = filters.search.trim();
-    if (filters.status && filters.status !== 'All' && filters.status !== 'all') {
-      params.status = filters.status;
-    } else {
-      params.status = 'all';
-    }
-    if (filters.skills && filters.skills.length > 0) {
-      params.skills = filters.skills.join(',');
-    }
-    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
-    if (filters.dateTo) params.dateTo = filters.dateTo;
-    if (filters.useRadius && filters.radiusLat && filters.radiusLng) {
-      params.lat = filters.radiusLat;
-      params.lng = filters.radiusLng;
-      params.radius = filters.radius;
-    }
-    params.sort = filters.sortBy || 'newest';
-    return params;
-  };
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const params = buildQueryParams();
-        const query = new URLSearchParams(params).toString();
-        const res = await axios.get(`${API_BASE}/api/browse-jobs${query ? '?' + query : ''}`);
-        setJobData(res.data || []);
-      } catch (err) {
-        console.error('❌ Failed to fetch jobs:', err);
-        setJobData([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [filters]);
-
-  useEffect(() => {
-    if (!('geolocation' in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setWorkerLocation([pos.coords.latitude, pos.coords.longitude]),
-      () => { },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-    );
-  }, []);
-
-  const categories = useMemo(
-    () => ['All', 'Plumbing', 'Electrical', 'Masonry', 'Carpentry', 'Repair', 'Cleaning'],
-    []
-  );
-
-  const locations = useMemo(
-    () => ['All', 'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Rangpur', 'Gazipur', 'Narayanganj'],
-    []
-  );
-
-  const pageCount = Math.max(1, Math.ceil(jobData.length / JOBS_PER_PAGE));
-  const start = (page - 1) * JOBS_PER_PAGE;
-  const currentJobs = jobData.slice(start, start + JOBS_PER_PAGE);
-
-  const { saveSearch } = useSearchHistory();
-  const saveSearchTimerRef = useRef(null);
-
-  const handleChange = (type, value) => {
-    setFilters(prev => ({ ...prev, [type]: value }));
-  };
-
-  useEffect(() => {
-    if (saveSearchTimerRef.current) clearTimeout(saveSearchTimerRef.current);
-    saveSearchTimerRef.current = setTimeout(() => saveSearch(filters), 2000);
-    return () => { if (saveSearchTimerRef.current) clearTimeout(saveSearchTimerRef.current); };
-  }, [filters, saveSearch]);
-
-  const handleSelectSearch = (savedFilters) => {
-    setFilters(savedFilters);
-    setPage(1);
-  };
-
-  useEffect(() => { setPage(1); }, [filters]);
-
-  const getJobLatLng = (job) => {
-    if (!job) return null;
-    const lat = job.lat ?? job.latitude ?? job?.locationLat ?? job?.location?.lat ?? job?.coordinates?.lat;
-    const lng = job.lng ?? job.longitude ?? job?.locationLng ?? job?.location?.lng ?? job?.coordinates?.lng;
-    if (typeof lat === 'number' && typeof lng === 'number') return [lat, lng];
-    return null;
-  };
-
-  const jobsWithCoords = useMemo(() => jobData.filter(job => getJobLatLng(job) !== null), [jobData]);
-
-  const mapCenter = useMemo(() => {
-    if (jobsWithCoords.length > 0) {
-      const coords = jobsWithCoords.map(j => getJobLatLng(j));
-      const avgLat = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
-      const avgLng = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
-      return [avgLat, avgLng];
-    }
-    return workerLocation || [23.8103, 90.4125];
-  }, [jobsWithCoords, workerLocation]);
-
-  const getDistanceKm = (lat1, lng1, lat2, lng2) => {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 10) / 10;
-  };
-
-  const formatRelativeTime = (date) => {
-    if (!date) return 'Recently';
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return 'Recently';
-    const now = new Date();
-    const diffMs = now - d;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    return d.toLocaleDateString();
-  };
-
-  const formatBudgetDisplay = (job) => {
-    const min = job.budgetMin ?? job.budget;
-    const max = job.budgetMax ?? job.budget;
-    if (min != null && max != null && min !== max) {
-      return `৳ ${Number(min).toLocaleString()} - ${Number(max).toLocaleString()}`;
-    }
-    if (job.budget != null) return `৳ ${Number(job.budget).toLocaleString()}`;
-    return '৳ —';
-  };
-
-  return (
+const newReturnBlock = `  return (
     <div className="min-h-screen bg-[#f9f9f7] pb-20 pt-8">
-      <div className="w-full max-w-[83.333%] mx-auto">
+      <div className="max-w-[90%] mx-auto">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">Find Jobs</h1>
-            <p className="text-gray-600 font-medium mt-1">Browse available jobs and send applications to clients.</p>
+            <p className="text-gray-500 font-medium mt-1">Browse available jobs and send applications to clients.</p>
           </div>
           <div className="flex bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'text-gray-600 hover:text-gray-900'}`}
+              className={\`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all \${viewMode === 'list' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'text-gray-500 hover:text-gray-900'}\`}
             >
               <span className="material-symbols-outlined text-[20px]">view_list</span>
               List View
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'map' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'text-gray-600 hover:text-gray-900'}`}
+              className={\`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all \${viewMode === 'map' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'text-gray-500 hover:text-gray-900'}\`}
             >
               <span className="material-symbols-outlined text-[20px]">map</span>
               Map View
@@ -309,7 +64,7 @@ const Jobs = () => {
                 <h3 className="font-bold text-gray-900 text-lg">Filters</h3>
                 <button
                   onClick={() => handleSelectSearch({ category: 'All', location: 'All', budgetMin: '', budgetMax: '', search: '', useRadius: false, sortBy: 'newest' })}
-                  className="text-sm text-brand-hover font-bold hover:text-brand-hover transition-colors"
+                  className="text-sm text-brand font-bold hover:text-brand-hover transition-colors"
                 >
                   Reset
                 </button>
@@ -320,7 +75,7 @@ const Jobs = () => {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Search Skills</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 text-xl">search</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl">search</span>
                     <input
                       type="text"
                       placeholder="e.g. Electrician..."
@@ -398,9 +153,9 @@ const Jobs = () => {
                           value={filters.radius || 10}
                           onChange={e => handleChange('radius', e.target.value)}
                         />
-                        <div className="flex justify-between text-sm font-bold text-gray-600">
+                        <div className="flex justify-between text-xs font-bold text-gray-500">
                           <span>1km</span>
-                          <span className="text-brand-hover">{filters.radius || 10}km</span>
+                          <span className="text-brand">{filters.radius || 10}km</span>
                           <span>100km</span>
                         </div>
                       </div>
@@ -414,17 +169,17 @@ const Jobs = () => {
           {/* Main Content Area */}
           <div className="flex-1 min-w-0">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-brand-hover">
+              <div className="flex flex-col items-center justify-center py-20 text-brand">
                 <span className="loading loading-spinner loading-lg"></span>
                 <p className="mt-4 font-bold text-gray-600">Loading jobs...</p>
               </div>
             ) : jobData.length === 0 ? (
               <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
                  <div className="w-20 h-20 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-search text-3xl text-brand-hover"></i>
+                    <i className="fas fa-search text-3xl text-brand"></i>
                  </div>
                  <h3 className="text-xl font-bold text-gray-900 mb-2">No Jobs Found</h3>
-                 <p className="text-gray-600 font-medium">Try adjusting your filters or search keywords.</p>
+                 <p className="text-gray-500 font-medium">Try adjusting your filters or search keywords.</p>
                  <button onClick={() => handleSelectSearch({ category: 'All', location: 'All', budgetMin: '', budgetMax: '', search: '', useRadius: false, sortBy: 'newest' })} className="mt-6 bg-brand hover:bg-brand-hover text-white font-bold py-2.5 px-6 rounded-lg transition-colors">
                     Clear All Filters
                  </button>
@@ -438,35 +193,35 @@ const Jobs = () => {
                       <div key={jobId} className="group bg-white border border-gray-100 rounded-2xl p-6 transition-all hover:shadow-lg hover:border-brand-light flex flex-col justify-between">
                         <div>
                           <div className="flex items-start justify-between mb-4">
-                            <span className="bg-brand-light text-brand-hover text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-md shadow-sm border border-brand-light">
+                            <span className="bg-brand-light text-brand text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-md shadow-sm border border-brand-light">
                               {job.category || 'GENERAL'}
                             </span>
                             <div className="flex items-center gap-2">
-                              {/* <button className="text-gray-500 hover:text-brand-hover transition-colors">
+                              {/* <button className="text-gray-400 hover:text-brand transition-colors">
                                 <BookmarkButton jobId={jobId} />
                               </button> */}
                             </div>
                           </div>
                           
-                          <h3 className="font-bold text-gray-900 text-lg mb-3 line-clamp-2 h-14 leading-tight group-hover:text-brand-hover transition-colors">
+                          <h3 className="font-bold text-gray-900 text-lg mb-3 line-clamp-2 h-14 leading-tight group-hover:text-brand transition-colors">
                             {job.title}
                           </h3>
 
                           <div className="space-y-3 mb-6">
                             <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                              <span className="material-symbols-outlined text-lg text-brand-hover">location_on</span>
+                              <span className="material-symbols-outlined text-lg text-brand">location_on</span>
                               <span className="truncate">{job.location || 'N/A'}</span>
                             </div>
-                            <div className="flex items-center justify-between text-sm font-bold">
-                              <span className="text-gray-500 uppercase tracking-tight">{formatRelativeTime(job.createdAt || job.date)}</span>
-                              <span className="text-brand-hover text-lg font-black">{formatBudgetDisplay(job)}</span>
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className="text-gray-400 uppercase tracking-tight">{formatRelativeTime(job.createdAt || job.date)}</span>
+                              <span className="text-brand text-lg font-black">{formatBudgetDisplay(job)}</span>
                             </div>
                           </div>
                         </div>
 
                         <Link
-                          to={`/jobs/${jobId}`}
-                          className="flex items-center justify-between font-bold text-sm text-brand-hover hover:text-brand-hover transition-colors pt-4 border-t border-gray-50 group/link"
+                          to={\`/jobs/\${jobId}\`}
+                          className="flex items-center justify-between font-bold text-sm text-brand hover:text-brand-hover transition-colors pt-4 border-t border-gray-50 group/link"
                         >
                           View Job Details
                           <i className="fas fa-arrow-right group-hover/link:translate-x-1 transition-transform"></i>
@@ -494,7 +249,7 @@ const Jobs = () => {
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${page === p ? 'bg-brand text-white shadow-md shadow-brand/20' : 'text-gray-600 hover:bg-gray-50 border border-transparent'}`}
+                          className={\`w-10 h-10 rounded-xl text-sm font-bold transition-all \${page === p ? 'bg-brand text-white shadow-md shadow-brand/20' : 'text-gray-600 hover:bg-gray-50 border border-transparent'}\`}
                         >
                           {p}
                         </button>
@@ -528,11 +283,9 @@ const Jobs = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    </div>`;
 
-// Isolated Map Component - Clean Light Style
+const newMapBlock = `// Isolated Map Component - Clean Light Style
 const JobMap = ({ jobsWithCoords, mapCenter, workerLocation, getJobLatLng }) => {
   return (
     <MapContainer
@@ -548,7 +301,7 @@ const JobMap = ({ jobsWithCoords, mapCenter, workerLocation, getJobLatLng }) => 
       {workerLocation && (
         <Marker position={workerLocation}>
           <Popup>
-            <div className="font-bold text-sm text-brand-hover text-center">YOUR LOCATION</div>
+            <div className="font-bold text-xs text-brand text-center">YOUR LOCATION</div>
           </Popup>
         </Marker>
       )}
@@ -560,15 +313,15 @@ const JobMap = ({ jobsWithCoords, mapCenter, workerLocation, getJobLatLng }) => 
             <Popup className="clean-popup">
               <div className="p-1 min-w-[200px]">
                 <div className="flex justify-between items-center mb-2">
-                   <span className="text-xs font-bold text-brand-hover uppercase">{job.category || 'General'}</span>
+                   <span className="text-[10px] font-bold text-brand uppercase">{job.category || 'General'}</span>
                 </div>
                 <h4 className="font-bold text-sm text-gray-900 leading-tight mb-2">{job.title}</h4>
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mb-3">
                   <p className="text-sm font-black text-gray-900">৳{job.budget?.toLocaleString() || 'N/A'}</p>
                 </div>
                 <Link
-                  to={`/jobs/${jobId}`}
-                  className="block w-full text-center bg-brand hover:bg-brand-hover text-white rounded-lg font-bold text-sm py-2 transition-colors"
+                  to={\`/jobs/\${jobId}\`}
+                  className="block w-full text-center bg-brand hover:bg-brand-hover text-white rounded-lg font-bold text-xs py-2 transition-colors"
                 >
                   View Details
                 </Link>
@@ -582,3 +335,9 @@ const JobMap = ({ jobsWithCoords, mapCenter, workerLocation, getJobLatLng }) => 
 };
 
 export default Jobs;
+`;
+
+const finalContent = content.substring(0, startIndex) + newReturnBlock + '\n' + newMapBlock;
+
+fs.writeFileSync(filePath, finalContent, 'utf8');
+console.log('Successfully patched Jobs.jsx');

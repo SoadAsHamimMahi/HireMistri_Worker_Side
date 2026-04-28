@@ -55,100 +55,120 @@ export default function RegistrationPending() {
   const cfg = statusConfig[status] || statusConfig.pending_review;
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-            style={{ background: 'rgba(29,198,108,0.1)', border: '1px solid rgba(29,198,108,0.3)' }}>
-            <span className="text-[#1DC66C] font-bold text-lg">HM</span>
-            <span className="text-slate-300 text-sm">Hire Mistri</span>
+    <div className="min-h-screen bg-base-100 flex items-center justify-center p-6 font-sans selection:bg-primary/20">
+      <div className="w-full max-w-xl">
+        {/* Institutional Branding */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-4 px-6 py-3 rounded-2xl bg-base-200 border border-base-300 shadow-sm animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+               <span className="material-symbols-outlined text-white text-xl">security</span>
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary leading-none mb-1">EMERALD LEDGER</p>
+              <p className="text-[8px] font-black uppercase tracking-widest text-base-content/30 leading-none">Vetted Talent Protocol</p>
+            </div>
           </div>
         </div>
 
-        {/* Status Card */}
-        <div className="rounded-2xl p-8 text-center"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
-
-          {/* Status Icon */}
-          <div className="flex justify-center mb-6">
-            <div className="w-24 h-24 rounded-full flex items-center justify-center"
-              style={{ background: cfg.bg, border: `2px solid ${cfg.border}` }}>
-              <span className="material-symbols-outlined text-5xl" style={{ color: cfg.color }}>
-                {cfg.icon}
-              </span>
+        {/* Status Card - Precision Engineering */}
+        <div className="bg-base-100 border border-base-300 rounded-[3rem] p-10 md:p-14 text-center shadow-[0_30px_100px_rgba(0,0,0,0.05)] relative overflow-hidden animate-in zoom-in-95 duration-500">
+          {/* Background Decorative Element */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+          
+          {/* Status Hexagon Icon */}
+          <div className="flex justify-center mb-10 relative z-10">
+            <div className="w-28 h-28 rounded-[2rem] flex items-center justify-center rotate-45 border-2 transition-all"
+              style={{ backgroundColor: `${cfg.color}10`, borderColor: `${cfg.color}30` }}>
+              <div className="-rotate-45">
+                <span className="material-symbols-outlined text-6xl" style={{ color: cfg.color }}>
+                  {cfg.icon}
+                </span>
+              </div>
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-white mb-2">{cfg.title}</h1>
-          <p className="font-semibold mb-3" style={{ color: cfg.color }}>{cfg.subtitle}</p>
-          <p className="text-slate-400 text-sm leading-relaxed mb-6">{cfg.description}</p>
+          <div className="relative z-10 space-y-4">
+            <h1 className="text-3xl md:text-4xl font-heading font-black text-base-content tracking-tight uppercase leading-tight">
+              {cfg.title}
+            </h1>
+            <div className="inline-block px-4 py-1.5 rounded-full bg-base-200 border border-base-300">
+               <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: cfg.color }}>{cfg.subtitle}</p>
+            </div>
+            <p className="text-base font-medium text-base-content/50 leading-relaxed max-w-sm mx-auto mt-4 italic">
+              {cfg.description}
+            </p>
+          </div>
 
-          {/* Rejection reason */}
+          {/* Rejection reason - Alert Style */}
           {status === 'rejected' && rejectionReason && (
-            <div className="rounded-xl p-4 mb-6 text-left"
-              style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-              <p className="text-amber-400 text-sm font-semibold mb-1">Reason from admin:</p>
-              <p className="text-amber-300 text-sm">{rejectionReason}</p>
+            <div className="mt-10 rounded-3xl p-6 text-left border border-error/20 bg-error/5 relative overflow-hidden animate-in slide-in-from-bottom-4">
+               <div className="absolute top-0 left-0 w-1 h-full bg-error"></div>
+               <p className="text-[10px] font-black uppercase tracking-widest text-error mb-2">Technical Discrepancy Found</p>
+               <p className="text-sm font-medium text-base-content/80">{rejectionReason}</p>
             </div>
           )}
 
-          {/* Timeline for pending */}
+          {/* Timeline - Logic Flow */}
           {status === 'pending_review' && (
-            <div className="rounded-xl p-4 mb-6 text-left space-y-3"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              {[
-                { icon: 'check_circle', color: '#1DC66C', text: 'Registration submitted' },
-                { icon: 'schedule', color: '#F59E0B', text: 'Under admin review (24–48 hours)' },
-                { icon: 'radio_button_unchecked', color: '#4B5563', text: 'Account approval email sent' },
-                { icon: 'radio_button_unchecked', color: '#4B5563', text: 'Start applying for jobs!' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-xl" style={{ color: item.color }}>{item.icon}</span>
-                  <span className="text-sm text-slate-300">{item.text}</span>
-                </div>
-              ))}
+            <div className="mt-12 space-y-6 text-left">
+              <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-base-content/20 ml-2">VERIFICATION PROTOCOL</h3>
+              <div className="space-y-4">
+                {[
+                  { icon: 'task_alt', color: 'var(--p)', text: 'Identity & Credentials Submitted', status: 'done' },
+                  { icon: 'clinical_notes', color: '#F59E0B', text: 'Admin Manual Audit (24-48h)', status: 'active' },
+                  { icon: 'mail', color: 'currentColor', text: 'Protocol Activation Email', status: 'pending' },
+                  { icon: 'rocket_launch', color: 'currentColor', text: 'Full Marketplace Access', status: 'pending' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-5 group">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${item.status === 'done' ? 'bg-primary/20 text-primary' : item.status === 'active' ? 'bg-amber-500/20 text-amber-500 animate-pulse' : 'bg-base-200 text-base-content/20'}`}>
+                      <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                    </div>
+                    <span className={`text-[11px] font-black uppercase tracking-widest ${item.status === 'pending' ? 'text-base-content/20' : 'text-base-content/70'}`}>
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="space-y-3">
+          {/* Actions - Tactical Navigation */}
+          <div className="mt-12 grid grid-cols-1 gap-4 relative z-10">
             {status === 'draft' && (
               <Link
                 to="/register"
-                className="block w-full py-3 rounded-xl text-white font-bold text-center transition-all"
-                style={{ background: 'linear-gradient(135deg, #1DC66C, #16a85a)' }}
+                className="btn btn-primary h-14 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/20"
               >
-                Continue Registration →
+                RESUME ONBOARDING →
               </Link>
             )}
-            {(status === 'rejected') && (
+            {status === 'rejected' && (
               <Link
                 to="/register"
-                className="block w-full py-3 rounded-xl text-white font-bold text-center transition-all"
-                style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)' }}
+                className="btn btn-error h-14 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-error/20"
               >
-                Re-submit Registration →
+                RE-INITIALIZE REGISTRATION
               </Link>
             )}
-            <a
-              href="mailto:support@hiremistri.com"
-              className="block w-full py-3 rounded-xl font-medium text-center transition-all text-slate-300"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              Contact Support
-            </a>
-            <button
-              onClick={handleLogout}
-              className="w-full py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              Sign out
-            </button>
+            <div className="grid grid-cols-2 gap-4">
+              <a
+                href="mailto:support@hiremistri.com"
+                className="btn btn-ghost border-base-300 h-12 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-base-200"
+              >
+                H-M SUPPORT
+              </a>
+              <button
+                onClick={handleLogout}
+                className="btn btn-ghost border-base-300 h-12 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-base-200"
+              >
+                TERMINATE SESSION
+              </button>
+            </div>
           </div>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
-          Hire Mistri © {new Date().getFullYear()} · All rights reserved
+        <p className="text-center text-[9px] font-black uppercase tracking-[0.4em] text-base-content/20 mt-12 mb-8">
+          © 2024 EMERALD LEDGER PROTOCOL · SYSTEM STATUS: STABLE
         </p>
       </div>
     </div>

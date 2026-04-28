@@ -395,20 +395,19 @@ export default function WorkerRegister() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#070b14] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <Toaster position="top-right" />
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
-            style={{ background: 'rgba(29,198,108,0.1)', border: '1px solid rgba(29,198,108,0.3)' }}>
-            <span className="material-symbols-outlined text-[#1DC66C] text-sm">work</span>
-            <span className="text-[#1DC66C] text-sm font-semibold">Worker Registration</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-primary/10 border border-primary/30">
+            <span className="material-symbols-outlined text-primary text-sm">work</span>
+            <span className="text-primary text-sm font-bold uppercase tracking-wider">Worker Registration</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Join Hire Mistri</h1>
-          <p className="text-slate-400">
+          <h1 className="text-3xl font-bold text-base-content mb-2">Join Hire Mistri</h1>
+          <p className="text-base-content/50">
             Already have an account?{' '}
-            <Link to="/login" className="text-[#1DC66C] hover:underline">Sign in</Link>
+            <Link to="/login" className="text-primary hover:underline font-bold">Sign in</Link>
           </p>
         </div>
 
@@ -418,34 +417,33 @@ export default function WorkerRegister() {
             {STEP_LABELS.map((label, i) => (
               <div key={label} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-                  i + 1 < step ? 'bg-[#1DC66C] text-white' :
-                  i + 1 === step ? 'bg-[#1DC66C] text-white ring-4 ring-[#1DC66C]/30' :
-                  'bg-slate-700 text-slate-400'
+                  i + 1 < step ? 'bg-primary text-primary-content' :
+                  i + 1 === step ? 'bg-primary text-primary-content ring-4 ring-primary/30' :
+                  'bg-base-300 text-base-content/40'
                 }`}>
                   {i + 1 < step ? '✓' : i + 1}
                 </div>
-                <span className={`text-xs hidden sm:block ${i + 1 === step ? 'text-[#1DC66C]' : 'text-slate-500'}`}>
+                <span className={`text-xs hidden sm:block font-medium ${i + 1 === step ? 'text-primary' : 'text-base-content/40'}`}>
                   {label}
                 </span>
               </div>
             ))}
           </div>
-          <div className="h-1 bg-slate-700 rounded-full mt-2">
+          <div className="h-1 bg-base-300 rounded-full mt-2">
             <div
-              className="h-full bg-[#1DC66C] rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-all duration-500 shadow-lg shadow-primary/20"
               style={{ width: `${((step - 1) / 4) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl p-8"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
+        <div className="bg-base-200 border border-base-300 rounded-3xl p-8 shadow-xl">
 
           {/* ── STEP 1: Account ── */}
           {step === 1 && (
             <div className="space-y-5">
-              <h2 className="text-xl font-bold text-white mb-4">Account Setup</h2>
+              <h2 className="text-xl font-bold text-base-content mb-4">Account Setup</h2>
 
               {/* Google Sign-in */}
               <button
@@ -766,8 +764,7 @@ export default function WorkerRegister() {
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={submitting}
-                  className="flex-1 py-3 px-6 rounded-xl text-white font-bold text-base transition-all duration-200 disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #1DC66C, #16a85a)' }}
+                  className="flex-1 py-3 px-6 rounded-xl text-primary-content bg-primary hover:bg-primary/90 font-bold text-base transition-all duration-200 disabled:opacity-60 shadow-lg shadow-primary/20 hover:shadow-xl"
                 >
                   {submitting ? 'Submitting…' : '🚀 Submit Registration'}
                 </button>

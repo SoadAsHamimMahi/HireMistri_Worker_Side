@@ -25,7 +25,8 @@ export default function JobOffers() {
       try {
         setLoading(true);
         setError('');
-        const { data } = await axios.get(`${API_BASE}/api/job-offers/worker/${user.uid}`, {
+        const { data } = await axios.get(`${API_BASE}/api/job-offers`, {
+          params: { workerId: user.uid },
           headers: { Accept: 'application/json' },
         });
         if (!ignore) setOffers(Array.isArray(data) ? data : []);

@@ -27,9 +27,10 @@ export default function JobOfferRejectModal({
       // Task 2.4: Retry mechanism
       await retryRequest(() =>
         axios.post(
-          `${API_BASE}/api/job-offers/${job._id}/reject`,
+          `${API_BASE}/api/job-offers/${job._id}/respond`,
           { 
             workerId,
+            action: 'reject',
             reason: reason.trim() || undefined
           }
         )

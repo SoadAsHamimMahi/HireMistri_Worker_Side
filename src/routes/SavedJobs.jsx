@@ -62,36 +62,41 @@ export default function SavedJobs() {
   }
 
   return (
-    <div className="min-h-screen page-bg">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen page-bg selection:bg-primary/20">
+      <div className="w-full max-w-[83.333%] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold text-base-content mb-2">
+        <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+          <h1 className="text-4xl lg:text-5xl font-heading font-black text-base-content mb-4 tracking-tight">
             Saved Jobs
           </h1>
-          <p className="text-base-content opacity-70">
-            {savedJobs.length} {savedJobs.length === 1 ? 'job' : 'jobs'} saved
-          </p>
+          <div className="flex items-center gap-3">
+             <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+             <p className="text-base-content/40 font-black uppercase tracking-widest text-xs">
+               {savedJobs.length} {savedJobs.length === 1 ? 'Opportunity' : 'Opportunities'} Bookmarked
+             </p>
+          </div>
         </div>
 
         {/* Jobs Grid */}
         {savedJobs.length === 0 ? (
-          <div className="text-center py-16">
-            <i className="far fa-bookmark text-6xl text-base-content opacity-30 mb-4"></i>
-            <h3 className="text-xl font-semibold mb-2 text-base-content">No saved jobs yet</h3>
-            <p className="text-base-content opacity-70 mb-6">
-              Start saving jobs you're interested in to view them later
+          <div className="text-center py-24 bg-base-200/50 rounded-[3rem] border-2 border-dashed border-base-300 animate-in zoom-in-95 duration-700">
+            <div className="w-20 h-20 bg-base-300 rounded-3xl flex items-center justify-center mx-auto mb-6 text-base-content/20 shadow-inner">
+               <i className="far fa-bookmark text-4xl"></i>
+            </div>
+            <h3 className="text-2xl font-heading font-black mb-3 text-base-content tracking-tight">No saved jobs yet</h3>
+            <p className="text-base-content/40 font-medium mb-10 max-w-sm mx-auto uppercase tracking-widest text-[10px] leading-relaxed">
+              Start building your future. Save high-potential jobs to track them here later.
             </p>
             <Link
               to="/jobs"
-              className="btn btn-primary"
+              className="btn btn-primary btn-lg rounded-2xl shadow-xl shadow-primary/10 font-black uppercase tracking-widest text-xs px-10 hover:shadow-primary/20 transition-all active:scale-95"
             >
-              Browse Jobs
+              Browse Open Jobs
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {savedJobs.map((job) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {savedJobs.map((job, index) => {
               const jobId = (typeof job._id === 'string' && job._id) ||
                            (job._id && job._id.$oid) ||
                            job.id;
@@ -99,37 +104,65 @@ export default function SavedJobs() {
               return (
                 <div
                   key={jobId}
-                  className="bg-base-200 border border-base-300 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition relative"
+                  className="bg-base-100 border border-base-300 rounded-[2.5rem] shadow-sm overflow-hidden hover:shadow-xl hover:border-primary/20 transition-all duration-500 group relative animate-in fade-in slide-in-from-bottom-4 duration-700"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="absolute top-2 right-2 z-10">
+                  <div className="absolute top-4 right-4 z-20 scale-110">
                     <BookmarkButton jobId={jobId} />
                   </div>
-                  <img
-                    src={job.images?.[0] || 'https://via.placeholder.com/300x200'}
-                    alt={job.title}
-                    className="w-full h-40 object-cover"
-                  />
+                  
+                  <div className="relative h-56 overflow-hidden">
+                    <img
+                      src={job.images?.[0] || 'https://via.placeholder.com/600x400'}
+                      alt={job.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-base-100 via-transparent to-transparent opacity-60"></div>
+                    <div className="absolute bottom-4 left-6">
+                       <span className="bg-primary text-black font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-xl shadow-lg">
+                          ৳{job.budget?.toLocaleString()}
+                       </span>
+                    </div>
+                  </div>
 
-                  <div className="p-4 flex flex-col gap-2">
-                    <h3 className="text-lg font-semibold text-base-content">{job.title}</h3>
-                    <p className="text-sm text-base-content opacity-70">📍 {job.location}</p>
-                    <p className="text-sm text-base-content opacity-70">📂 {job.category}</p>
-                    <p className="text-sm text-base-content opacity-70">
-                      🗓️ Posted on: {job.date || (job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A')}
-                    </p>
-                    <span className="text-primary font-semibold text-sm">৳{job.budget}</span>
-                    {job.savedAt && (
-                      <p className="text-xs text-base-content opacity-60">
-                        Saved {new Date(job.savedAt).toLocaleDateString()}
-                      </p>
-                    )}
+                  <div className="p-8 flex flex-col gap-6">
+                    <div>
+                        <h3 className="text-xl font-heading font-black text-base-content leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-1">{job.title}</h3>
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                           <p className="text-[10px] font-black text-base-content/40 uppercase tracking-widest flex items-center gap-1.5">
+                              <i className="fas fa-map-marker-alt text-primary/50 text-xs"></i> {job.location}
+                           </p>
+                           <p className="text-[10px] font-black text-base-content/40 uppercase tracking-widest flex items-center gap-1.5">
+                              <i className="fas fa-layer-group text-primary/50 text-xs"></i> {job.category}
+                           </p>
+                        </div>
+                    </div>
 
-                    <Link
-                      to={`/jobs/${jobId}`}
-                      className="btn btn-sm btn-primary mt-3 w-full text-center"
-                    >
-                      View Details
-                    </Link>
+                    <div className="pt-6 border-t border-base-200">
+                        <div className="flex items-center justify-between mb-6">
+                           <div className="flex flex-col">
+                              <span className="text-[9px] font-black text-base-content/30 uppercase tracking-[0.2em] mb-1">Posted On</span>
+                              <span className="text-xs font-black text-base-content/70">
+                                 {job.date || (job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A')}
+                              </span>
+                           </div>
+                           {job.savedAt && (
+                              <div className="flex flex-col text-right">
+                                 <span className="text-[9px] font-black text-base-content/30 uppercase tracking-[0.2em] mb-1">Saved At</span>
+                                 <span className="text-xs font-black text-primary/70">
+                                    {new Date(job.savedAt).toLocaleDateString()}
+                                 </span>
+                              </div>
+                           )}
+                        </div>
+
+                        <Link
+                          to={`/jobs/${jobId}`}
+                          className="btn btn-primary w-full rounded-2xl shadow-lg shadow-primary/5 font-black uppercase tracking-widest text-[10px] py-4 h-auto group-hover:bg-primary group-hover:border-primary transition-all active:scale-95"
+                        >
+                          View Opportunity <i className="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </Link>
+                    </div>
                   </div>
                 </div>
               );

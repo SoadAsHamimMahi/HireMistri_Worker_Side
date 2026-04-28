@@ -1,395 +1,30 @@
-import React, { useEffect, useMemo, useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import {
-  BriefcaseIcon,
-  MapPinIcon,
-  CalendarDaysIcon,
-  CurrencyBangladeshiIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
-import axios from 'axios';
-import { getAuth } from 'firebase/auth';
-import { AuthContext } from '../Authentication/AuthProvider';
-import { app } from '../Authentication/firebaseConfig';
-import { useDarkMode } from '../contexts/DarkModeContext';
-import ApplicationNotes from '../components/ApplicationNotes';
-import RatingModal from '../components/RatingModal';
-import PageContainer from '../components/layout/PageContainer';
-import PageHeader from '../components/layout/PageHeader';
+const fs = require('fs');
+const path = require('path');
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const filePath = path.join(__dirname, 'src/routes/Applications.jsx');
+let content = fs.readFileSync(filePath, 'utf8');
 
-const STATUS_TONES = {
-  pending:  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-  accepted: 'badge-success',
-  completed:'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-};
+const returnStartMarker = '  return (\n    <div className="min-h-screen text-white">';
+let startIndex = content.indexOf(returnStartMarker);
 
-const STATUS_ICONS = {
-  pending:  'fas fa-clock',
-  accepted: 'fas fa-check-circle',
-  completed:'fas fa-check-double',
-  rejected: 'fas fa-times-circle',
-};
-
-function fmtDate(iso) {
-  if (!iso) return '—';
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+if (startIndex === -1) {
+  startIndex = content.indexOf('  return (\r\n    <div className="min-h-screen text-white">');
 }
 
-export default function Applications() {
-  const { user } = useContext(AuthContext) || {};
-  const { isDarkMode } = useDarkMode();
-  const navigate = useNavigate();
-  const [authReady, setAuthReady] = useState(Boolean(user));
-  useEffect(() => { setAuthReady(true); }, [user]);
+if (startIndex === -1) {
+  console.error('Could not find the return block start in Applications.jsx');
+  process.exit(1);
+}
 
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancellingApplicationId, setCancellingApplicationId] = useState(null);
-  const [cancellingApplicationTitle, setCancellingApplicationTitle] = useState('');
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingApplication, setEditingApplication] = useState(null);
-  const [editProposalText, setEditProposalText] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [ratingModalOpen, setRatingModalOpen] = useState(false);
-  const [selectedApplicationForRating, setSelectedApplicationForRating] = useState(null);
-  const [completingApplicationId, setCompletingApplicationId] = useState(null);
-  const [negotiatingApplicationId, setNegotiatingApplicationId] = useState(null);
-
-  // filters
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false); // mobile toggle
-  const [clientDetails, setClientDetails] = useState({}); // Cache for client { name, phone, email }
-  const [expandedProposal, setExpandedProposal] = useState({}); // appId -> boolean for collapsible proposal
-  const toggleProposal = (id) => setExpandedProposal((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  // Fetch client details for contact (Call/Email) - uses contact endpoint (only for accepted apps)
-  const fetchClientDetails = async (clientId) => {
-    if (!clientId || !user?.uid) return { name: 'Client', phone: '', email: '' };
-    if (clientDetails[clientId]) return clientDetails[clientId];
-    
-    try {
-      const auth = getAuth(app);
-      const token = await auth.currentUser?.getIdToken?.();
-      if (!token) return { name: 'Client', phone: '', email: '' };
-
-      const contactRes = await axios.get(`${API_BASE}/api/users/${clientId}/contact`, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }
-      });
-      if (contactRes.data && (contactRes.data.phone || contactRes.data.email)) {
-        const publicRes = await axios.get(`${API_BASE}/api/users/${clientId}/public`, {
-          headers: { Accept: 'application/json' }
-        });
-        const clientData = publicRes.data || {};
-        const info = {
-          name: [clientData.firstName, clientData.lastName].filter(Boolean).join(' ') || clientData.displayName || 'Client',
-          phone: contactRes.data.phone || '',
-          email: contactRes.data.email || ''
-        };
-        setClientDetails(prev => ({ ...prev, [clientId]: info }));
-        return info;
-      }
-    } catch (err) {
-      if (err?.response?.status !== 403) console.error('Failed to fetch client details:', err);
-    }
-    setClientDetails(prev => ({ ...prev, [clientId]: { name: 'Client', phone: '', email: '' } }));
-    return { name: 'Client', phone: '', email: '' };
-  };
-
-  // fetch apps for this worker (server already joins basic job fields)
-  useEffect(() => {
-    if (!authReady) return;
-    if (!user?.uid) { setLoading(false); setApplications([]); return; }
-
-    let ignore = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setErr('');
-
-        // ✅ correct endpoint
-        const { data } = await axios.get(`${API_BASE}/api/my-applications/${user.uid}`, {
-          headers: { Accept: 'application/json' },
-        });
-
-        // normalize a bit for UI safety
-        const rows = Array.isArray(data) ? data : [];
-        const normalized = rows.map(a => ({
-          ...a,
-          // ensure fields exist; backend aggregation should already provide these
-          title:     a.title ?? 'Untitled Job',
-          location:  a.location ?? 'N/A',
-          budget:    a.budget ?? null,
-          category:  a.category ?? '',
-          createdAt: a.createdAt || a.updatedAt || null,
-          status:    (a.status || 'pending').toLowerCase(),
-        }));
-
-        if (!ignore) setApplications(normalized);
-      } catch (e) {
-        console.error('❌ Failed to load applications:', e?.response?.data || e.message);
-        if (!ignore) setErr('Failed to load applications');
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    })();
-
-    return () => { ignore = true; };
-  }, [authReady, user?.uid]);
-
-  // Preload client details for accepted applications (for Contact Call/Email)
-  useEffect(() => {
-    applications
-      .filter(a => ['accepted', 'completed'].includes((a.status || '').toLowerCase()) && a.clientId)
-      .forEach(a => fetchClientDetails(a.clientId));
-  }, [applications]);
-
-  // dynamic categories list (includes All)
-  const categories = useMemo(() => {
-    const set = new Set(['All']);
-    applications.forEach(a => a?.category && set.add(a.category));
-    return Array.from(set);
-  }, [applications]);
-
-  // filter + search
-  const filteredApps = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    return applications.filter(app => {
-      const sOK =
-        statusFilter === 'All' ||
-        (app.status && app.status.toLowerCase() === statusFilter.toLowerCase());
-      const cOK =
-        categoryFilter === 'All' ||
-        (app.category && app.category === categoryFilter);
-      const tOK = !q || (app.title || '').toLowerCase().includes(q);
-      return sOK && cOK && tOK;
-    });
-  }, [applications, statusFilter, categoryFilter, searchTerm]);
-
-  // Group by status: accepted first, then pending, then rejected
-  const groupedApps = useMemo(() => ({
-    accepted: filteredApps.filter(a => (a.status || '').toLowerCase() === 'accepted'),
-    pending: filteredApps.filter(a => (a.status || '').toLowerCase() === 'pending'),
-    completed: filteredApps.filter(a => (a.status || '').toLowerCase() === 'completed'),
-    rejected: filteredApps.filter(a => (a.status || '').toLowerCase() === 'rejected')
-  }), [filteredApps]);
-  const acceptedAppsCount = groupedApps.accepted.length;
-
-  // Open cancel confirmation modal
-  const handleCancelClick = (application) => {
-    setCancellingApplicationId(application._id);
-    setCancellingApplicationTitle(application.title || 'this job');
-    setShowCancelModal(true);
-  };
-
-  // Confirm and delete application
-  const handleCancelConfirm = async () => {
-    if (!cancellingApplicationId || !user?.uid) {
-      toast.error('Unable to cancel application. Please try again.');
-      return;
-    }
-
-    try {
-      setIsCancelling(true);
-      
-      const response = await axios.delete(`${API_BASE}/api/applications/${cancellingApplicationId}`, {
-        data: { workerId: user.uid },
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.status === 200 || response.status === 204) {
-        // Remove from local state
-        setApplications(prev => prev.filter(a => a._id !== cancellingApplicationId));
-        toast.success('Application withdrawn successfully.');
-        setShowCancelModal(false);
-        setCancellingApplicationId(null);
-        setCancellingApplicationTitle('');
-      }
-    } catch (error) {
-      console.error('Failed to withdraw application:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to withdraw application. Please try again.';
-      toast.error(errorMessage);
-    } finally {
-      setIsCancelling(false);
-    }
-  };
-
-  const handleCancelCancel = () => {
-    setShowCancelModal(false);
-    setCancellingApplicationId(null);
-    setCancellingApplicationTitle('');
-  };
-
-  // Open edit proposal modal
-  const handleEditClick = (application) => {
-    setEditingApplication(application);
-    setEditProposalText(application.proposalText || '');
-    setShowEditModal(true);
-  };
-
-  // Save edited proposal
-  const handleSaveProposal = async () => {
-    if (!editingApplication || !user?.uid) {
-      toast.error('Unable to save proposal. Please try again.');
-      return;
-    }
-
-    if (!editProposalText.trim()) {
-      toast.error('Proposal text cannot be empty');
-      return;
-    }
-
-    if (editProposalText.trim().length < 50) {
-      toast.error('Proposal must be at least 50 characters long');
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      
-      const response = await axios.post(`${API_BASE}/api/applications`, {
-        jobId: editingApplication.jobId,
-        workerId: user.uid,
-        proposalText: editProposalText.trim(),
-        status: 'pending'
-      });
-
-      if (response.status === 200 || response.status === 201) {
-        // Update local state
-        setApplications(prev =>
-          prev.map(app =>
-            app._id === editingApplication._id
-              ? { ...app, proposalText: editProposalText.trim(), updatedAt: new Date().toISOString() }
-              : app
-          )
-        );
-        toast.success('Proposal updated successfully!');
-        setShowEditModal(false);
-        setEditingApplication(null);
-        setEditProposalText('');
-      }
-    } catch (error) {
-      console.error('Failed to update proposal:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to update proposal. Please try again.';
-      toast.error(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleEditCancel = () => {
-    setShowEditModal(false);
-    setEditingApplication(null);
-    setEditProposalText('');
-  };
-
-  const handleReapply = (app) => {
-    if (app?.jobId) {
-      navigate(`/jobs/${app.jobId}`);
-    } else {
-      toast.error('Unable to open job. Please try again.');
-    }
-  };
-
-  const handleMarkComplete = async (application) => {
-    if (!application?._id) return;
-    try {
-      setCompletingApplicationId(application._id);
-      const { data } = await axios.patch(`${API_BASE}/api/applications/${application._id}`, {
-        status: 'completed',
-        actorRole: 'worker',
-      }, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      setApplications((prev) =>
-        prev.map((app) => (app._id === application._id ? { ...app, ...data } : app))
-      );
-
-      if ((data?.status || '').toLowerCase() === 'completed') {
-        toast.success('Job completed by both sides. You can now rate the client.');
-      } else {
-        toast.success('Completion sent. Waiting for client confirmation.');
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.error || 'Failed to update completion status');
-    } finally {
-      setCompletingApplicationId(null);
-    }
-  };
-
-  const handleCounterDecision = async (application, decision) => {
-    if (!application?.jobId || !user?.uid) {
-      toast.error('Missing application details.');
-      return;
-    }
-    const parseMoney = (v) => {
-      if (v == null || v === '') return NaN;
-      if (typeof v === 'number' && Number.isFinite(v)) return v;
-      if (typeof v === 'object' && v !== null && '$numberDecimal' in v) return parseFloat(v.$numberDecimal);
-      const n = parseFloat(String(v));
-      return Number.isFinite(n) ? n : NaN;
-    };
-    if (decision === 'accept') {
-      const counter = parseMoney(application.counterPrice);
-      if (!Number.isFinite(counter) || counter <= 0) {
-        toast.error('Invalid counter offer amount.');
-        return;
-      }
-    }
-    try {
-      setNegotiatingApplicationId(application._id);
-      const payload =
-        decision === 'accept'
-          ? {
-              jobId: application.jobId,
-              workerId: user.uid,
-              finalPrice: parseMoney(application.counterPrice),
-              negotiationStatus: 'accepted',
-            }
-          : {
-              jobId: application.jobId,
-              workerId: user.uid,
-              negotiationStatus: 'cancelled',
-            };
-
-      const { data } = await axios.post(`${API_BASE}/api/applications`, payload);
-      const updated = data?.application;
-      if (updated) {
-        setApplications((prev) =>
-          prev.map((app) => (app._id === application._id ? { ...app, ...updated } : app))
-        );
-      }
-      toast.success(decision === 'accept' ? 'Counter offer accepted.' : 'Counter offer declined.');
-    } catch (error) {
-      console.error('Failed to update counter decision:', error);
-      toast.error(error?.response?.data?.error || 'Failed to update counter decision.');
-    } finally {
-      setNegotiatingApplicationId(null);
-    }
-  };
-
-  const statuses = ['All', 'Pending', 'Accepted', 'Completed', 'Rejected'];
-
-  return (
+const newReturnBlock = `  return (
     <div className="min-h-screen bg-[#f9f9f7] pb-20 pt-8">
-      <div className="w-full max-w-[83.333%] mx-auto">
+      <div className="max-w-[90%] mx-auto">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Applications</h1>
-            <p className="text-gray-600 font-medium mt-1">Track and manage your job applications and ongoing work.</p>
+            <p className="text-gray-500 font-medium mt-1">Track and manage your job applications and ongoing work.</p>
           </div>
           <button
             className="md:hidden flex items-center px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-lg font-bold transition-colors shadow-md shadow-brand/20 w-fit"
@@ -406,34 +41,34 @@ export default function Applications() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 mb-1">Total</p>
+              <p className="text-sm font-bold text-gray-500 mb-1">Total</p>
               <p className="text-3xl font-black text-gray-900">{applications.length}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100">
-              <i className="fas fa-briefcase text-xl text-gray-500"></i>
+              <i className="fas fa-briefcase text-xl text-gray-400"></i>
             </div>
           </div>
           <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 mb-1">Pending</p>
+              <p className="text-sm font-bold text-gray-500 mb-1">Pending</p>
               <p className="text-3xl font-black text-gray-900">{applications.filter(a => a.status === 'pending').length}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-100">
               <i className="fas fa-clock text-xl text-amber-500"></i>
             </div>
           </div>
-          <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex items-center justify-between">
+          <div className="p-5 rounded-2xl border border-brand-light bg-brand-light/30 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 mb-1">Accepted</p>
-              <p className="text-3xl font-black text-brand-hover">{applications.filter(a => a.status === 'accepted').length}</p>
+              <p className="text-sm font-bold text-gray-500 mb-1">Accepted</p>
+              <p className="text-3xl font-black text-brand">{applications.filter(a => a.status === 'accepted').length}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-brand-light/30 flex items-center justify-center border border-brand-light/50">
-              <i className="fas fa-check-circle text-xl text-brand-hover"></i>
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-brand-light shadow-sm">
+              <i className="fas fa-check-circle text-xl text-brand"></i>
             </div>
           </div>
           <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-600 mb-1">Rejected</p>
+              <p className="text-sm font-bold text-gray-500 mb-1">Rejected</p>
               <p className="text-3xl font-black text-gray-900">{applications.filter(a => a.status === 'rejected').length}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center border border-red-100">
@@ -446,16 +81,16 @@ export default function Applications() {
           {/* Filters Sidebar */}
           <aside
             id="filters"
-            className={`
-              ${filtersOpen ? 'block' : 'hidden'}
+            className={\`
+              \${filtersOpen ? 'block' : 'hidden'}
               lg:block lg:col-span-1
-            `}
+            \`}
           >
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-gray-900 text-lg">Filters</h3>
                 <button
-                  className="lg:hidden text-gray-500 hover:text-gray-900 transition-colors"
+                  className="lg:hidden text-gray-400 hover:text-gray-900 transition-colors"
                   onClick={() => setFiltersOpen(false)}
                 >
                   <XMarkIcon className="w-5 h-5" />
@@ -466,7 +101,7 @@ export default function Applications() {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Search Title</label>
                   <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-sm font-medium text-gray-900 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all"
@@ -506,13 +141,13 @@ export default function Applications() {
           <main className="lg:col-span-3 min-w-0 space-y-8">
             {!authReady ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm flex flex-col items-center justify-center">
-                <span className="loading loading-spinner loading-lg text-brand-hover mb-4"></span>
-                <p className="font-bold text-gray-600">Checking sign-in...</p>
+                <span className="loading loading-spinner loading-lg text-brand mb-4"></span>
+                <p className="font-bold text-gray-500">Checking sign-in...</p>
               </div>
             ) : loading ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm flex flex-col items-center justify-center">
-                <span className="loading loading-spinner loading-lg text-brand-hover mb-4"></span>
-                <p className="font-bold text-gray-600">Loading applications...</p>
+                <span className="loading loading-spinner loading-lg text-brand mb-4"></span>
+                <p className="font-bold text-gray-500">Loading applications...</p>
               </div>
             ) : err ? (
               <div className="bg-red-50 rounded-2xl border border-red-100 p-12 text-center">
@@ -526,10 +161,10 @@ export default function Applications() {
                   <i className="fas fa-inbox text-4xl text-gray-300"></i>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">No Applications Found</h3>
-                <p className="text-gray-600 font-medium mb-8 max-w-md mx-auto">
+                <p className="text-gray-500 font-medium mb-8 max-w-md mx-auto">
                   {searchTerm || statusFilter !== 'All' || categoryFilter !== 'All'
                     ? 'No applications match your current filters.'
-                    : 'You haven\'t applied to any jobs yet. Start browsing jobs to find your next opportunity.'}
+                    : 'You haven\\'t applied to any jobs yet. Start browsing jobs to find your next opportunity.'}
                 </p>
                 <Link to="/jobs" className="bg-brand hover:bg-brand-hover text-white font-bold py-3 px-8 rounded-xl transition-colors inline-flex items-center gap-2 shadow-md shadow-brand/20">
                   <i className="fas fa-search"></i>
@@ -543,12 +178,12 @@ export default function Applications() {
                   <div className="p-6 rounded-2xl border border-brand-light bg-white shadow-sm relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-brand-light rounded-bl-full opacity-50 pointer-events-none"></div>
                     <div className="flex items-center gap-4 mb-6 relative">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-brand-light border border-brand-light text-brand-hover shadow-sm">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-brand-light border border-brand-light text-brand shadow-sm">
                         <i className="fas fa-user-check text-xl"></i>
                       </div>
                       <div>
                         <h2 className="text-xl font-black text-gray-900">Active Orders</h2>
-                        <p className="text-sm font-medium text-gray-600">Contact your clients to coordinate the work.</p>
+                        <p className="text-sm font-medium text-gray-500">Contact your clients to coordinate the work.</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative">
@@ -557,16 +192,16 @@ export default function Applications() {
                         return (
                           <div key={app._id} className="flex flex-col gap-3 rounded-xl p-4 border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md transition-all group">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand-hover font-black border border-brand-light/50">
+                              <div className="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center text-brand font-black border border-brand-light/50">
                                 {info.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-bold text-gray-900 truncate">{info.name}</p>
-                                <p className="text-sm font-medium text-gray-600 truncate">{app.title || 'Job'}</p>
+                                <p className="text-xs font-medium text-gray-500 truncate">{app.title || 'Job'}</p>
                               </div>
                             </div>
                             {info.phone && (
-                              <a href={`tel:${info.phone.replace(/\s/g, '')}`} className="w-full flex justify-center items-center gap-2 bg-white border border-gray-200 hover:border-brand hover:text-brand-hover text-gray-700 font-bold text-sm py-2 rounded-lg transition-colors">
+                              <a href={\`tel:\${info.phone.replace(/\\s/g, '')}\`} className="w-full flex justify-center items-center gap-2 bg-white border border-gray-200 hover:border-brand hover:text-brand text-gray-700 font-bold text-xs py-2 rounded-lg transition-colors">
                                 <i className="fas fa-phone"></i>
                                 Call Client
                               </a>
@@ -585,19 +220,19 @@ export default function Applications() {
                   
                   const sectionLabels = { accepted: 'Active Orders', pending: 'Pending Proposals', completed: 'Completed Jobs', rejected: 'Rejected' };
                   const sectionIcons = { accepted: 'fa-user-check', pending: 'fa-clock', completed: 'fa-check-double', rejected: 'fa-times-circle' };
-                  const sectionColors = { accepted: 'text-brand-hover', pending: 'text-amber-500', completed: 'text-blue-500', rejected: 'text-gray-500' };
+                  const sectionColors = { accepted: 'text-brand', pending: 'text-amber-500', completed: 'text-blue-500', rejected: 'text-gray-400' };
                   const badgeColors = {
-                    accepted: 'bg-brand-light text-brand-hover border border-brand-light/50',
+                    accepted: 'bg-brand-light text-brand border border-brand-light/50',
                     pending: 'bg-amber-50 text-amber-600 border border-amber-100',
                     completed: 'bg-blue-50 text-blue-600 border border-blue-100',
-                    rejected: 'bg-gray-100 text-gray-600 border border-gray-200'
+                    rejected: 'bg-gray-100 text-gray-500 border border-gray-200'
                   };
 
                   return (
                     <div key={statusKey} className="space-y-4">
-                      <h3 className={`flex items-center gap-2 text-lg font-black ${sectionColors[statusKey]}`}>
-                        <i className={`fas ${sectionIcons[statusKey]}`}></i>
-                        {sectionLabels[statusKey]} <span className="text-sm font-bold bg-white px-2 py-0.5 rounded-md border border-gray-200 shadow-sm text-gray-600">{group.length}</span>
+                      <h3 className={\`flex items-center gap-2 text-lg font-black \${sectionColors[statusKey]}\`}>
+                        <i className={\`fas \${sectionIcons[statusKey]}\`}></i>
+                        {sectionLabels[statusKey]} <span className="text-sm font-bold bg-white px-2 py-0.5 rounded-md border border-gray-200 shadow-sm text-gray-500">{group.length}</span>
                       </h3>
                       <div className="space-y-4">
                         {group.map(app => {
@@ -610,19 +245,19 @@ export default function Applications() {
                               <div className="p-6 space-y-5">
                                 {/* Header */}
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                  <h3 className="text-xl font-bold text-gray-900 pr-2 group-hover:text-brand-hover transition-colors">
+                                  <h3 className="text-xl font-bold text-gray-900 pr-2 group-hover:text-brand transition-colors">
                                     {app.title || 'Untitled Job'}
                                   </h3>
-                                  <span className={`shrink-0 px-3 py-1 rounded-full text-sm font-bold inline-flex items-center w-fit ${badgeClass}`}>
-                                    <i className={`fas ${sectionIcons[statusKey]} mr-1.5 text-xs`}></i>
+                                  <span className={\`shrink-0 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center w-fit \${badgeClass}\`}>
+                                    <i className={\`fas \${sectionIcons[statusKey]} mr-1.5 text-[10px]\`}></i>
                                     {isAccepted ? 'ACTIVE' : (app.status || 'PENDING').toUpperCase()}
                                   </span>
                                 </div>
 
                                 {/* Meta row */}
-                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 font-medium">
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500 font-medium">
                                   <span className="flex items-center gap-1.5 min-w-0 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100" title={app.location || undefined}>
-                                    <MapPinIcon className="w-4 h-4 text-gray-500 shrink-0" />
+                                    <MapPinIcon className="w-4 h-4 text-gray-400 shrink-0" />
                                     <span className="truncate">{app.location || 'N/A'}</span>
                                   </span>
                                   {app.category && (
@@ -632,10 +267,10 @@ export default function Applications() {
                                     </span>
                                   )}
                                   <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                    <CurrencyBangladeshiIcon className="w-4 h-4 text-gray-500" />
-                                    {typeof app.budget === 'number' ? `৳${app.budget.toLocaleString()}` : (app.budget || '৳N/A')}
+                                    <CurrencyBangladeshiIcon className="w-4 h-4 text-gray-400" />
+                                    {typeof app.budget === 'number' ? \`৳\${app.budget.toLocaleString()}\` : (app.budget || '৳N/A')}
                                   </span>
-                                  <span className="flex items-center gap-1.5 text-gray-500">
+                                  <span className="flex items-center gap-1.5 text-gray-400">
                                     <CalendarDaysIcon className="w-4 h-4" />
                                     {fmtDate(app.createdAt)}
                                   </span>
@@ -645,8 +280,8 @@ export default function Applications() {
                                 {(app.proposedPrice || app.counterPrice || app.finalPrice || app.negotiationStatus) && (
                                   <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4 space-y-3">
                                     <div className="flex items-center justify-between border-b border-amber-100/50 pb-2">
-                                      <span className="text-sm font-bold text-amber-700 uppercase tracking-wide">Price Negotiation</span>
-                                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white border border-amber-200 text-amber-600 uppercase">
+                                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Price Negotiation</span>
+                                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-amber-200 text-amber-600 uppercase">
                                         {(app.negotiationStatus || (app.counterPrice ? 'COUNTERED' : 'PENDING')).toString()}
                                       </span>
                                     </div>
@@ -654,22 +289,22 @@ export default function Applications() {
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                       {app.proposedPrice ? (
                                         <div className="bg-white rounded-lg p-3 border border-amber-100 shadow-sm">
-                                          <span className="block text-sm font-bold text-gray-500 mb-1">Your Proposed</span>
+                                          <span className="block text-xs font-bold text-gray-400 mb-1">Your Proposed</span>
                                           <span className="font-black text-gray-900">৳{Number(app.proposedPrice).toLocaleString()}</span>
                                         </div>
                                       ) : null}
 
                                       {app.counterPrice ? (
                                         <div className="bg-white rounded-lg p-3 border border-amber-200 shadow-sm shadow-amber-100">
-                                          <span className="block text-sm font-bold text-amber-500 mb-1">Client Counter</span>
+                                          <span className="block text-xs font-bold text-amber-500 mb-1">Client Counter</span>
                                           <span className="font-black text-amber-600">৳{Number(app.counterPrice).toLocaleString()}</span>
                                         </div>
                                       ) : null}
 
                                       {app.finalPrice ? (
                                         <div className="bg-brand-light rounded-lg p-3 border border-brand-light shadow-sm">
-                                          <span className="block text-sm font-bold text-brand-hover mb-1">Final Agreed</span>
-                                          <span className="font-black text-brand-hover">৳{Number(app.finalPrice).toLocaleString()}</span>
+                                          <span className="block text-xs font-bold text-brand mb-1">Final Agreed</span>
+                                          <span className="font-black text-brand">৳{Number(app.finalPrice).toLocaleString()}</span>
                                         </div>
                                       ) : null}
                                     </div>
@@ -703,13 +338,13 @@ export default function Applications() {
                                     {expandedProposal[app._id] ? (
                                       <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
                                         <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-gray-200">
-                                          <span className="text-sm font-bold text-gray-600 uppercase tracking-wide">Your Cover Letter</span>
-                                          <button type="button" className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors" onClick={() => toggleProposal(app._id)}>Close</button>
+                                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Your Cover Letter</span>
+                                          <button type="button" className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors" onClick={() => toggleProposal(app._id)}>Close</button>
                                         </div>
-                                        <p className="text-base text-gray-700 font-medium leading-relaxed whitespace-pre-wrap">{app.proposalText}</p>
+                                        <p className="text-sm text-gray-700 font-medium leading-relaxed whitespace-pre-wrap">{app.proposalText}</p>
                                       </div>
                                     ) : (
-                                      <button type="button" className="flex items-center gap-2 text-sm font-bold text-brand-hover hover:text-brand-hover transition-colors" onClick={() => toggleProposal(app._id)}>
+                                      <button type="button" className="flex items-center gap-2 text-sm font-bold text-brand hover:text-brand-hover transition-colors" onClick={() => toggleProposal(app._id)}>
                                         <i className="fas fa-file-alt"></i>
                                         Read Cover Letter
                                       </button>
@@ -719,13 +354,13 @@ export default function Applications() {
 
                                 {/* Actions Bar */}
                                 <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
-                                  <Link to={`/jobs/${app.jobId}`} className="bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                  <Link to={\`/jobs/\${app.jobId}\`} className="bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                                     <i className="fas fa-eye"></i> View Job
                                   </Link>
 
                                   {app.status?.toLowerCase() === 'accepted' && app.clientId && (
                                     <>
-                                      <button onClick={() => navigate(`/client/${app.clientId}`)} className="bg-white border border-gray-200 hover:border-brand hover:text-brand-hover text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                      <button onClick={() => navigate(\`/client/\${app.clientId}\`)} className="bg-white border border-gray-200 hover:border-brand hover:text-brand text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                                         <i className="fas fa-user"></i> View Client
                                       </button>
                                       {(() => {
@@ -733,12 +368,12 @@ export default function Applications() {
                                         return (info.phone || info.email) ? (
                                           <>
                                             {info.phone && (
-                                              <a href={`tel:${info.phone.replace(/\s/g, '')}`} className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                              <a href={\`tel:\${info.phone.replace(/\\s/g, '')}\`} className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                                                 <i className="fas fa-phone"></i> Call
                                               </a>
                                             )}
                                             {info.email && (
-                                              <a href={`mailto:${info.email}`} className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                              <a href={\`mailto:\${info.email}\`} className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                                                 <i className="fas fa-envelope"></i> Email
                                               </a>
                                             )}
@@ -758,7 +393,7 @@ export default function Applications() {
 
                                   {app.status?.toLowerCase() === 'pending' && (
                                     <>
-                                      <button className="bg-white border border-gray-200 hover:border-brand hover:text-brand-hover text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm" onClick={() => handleEditClick(app)} disabled={isSaving}>
+                                      <button className="bg-white border border-gray-200 hover:border-brand hover:text-brand text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm" onClick={() => handleEditClick(app)} disabled={isSaving}>
                                         <i className="fas fa-edit"></i> Edit Proposal
                                       </button>
                                       <button className="bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm" onClick={() => handleCancelClick(app)} disabled={isCancelling}>
@@ -769,7 +404,7 @@ export default function Applications() {
                                   )}
 
                                   {app.status?.toLowerCase() === 'rejected' && (
-                                    <button className="bg-white border border-gray-200 hover:border-brand hover:text-brand-hover text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm" onClick={() => handleReapply(app)}>
+                                    <button className="bg-white border border-gray-200 hover:border-brand hover:text-brand text-gray-700 font-bold text-sm py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-sm" onClick={() => handleReapply(app)}>
                                       <i className="fas fa-redo"></i> Reapply
                                     </button>
                                   )}
@@ -809,7 +444,7 @@ export default function Applications() {
                 <i className="fas fa-exclamation-triangle text-3xl text-red-500"></i>
               </div>
               <h3 className="text-xl font-black text-gray-900">Withdraw Application?</h3>
-              <p className="text-gray-600 font-medium">Are you sure you want to withdraw your application for <span className="font-bold text-gray-900">"{cancellingApplicationTitle}"</span>? This action cannot be undone.</p>
+              <p className="text-gray-500 font-medium">Are you sure you want to withdraw your application for <span className="font-bold text-gray-900">"{cancellingApplicationTitle}"</span>? This action cannot be undone.</p>
               
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button
@@ -838,7 +473,7 @@ export default function Applications() {
           <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="text-xl font-black text-gray-900">Edit Cover Letter</h3>
-              <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-colors" onClick={handleEditCancel}>
+              <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors" onClick={handleEditCancel}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -850,7 +485,7 @@ export default function Applications() {
                 value={editProposalText}
                 onChange={(e) => setEditProposalText(e.target.value)}
               ></textarea>
-              <p className="text-sm text-gray-600 font-bold mt-2 text-right">
+              <p className="text-xs text-gray-500 font-bold mt-2 text-right">
                  {editProposalText.length} characters (min 50)
               </p>
             </div>
@@ -895,3 +530,9 @@ export default function Applications() {
     </div>
   );
 }
+`;
+
+const finalContent = content.substring(0, startIndex) + newReturnBlock;
+
+fs.writeFileSync(filePath, finalContent, 'utf8');
+console.log('Successfully patched Applications.jsx');
