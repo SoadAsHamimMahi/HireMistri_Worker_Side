@@ -1197,7 +1197,7 @@ export default function WorkerJobDetails() {
                <div className="flex items-center gap-5 mb-8">
                   <div className="relative">
                     <img
-                      src={clientPublic?.pfp || 'https://via.placeholder.com/150'}
+                      src={clientPublic?.pfp || 'https://placehold.co/150'}
                       alt={poster.name}
                       className="w-16 h-16 rounded-full object-cover border-2 border-brand"
                     />

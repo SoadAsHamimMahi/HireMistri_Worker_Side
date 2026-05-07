@@ -15,7 +15,7 @@ const JobCardList = () => {
   };
 
   const FallbackImg =
-    "https://via.placeholder.com/640x400?text=No+Image";
+    "https://placehold.co/640x400?text=No+Image";
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

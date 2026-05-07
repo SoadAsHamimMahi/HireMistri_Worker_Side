@@ -113,7 +113,7 @@ export default function SavedJobs() {
                   
                   <div className="relative h-56 overflow-hidden">
                     <img
-                      src={job.images?.[0] || 'https://via.placeholder.com/600x400'}
+                      src={job.images?.[0] || 'https://placehold.co/600x400'}
                       alt={job.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
