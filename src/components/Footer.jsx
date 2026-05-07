@@ -32,10 +32,10 @@ export default function Footer() {
       <div className="footer-cta-bg bg-gradient-to-r from-base-200 via-base-100 to-base-200">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h3 className="text-xl md:text-2xl font-semibold text-base-content">
-            Find work faster with <span className="text-primary">Hire</span>Mistri
+            Find work faster with <span className="text-brand">Hire</span>Mistri
           </h3>
           <div className="flex flex-wrap gap-3">
-            <Link to="/jobs" className="btn btn-primary">
+            <Link to="/jobs" className="btn bg-brand hover:bg-brand-hover text-white border-none">
               Find Jobs
             </Link>
             <Link to="/dashboard/applications" className="inline-flex items-center justify-center px-5 py-2 rounded-md border border-base-300 hover:bg-base-200 transition text-base-content">
@@ -56,7 +56,7 @@ export default function Footer() {
             <div>
               <Link to="/" className="inline-flex items-baseline gap-1 font-extrabold text-2xl">
                 <span className="text-base-content">Hire</span>
-                <span className="text-primary">Mistri</span>
+                <span className="text-brand">Mistri</span>
               </Link>
               <p className="mt-3 text-sm text-base-content opacity-70 leading-6">
                 Get matched to nearby jobs in minutes. Apply directly, chat with clients,
@@ -65,15 +65,15 @@ export default function Footer() {
 
               <ul className="mt-5 space-y-2 text-sm">
                 <li className="flex items-start gap-2">
-                  <MapPinIcon className="w-5 h-5 text-primary shrink-0" />
+                  <MapPinIcon className="w-5 h-5 text-brand shrink-0" />
                   <span>Dhaka, Bangladesh</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <PhoneIcon className="w-5 h-5 text-primary shrink-0" />
+                  <PhoneIcon className="w-5 h-5 text-brand shrink-0" />
                   <a className="text-base-content opacity-70 hover:opacity-100" href="tel:+8801990444882">+8801990444882</a>
                 </li>
                 <li className="flex items-start gap-2">
-                  <EnvelopeIcon className="w-5 h-5 text-primary shrink-0" />
+                  <EnvelopeIcon className="w-5 h-5 text-brand shrink-0" />
                   <a className="text-base-content opacity-70 hover:opacity-100" href="mailto:soadashamimmahi@gmail.com">soadashamimmahi@gmail.com</a>
                 </li>
               </ul>
@@ -150,7 +150,7 @@ export default function Footer() {
                     placeholder="you@example.com"
                     className="input input-bordered flex-1 text-sm"
                   />
-                  <button className="btn btn-primary btn-sm" type="submit">
+                  <button className="btn bg-brand hover:bg-brand-hover text-white btn-sm border-none" type="submit">
                     Subscribe
                   </button>
                 </div>
@@ -174,7 +174,7 @@ export default function Footer() {
           <div className="pt-6 mt-8 border-t border-base-300 flex flex-col md:flex-row gap-3 md:items-center md:justify-between text-xs text-base-content opacity-70">
             <p>
               © {year} <span className="text-base-content">Hire</span>
-              <span className="text-primary">Mistri</span>. All rights reserved.
+              <span className="text-brand">Mistri</span>. All rights reserved.
             </p>
             <div className="flex gap-5">
               <Link to="/terms" className="hover:opacity-100">Terms</Link>

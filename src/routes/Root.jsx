@@ -13,7 +13,7 @@ const Root = () => {
       <main className={`flex-1 w-full ${isDashboardArea ? '' : 'max-w-[83.333%] mx-auto'}`}>
         <Outlet />
       </main>
-      {!isDashboardArea && <Footer />}
+      <Footer />
     </div>
   );
 };

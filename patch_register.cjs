@@ -1,399 +1,19 @@
-import React, { useState, useContext, useRef, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../Authentication/AuthProvider';
-import { saveUserToApi } from '../Authentication/saveUser';
-import toast, { Toaster } from 'react-hot-toast';
+const fs = require('fs');
+const path = require('path');
 
-const API_BASE = (import.meta.env?.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
-const TERMS_VERSION = '2026-03-28';
-const PRIVACY_VERSION = '2026-03-28';
+const filePath = path.join(__dirname, 'src', 'Authentication', 'WorkerRegister.jsx');
+let content = fs.readFileSync(filePath, 'utf8');
 
-const BD_MOBILE_REGEX = /^01[3-9]\d{8}$/;
-const NID_REGEX = /^\d{10}$|^\d{17}$/;
+// Use regex to find the start of the return statement
+const returnMatch = content.match(/  \/\/ ── Render ─+\r?\n  return \(/);
 
-const SERVICE_CATEGORY_GROUPS = [
-  {
-    id: 'home-repair-trades',
-    title: 'Home Repair & Trades',
-    subtitle: 'Typical one-off visits for essential repairs',
-    items: [
-      { id: 'electrician', label: 'Electrician', description: 'Faults, fittings, DB/MCB, wiring' },
-      { id: 'plumber', label: 'Plumber', description: 'Leaks, taps, line fix, motor/tank' },
-      { id: 'ac-service', label: 'AC Service & Repair', description: 'Gas refill, cleaning, repair' },
-      { id: 'carpenter', label: 'Carpenter', description: 'Doors, shelves, small wood fixes' },
-      { id: 'painter', label: 'Painter', description: 'Touch-ups, defined areas' },
-      { id: 'mason', label: 'Mason / Civil', description: 'Patches, broken corners, RCC' },
-      { id: 'tile-marble', label: 'Tile & Marble Fix', description: 'Replacement, grout repair' },
-      { id: 'welder', label: 'Welder / Fabrication', description: 'Gating, railing repair' },
-      { id: 'gypsum', label: 'Gypsum / False Ceiling', description: 'Patch or small sections' },
-      { id: 'glass-alum', label: 'Glass & Aluminium', description: 'Window/door adjustment' },
-    ],
-  },
-  {
-    id: 'install-mounting',
-    title: 'Install & Mounting',
-    subtitle: 'Professional installation for hardware and units',
-    items: [
-      { id: 'general-install', label: 'Fan, Light & Appliance', description: 'Standard mounting & wiring' },
-      { id: 'mounting-decor', label: 'Curtain, Mirror & Shelves', description: 'Precise wall mounting' },
-      { id: 'tv-mount', label: 'TV Wall Mount', description: 'Bracket installation' },
-      { id: 'water-filter', label: 'Water Filter / Geyser', description: 'Inlet/outlet setup' },
-    ],
-  },
-  {
-    id: 'other',
-    title: 'Specialized / Other',
-    items: [
-      { id: 'cleaning', label: 'Cleaning Service', description: 'Deep or regular cleaning' },
-      { id: 'security', label: 'Security Guard', description: 'Premise monitoring' },
-      { id: 'gardening', label: 'Gardening', description: 'Lawn & plant care' },
-      { id: 'other', label: 'Other', description: 'If not listed above' },
-    ],
-  },
-];
+if (!returnMatch) {
+  throw new Error("Could not find Render marker");
+}
 
-const DISTRICTS = [
-  'Dhaka', 'Chattogram', 'Sylhet', 'Rajshahi', 'Khulna', 'Barishal',
-  'Mymensingh', 'Rangpur', 'Gazipur', 'Narayanganj', 'Cumilla', 'Cox\'s Bazar', 'Other',
-];
+const topPart = content.substring(0, returnMatch.index);
 
-const STEP_LABELS = [
-  'Account', 'Profile', 'Photo', 'Documents', 'Payout'
-];
-
-export default function WorkerRegister() {
-  const auth = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  if (!auth) {
-    return (
-      <section className="p-8 text-center text-red-400">
-        AuthProvider not found. Wrap your app with &lt;AuthProvider&gt; in main.jsx.
-      </section>
-    );
-  }
-
-  const { createUser, signInWithGoogle } = auth;
-
-  const [step, setStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
-  const [uid, setUid] = useState(null);
-  const [firebaseToken, setFirebaseToken] = useState(null);
-
-  // Step 1 — Account
-  const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phone: '',
-    password: '', confirmPassword: '',
-  });
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
-
-  // Step 2 — Professional Profile
-  const [profile, setProfile] = useState({
-    bio: '', experienceYears: '', selectedServices: [],
-    city: '', district: '',
-  });
-  const [serviceSearch, setServiceSearch] = useState('');
-
-  const filteredServiceGroups = useMemo(() => {
-    const q = serviceSearch.trim().toLowerCase();
-    if (!q) return SERVICE_CATEGORY_GROUPS;
-    return SERVICE_CATEGORY_GROUPS.map((g) => ({
-      ...g,
-      items: g.items.filter(
-        (it) =>
-          it.label.toLowerCase().includes(q) ||
-          (it.description && it.description.toLowerCase().includes(q)) ||
-          g.title.toLowerCase().includes(q) ||
-          (g.subtitle && g.subtitle.toLowerCase().includes(q))
-      ),
-    })).filter((g) => g.items.length > 0);
-  }, [serviceSearch]);
-
-  // Step 3 — Profile Photo
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const photoRef = useRef();
-
-  // Step 4 — Documents
-  const [nidNumber, setNidNumber] = useState('');
-  const [nidFrontUrl, setNidFrontUrl] = useState('');
-  const [nidBackUrl, setNidBackUrl] = useState('');
-  const [nidFrontUploading, setNidFrontUploading] = useState(false);
-  const [nidBackUploading, setNidBackUploading] = useState(false);
-  const nidFrontRef = useRef();
-  const nidBackRef = useRef();
-
-  // Step 5 — Emergency & Payout
-  const [emergency, setEmergency] = useState({ name: '', phone: '' });
-  const [emergencyNidNumber, setEmergencyNidNumber] = useState('');
-  const [emergencyNidFrontUrl, setEmergencyNidFrontUrl] = useState('');
-  const [emergencyNidBackUrl, setEmergencyNidBackUrl] = useState('');
-  const [emergencyNidFrontUploading, setEmergencyNidFrontUploading] = useState(false);
-  const [emergencyNidBackUploading, setEmergencyNidBackUploading] = useState(false);
-  const emergencyNidFrontRef = useRef();
-  const emergencyNidBackRef = useRef();
-  const [payout, setPayout] = useState({ provider: '', number: '' });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
-  };
-
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
-    setProfile(p => ({ ...p, [name]: value }));
-  };
-
-  const toggleService = (svc) => {
-    setProfile(p => ({
-      ...p,
-      selectedServices: p.selectedServices.includes(svc)
-        ? p.selectedServices.filter(s => s !== svc)
-        : [...p.selectedServices, svc],
-    }));
-  };
-
-  // ── File upload helpers ──────────────────────────────────────────────────
-  async function uploadFile(file, endpoint, fieldName, token) {
-    const fd = new FormData();
-    fd.append(fieldName, file);
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: fd,
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Upload failed');
-    }
-    return res.json();
-  }
-
-  async function handlePhotoChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!uid || !firebaseToken) { toast.error('Please complete account creation first'); return; }
-    setPhotoUploading(true);
-    try {
-      const data = await uploadFile(file, `${API_BASE}/api/users/${uid}/avatar`, 'avatar', firebaseToken);
-      setProfilePhotoUrl(data.url);
-      toast.success('Profile photo uploaded!');
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setPhotoUploading(false);
-    }
-  }
-
-  async function handleNidChange(side, e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!uid || !firebaseToken) { toast.error('Please complete account creation first'); return; }
-    
-    let setUploading = side === 'front' ? setNidFrontUploading : setNidBackUploading;
-    if (side === 'emergencyFront') setUploading = setEmergencyNidFrontUploading;
-    if (side === 'emergencyBack') setUploading = setEmergencyNidBackUploading;
-
-    setUploading(true);
-    try {
-      const data = await uploadFile(file, `${API_BASE}/api/users/${uid}/nid/${side}`, 'file', firebaseToken);
-      if (side === 'front') setNidFrontUrl(data.url);
-      else if (side === 'emergencyFront') setEmergencyNidFrontUrl(data.url);
-      else if (side === 'emergencyBack') setEmergencyNidBackUrl(data.url);
-      else setNidBackUrl(data.url);
-      
-      const sideLabel = side.includes('emergency') ? `Emergency ${side.includes('Front') ? 'Front' : 'Back'}` : side;
-      toast.success(`NID ${sideLabel} photo uploaded!`);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  // ── Step validators ──────────────────────────────────────────────────────
-  function validateStep1() {
-    if (!form.firstName.trim()) return 'First name is required.';
-    if (!form.lastName.trim()) return 'Last name is required.';
-    if (!BD_MOBILE_REGEX.test(form.phone.trim())) return 'Enter a valid Bangladesh mobile number (e.g. 01XXXXXXXXX).';
-    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) return 'Enter a valid email address.';
-    if (form.password.length < 6) return 'Password must be at least 6 characters.';
-    if (form.password !== form.confirmPassword) return 'Passwords do not match.';
-    if (!ageConfirmed) return 'You must confirm you are 18 or older.';
-    if (!termsAccepted) return 'You must accept the Terms of Service.';
-    if (!privacyAccepted) return 'You must accept the Privacy Policy.';
-    return null;
-  }
-
-  function validateStep2() {
-    if (profile.selectedServices.length === 0) return 'Select at least one service category.';
-    if (!profile.city.trim()) return 'City is required.';
-    if (!profile.district) return 'District is required.';
-    return null;
-  }
-
-  function validateStep3() {
-    if (!profilePhotoUrl) return 'Please upload your profile photo.';
-    return null;
-  }
-
-  function validateStep4() {
-    if (!NID_REGEX.test(nidNumber.trim())) return 'Enter a valid NID number (10 or 17 digits).';
-    if (!nidFrontUrl) return 'Please upload the front of your NID card.';
-    if (!nidBackUrl) return 'Please upload the back of your NID card.';
-    return null;
-  }
-
-  function validateStep5() {
-    if (!emergency.name.trim()) return 'Emergency contact name is required.';
-    if (!BD_MOBILE_REGEX.test(emergency.phone.trim())) return 'Enter a valid emergency contact number.';
-    if (!NID_REGEX.test(emergencyNidNumber.trim())) return 'Enter a valid Emergency Contact NID number (10 or 17 digits).';
-    if (!emergencyNidFrontUrl || !emergencyNidBackUrl) return 'Please upload both front and back emergency contact NID pictures.';
-    if (!payout.provider) return 'Select a payout wallet provider.';
-    if (!BD_MOBILE_REGEX.test(payout.number.trim())) return 'Enter a valid wallet mobile number.';
-    return null;
-  }
-
-  // ── Step 1: Create Firebase account ─────────────────────────────────────
-  async function handleStep1Next() {
-    const err = validateStep1();
-    if (err) { toast.error(err); return; }
-    if (uid) { setStep(2); return; } // already created, just go next
-
-    setSubmitting(true);
-    try {
-      const cred = await createUser(form.email.trim(), form.password);
-      const user = cred?.user;
-      if (!user) throw new Error('Account creation failed.');
-      const token = await user.getIdToken();
-      setUid(user.uid);
-      setFirebaseToken(token);
-
-      await saveUserToApi(user, {
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        phone: form.phone.trim(),
-        role: 'worker',
-        workerAccountStatus: 'draft',
-      });
-
-      toast.success('Account created! Continue your profile.');
-      setStep(2);
-    } catch (error) {
-      const msg = error?.response?.data?.error || error?.message || 'Registration failed.';
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  // ── Google Sign-In ───────────────────────────────────────────────────────
-  async function handleGoogle() {
-    if (!signInWithGoogle) { toast.error('Google sign-in is not configured.'); return; }
-    setSubmitting(true);
-    try {
-      const cred = await signInWithGoogle();
-      const user = cred?.user;
-      if (!user) throw new Error('Google sign-in failed.');
-      const token = await user.getIdToken();
-      setUid(user.uid);
-      setFirebaseToken(token);
-
-      const names = (user.displayName || '').split(' ');
-      setForm(f => ({
-        ...f,
-        firstName: names[0] || '',
-        lastName: names.slice(1).join(' ') || '',
-        email: user.email || '',
-      }));
-
-      await saveUserToApi(user, { role: 'worker', workerAccountStatus: 'draft' });
-      toast.success('Google sign-in successful! Continue your profile.');
-      // Skip to step 2 — skip password step for Google users
-      setStep(2);
-    } catch (error) {
-      let msg = 'Google sign-in failed.';
-      if (error.code === 'auth/popup-closed-by-user') msg = 'Sign-in cancelled.';
-      else if (error.code === 'auth/popup-blocked') msg = 'Popup blocked. Please allow popups.';
-      else msg = error?.message || msg;
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  // ── Final submit ─────────────────────────────────────────────────────────
-  async function handleFinalSubmit() {
-    const err = validateStep5();
-    if (err) { toast.error(err); return; }
-    if (!uid || !firebaseToken) { toast.error('Session expired. Please refresh and try again.'); return; }
-
-    setSubmitting(true);
-    try {
-      const now = new Date().toISOString();
-      const payload = {
-        uid,
-        fullLegalName: `${form.firstName.trim()} ${form.lastName.trim()}`,
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        phone: form.phone.trim(),
-        city: profile.city.trim(),
-        district: profile.district,
-        country: 'Bangladesh',
-        bio: profile.bio.trim(),
-        experienceYears: Number(profile.experienceYears) || 0,
-        servicesOffered: profile.selectedServices,
-        nidNumber: nidNumber.trim(),
-        nidFrontImageUrl: nidFrontUrl,
-        nidBackImageUrl: nidBackUrl,
-        profileCover: profilePhotoUrl,
-        emergencyContactName: emergency.name.trim(),
-        emergencyContactPhone: emergency.phone.trim(),
-        emergencyContactNidNumber: emergencyNidNumber.trim(),
-        emergencyContactNidFrontUrl: emergencyNidFrontUrl,
-        emergencyContactNidBackUrl: emergencyNidBackUrl,
-        payoutWalletProvider: payout.provider,        payoutWalletNumber: payout.number.trim(),
-        termsAcceptedAt: now,
-        privacyAcceptedAt: now,
-        ageConfirmedAt: now,
-        termsVersion: TERMS_VERSION,
-        privacyVersion: PRIVACY_VERSION,
-      };
-
-      const res = await fetch(`${API_BASE}/api/workers/registration/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${firebaseToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok && res.status !== 409) throw new Error(data.error || 'Submission failed.');
-
-      navigate('/registration/pending');
-    } catch (error) {
-      toast.error(error.message || 'Registration submission failed.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function nextStep() {
-    const validators = [null, validateStep1, validateStep2, validateStep3, validateStep4, validateStep5];
-    const err = validators[step]?.();
-    if (err) { toast.error(err); return; }
-    setStep(s => Math.min(5, s + 1));
-  }
-
-  function prevStep() {
-    setStep(s => Math.max(1, s - 1));
-  }
-
-  // ── Render ───────────────────────────────────────────────────────────────
+const bottomPart = `  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#f9f9f7] flex flex-col lg:flex-row">
       <Toaster position="top-right" />
@@ -485,14 +105,14 @@ export default function WorkerRegister() {
             <div className="flex justify-between items-center relative z-10">
               {STEP_LABELS.map((label, i) => (
                 <div key={label} className="flex flex-col items-center gap-2 bg-[#f9f9f7] px-2" style={{ flex: 1 }}>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                  <div className={\`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 \${
                     i + 1 < step ? 'bg-brand text-white shadow-sm' :
                     i + 1 === step ? 'bg-brand text-white ring-4 ring-brand/20 shadow-md' :
                     'bg-white text-gray-400 border-2 border-gray-200'
-                  }`}>
+                  }\`}>
                     {i + 1 < step ? <i className="fas fa-check"></i> : i + 1}
                   </div>
-                  <span className={`text-xs hidden sm:block font-bold ${i + 1 === step ? 'text-brand' : 'text-gray-400'}`}>
+                  <span className={\`text-xs hidden sm:block font-bold \${i + 1 === step ? 'text-brand' : 'text-gray-400'}\`}>
                     {label}
                   </span>
                 </div>
@@ -501,7 +121,7 @@ export default function WorkerRegister() {
             <div className="h-1 bg-gray-200 rounded-full -mt-11 sm:-mt-14 relative z-0 mx-6">
               <div
                 className="h-full bg-brand rounded-full transition-all duration-500"
-                style={{ width: `${((step - 1) / 4) * 100}%` }}
+                style={{ width: \`\${((step - 1) / 4) * 100}%\` }}
               />
             </div>
           </div>
@@ -589,7 +209,7 @@ export default function WorkerRegister() {
                           </summary>
                           <div className="p-4 pt-0 flex flex-wrap gap-2">
                             {group.items.map((item) => {
-                              const val = `${group.id}:${item.id}`;
+                              const val = \`\${group.id}:\${item.id}\`;
                               const isSelected = profile.selectedServices.includes(val);
                               return (
                                 <button
@@ -597,11 +217,11 @@ export default function WorkerRegister() {
                                   type="button"
                                   title={item.description}
                                   onClick={() => toggleService(val)}
-                                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+                                  className={\`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border \${
                                     isSelected
                                       ? 'bg-brand text-white border-brand shadow-md shadow-brand/20'
                                       : 'bg-white text-gray-600 border-gray-200 hover:border-brand/50'
-                                  }`}
+                                  }\`}
                                 >
                                   {item.label}
                                 </button>
@@ -640,7 +260,7 @@ export default function WorkerRegister() {
                     className="w-full px-4 py-3 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all"
                   >
                     <option value="">Select…</option>
-                    {[0,1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n === 0 ? 'Less than 1 year' : `${n}+ years`}</option>)}
+                    {[0,1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n === 0 ? 'Less than 1 year' : \`\${n}+ years\`}</option>)}
                   </select>
                 </div>
                 <div>
@@ -667,7 +287,7 @@ export default function WorkerRegister() {
                 <p className="text-gray-500 text-sm mb-6">Upload a clear, professional photo of yourself. This builds trust with clients.</p>
                 <div className="flex flex-col items-center gap-6">
                   <div
-                    className={`w-40 h-40 rounded-full overflow-hidden flex items-center justify-center cursor-pointer group relative border-4 ${profilePhotoUrl ? 'border-brand' : 'border-dashed border-gray-300 bg-gray-50 hover:border-brand/50'}`}
+                    className={\`w-40 h-40 rounded-full overflow-hidden flex items-center justify-center cursor-pointer group relative border-4 \${profilePhotoUrl ? 'border-brand' : 'border-dashed border-gray-300 bg-gray-50 hover:border-brand/50'}\`}
                     onClick={() => photoRef.current?.click()}
                   >
                     {profilePhotoUrl ? (
@@ -710,7 +330,7 @@ export default function WorkerRegister() {
                 <Input
                   label="NID Number"
                   value={nidNumber}
-                  onChange={e => setNidNumber(e.target.value.replace(/\D/g, ''))}
+                  onChange={e => setNidNumber(e.target.value.replace(/\\D/g, ''))}
                   placeholder="10 or 17 digit NID number"
                   type="text"
                 />
@@ -759,7 +379,7 @@ export default function WorkerRegister() {
                     <Input 
                       label="Emergency Contact NID Number" 
                       value={emergencyNidNumber} 
-                      onChange={e => setEmergencyNidNumber(e.target.value.replace(/\D/g, ''))} 
+                      onChange={e => setEmergencyNidNumber(e.target.value.replace(/\\D/g, ''))} 
                       placeholder="10 or 17 digit NID number" 
                       type="text" 
                     />
@@ -790,11 +410,11 @@ export default function WorkerRegister() {
                         key={provider}
                         type="button"
                         onClick={() => setPayout(p => ({ ...p, provider }))}
-                        className={`py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border-2 ${
+                        className={\`py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border-2 \${
                           payout.provider === provider
                             ? 'text-white border-transparent shadow-md'
                             : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
+                        }\`}
                         style={payout.provider === provider ? {
                           background: provider === 'bkash' ? '#E2136E' : provider === 'nagad' ? '#F4821F' : '#8B228B',
                         } : {}}
@@ -805,7 +425,7 @@ export default function WorkerRegister() {
                   </div>
                   {payout.provider && (
                     <Input
-                      label={`${payout.provider.charAt(0).toUpperCase() + payout.provider.slice(1)} Number`}
+                      label={\`\${payout.provider.charAt(0).toUpperCase() + payout.provider.slice(1)} Number\`}
                       value={payout.number}
                       onChange={e => setPayout(p => ({ ...p, number: e.target.value }))}
                       placeholder="01XXXXXXXXX"
@@ -867,7 +487,7 @@ function CheckItem({ checked, onChange, label }) {
     <label className="flex items-start gap-3 cursor-pointer group mb-3">
       <div
         onClick={() => onChange(!checked)}
-        className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all border-2 ${checked ? 'bg-brand border-brand' : 'bg-white border-gray-300 group-hover:border-brand/50'}`}
+        className={\`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all border-2 \${checked ? 'bg-brand border-brand' : 'bg-white border-gray-300 group-hover:border-brand/50'}\`}
       >
         {checked && <span className="text-white text-xs font-bold">✓</span>}
       </div>
@@ -906,7 +526,7 @@ function NidUpload({ label, url, uploading, inputRef, onChange }) {
     <div>
       <label className="block text-sm font-bold text-gray-700 mb-2">{label} <span className="text-red-500">*</span></label>
       <div
-        className={`h-36 rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer group relative border-2 transition-colors ${url ? 'border-brand bg-brand-light/30' : 'border-dashed border-gray-300 bg-gray-50 hover:border-brand/50 hover:bg-brand-light/10'}`}
+        className={\`h-36 rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer group relative border-2 transition-colors \${url ? 'border-brand bg-brand-light/30' : 'border-dashed border-gray-300 bg-gray-50 hover:border-brand/50 hover:bg-brand-light/10'}\`}
         onClick={() => inputRef.current?.click()}
       >
         {url ? (
@@ -927,3 +547,7 @@ function NidUpload({ label, url, uploading, inputRef, onChange }) {
     </div>
   );
 }
+`;
+
+fs.writeFileSync(filePath, topPart + bottomPart);
+console.log('Successfully updated WorkerRegister.jsx');

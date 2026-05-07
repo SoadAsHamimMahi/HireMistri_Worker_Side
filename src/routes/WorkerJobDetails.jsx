@@ -602,10 +602,10 @@ export default function WorkerJobDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen page-bg flex items-center justify-center">
+      <div className="min-h-screen bg-[#f9f9f7] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-base-content opacity-80">Loading job details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading job details...</p>
         </div>
       </div>
     );
@@ -613,18 +613,18 @@ export default function WorkerJobDetails() {
 
   if (err) {
     return (
-      <div className="min-h-screen page-bg flex items-center justify-center">
+      <div className="min-h-screen bg-[#f9f9f7] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-24 h-24 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-3xl"></i>
+          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <i className="fas fa-exclamation-triangle text-red-500 text-3xl"></i>
           </div>
-          <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
             Error Loading Job
           </h3>
-          <p className="text-base-content opacity-80 mb-6">{err}</p>
+          <p className="text-gray-600 mb-6">{err}</p>
           <button 
             onClick={() => navigate('/jobs')} 
-            className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
+            className="px-6 py-3 bg-brand hover:bg-brand-hover text-white font-bold rounded-xl transition-colors shadow-sm"
           >
             Back to Jobs
           </button>
@@ -635,18 +635,18 @@ export default function WorkerJobDetails() {
 
   if (!job) {
     return (
-      <div className="min-h-screen page-bg flex items-center justify-center">
+      <div className="min-h-screen bg-[#f9f9f7] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-24 h-24 bg-base-300 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-briefcase text-base-content opacity-60 text-3xl"></i>
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
+            <i className="fas fa-briefcase text-gray-400 text-3xl"></i>
           </div>
-          <h3 className="text-xl font-heading font-semibold text-base-content mb-2">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
             Job Not Found
           </h3>
-          <p className="text-base-content opacity-80 mb-6">This job may have been removed or doesn't exist.</p>
+          <p className="text-gray-600 mb-6">This job may have been removed or doesn't exist.</p>
           <button 
             onClick={() => navigate('/jobs')} 
-            className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition-colors"
+            className="px-6 py-3 bg-brand hover:bg-brand-hover text-white font-bold rounded-xl transition-colors shadow-sm"
           >
             Back to Jobs
           </button>
@@ -670,69 +670,60 @@ export default function WorkerJobDetails() {
   const distanceKm = getDistanceKm(workerLocation, resolvedJobGeo);
 
   return (
-    <div className="min-h-screen text-[#e0e0e0] font-sans selection:bg-primary/30">
+    <div className="min-h-screen bg-[#f9f9f7] text-gray-900 font-sans pb-20 pt-6">
       
-      {/* Top Navbar / Header area */}
-      <div className="sticky top-0 z-[100] bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4">
-        <div className="mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all border border-white/5"
-            >
-              <i className="fas fa-arrow-left text-sm opacity-70"></i>
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
-                <i className="fas fa-hammer text-primary text-sm"></i>
-              </div>
-              <span className="font-heading font-bold text-lg tracking-tight text-white/90">Hire Mistri</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-             <div className="tooltip tooltip-bottom" data-tip="Share Job">
-               <ShareButton jobId={id} jobTitle={job.title} jobDescription={job.description} className="!w-10 !h-10 !rounded-full bg-white/5 border-white/5 hover:bg-white/10" />
-             </div>
-             <div className="tooltip tooltip-bottom" data-tip="Bookmark">
-               <BookmarkButton jobId={id} className="!w-10 !h-10 !rounded-full bg-white/5 border-white/5 hover:bg-white/10" />
-             </div>
-          </div>
+      {/* Top Navbar / Header area (Simplified for Light Theme) */}
+      <div className="w-full max-w-[83.333%] mx-auto mb-6 flex items-center justify-between">
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-900 font-semibold transition-colors"
+        >
+          <i className="fas fa-arrow-left"></i>
+          <span>Back</span>
+        </button>
+        <div className="flex items-center gap-3">
+           <div className="tooltip tooltip-bottom" data-tip="Share Job">
+             <ShareButton jobId={id} jobTitle={job.title} jobDescription={job.description} className="!w-10 !h-10 !rounded-full bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900 shadow-sm border" />
+           </div>
+           <div className="tooltip tooltip-bottom" data-tip="Bookmark">
+             <BookmarkButton jobId={id} className="!w-10 !h-10 !rounded-full bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900 shadow-sm border" />
+           </div>
         </div>
       </div>
 
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-[83.333%] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Content (Left 2/3) */}
           <div className="lg:col-span-2 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             
             {/* 1. Hero Title Card */}
-            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -mr-32 -mt-32"></div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-brand-light blur-[100px] -mr-32 -mt-32"></div>
                
-               <h1 className="text-3xl lg:text-4xl font-heading font-black text-white mb-4 leading-tight">
+               <h1 className="text-3xl lg:text-4xl font-black text-gray-900 mb-4 leading-tight relative">
                  {job.title || 'Untitled Job'}
                </h1>
                
-               <div className="flex flex-wrap items-center gap-6 text-sm">
-                 <div className="flex items-center gap-2 font-bold text-[#00C853]">
+               <div className="flex flex-wrap items-center gap-6 text-sm relative">
+                 <div className="flex items-center gap-2 font-bold text-brand-hover">
                    <i className="fas fa-money-bill-wave"></i>
                    <span className="text-xl">৳{job.budget?.toLocaleString() || 'N/A'} Total</span>
                  </div>
-                 <div className="flex items-center gap-2 text-white/60">
+                 <div className="flex items-center gap-2 text-gray-600">
                    <i className="fas fa-map-marker-alt"></i>
                    <span>{job.location || 'N/A'}</span>
                  </div>
-                 <div className="flex items-center gap-2 text-white/40">
+                 <div className="flex items-center gap-2 text-gray-500">
                    <i className="fas fa-clock"></i>
                    <span>Posted {timeAgo(job.createdAt || job.date)}</span>
                  </div>
                </div>
                
                {distanceKm !== null && (
-                 <div className="mt-6">
-                    <span className="inline-flex items-center gap-2 bg-green-500/10 text-green-500 px-4 py-1.5 rounded-full text-xs font-bold border border-green-500/20 shadow-lg shadow-green-500/5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                 <div className="mt-6 relative">
+                    <span className="inline-flex items-center gap-2 bg-green-50 text-brand-hover px-4 py-1.5 rounded-full text-xs font-bold border border-green-100">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
                       {distanceKm} KM FROM {workerLocation === ctx?.profile?.locationGeo ? 'SAVED ADDRESS' : 'YOU'}
                     </span>
                  </div>
@@ -740,31 +731,31 @@ export default function WorkerJobDetails() {
             </div>
 
             {/* 2. Job Details Grid */}
-            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
-               <h2 className="text-xl font-heading font-bold text-white mb-6 flex items-center gap-2">
-                 <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
+               <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                 <span className="w-1.5 h-6 bg-brand rounded-full"></span>
                  Job Details
                </h2>
                
                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                 <div className="bg-[#111] border border-white/5 p-4 rounded-2xl">
-                    <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Category</span>
-                    <span className="text-lg font-bold text-white/90">{job.category || 'Masonry (Mistri)'}</span>
+                 <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                    <span className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</span>
+                    <span className="text-lg font-bold text-gray-900">{job.category || 'Masonry (Mistri)'}</span>
                  </div>
-                 <div className="bg-[#111] border border-white/5 p-4 rounded-2xl">
-                    <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Duration</span>
-                    <span className="text-lg font-bold text-white/90">{job.duration || '5 Days'}</span>
+                 <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                    <span className="block text-xs font-bold text-gray-500 uppercase mb-1">Duration</span>
+                    <span className="text-lg font-bold text-gray-900">{job.duration || '5 Days'}</span>
                  </div>
-                 <div className="bg-[#111] border border-white/5 p-4 rounded-2xl">
-                    <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Start Date</span>
-                    <span className="text-lg font-bold text-white/90">{job.startDate ? new Date(job.startDate).toLocaleDateString() : 'Immediate'}</span>
+                 <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                    <span className="block text-xs font-bold text-gray-500 uppercase mb-1">Start Date</span>
+                    <span className="text-lg font-bold text-gray-900">{job.startDate ? new Date(job.startDate).toLocaleDateString() : 'Immediate'}</span>
                  </div>
                </div>
 
                {/* Description */}
                <div className="mt-8">
-                 <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-4">Description</h3>
-                 <div className="text-white/70 leading-relaxed space-y-4 text-base">
+                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Description</h3>
+                 <div className="text-gray-700 leading-relaxed space-y-4 text-base">
                    {job.description ? (
                      job.description.split('\n').map((para, i) => (
                        <p key={i}>{para}</p>
@@ -777,10 +768,10 @@ export default function WorkerJobDetails() {
 
                {/* Required Skills */}
                <div className="mt-8">
-                 <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-4">Required Skills</h3>
+                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Required Skills</h3>
                  <div className="flex flex-wrap gap-2">
                    {(job.skills || ['Plastering', 'Tile Installation', 'Cement Work', 'Finishing']).map((skill, idx) => (
-                     <span key={idx} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-medium hover:bg-white/10 hover:border-white/20 transition-all cursor-default">
+                     <span key={idx} className="px-4 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-200 transition-all cursor-default">
                        {skill}
                      </span>
                    ))}
@@ -790,14 +781,14 @@ export default function WorkerJobDetails() {
 
             {/* 2.5 Image Gallery */}
             {images && images.length > 0 && (
-               <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
-                  <h2 className="text-xl font-heading font-bold text-white mb-6 flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
+                  <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-brand rounded-full"></span>
                     Project Media
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      {images.map((img, idx) => (
-                        <div key={idx} className={`relative rounded-2xl overflow-hidden border border-white/5 group ${idx === 0 && images.length % 2 !== 0 ? 'sm:col-span-2' : ''}`}>
+                        <div key={idx} className={`relative rounded-2xl overflow-hidden border border-gray-200 group ${idx === 0 && images.length % 2 !== 0 ? 'sm:col-span-2' : ''}`}>
                            <img 
                               src={img} 
                               alt={`Job ${idx}`} 
@@ -815,13 +806,13 @@ export default function WorkerJobDetails() {
             {/* Required Skills moved below Gallery or kept in Details? Let's keep it in Details as I had it. */}
 
             {/* 3. Work Location */}
-            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
-               <h2 className="text-xl font-heading font-bold text-white mb-6 flex items-center gap-2">
-                 <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
+               <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                 <span className="w-1.5 h-6 bg-brand rounded-full"></span>
                  Work Location
                </h2>
                
-               <div className="relative rounded-3xl overflow-hidden border border-white/5 h-[350px] shadow-2xl">
+               <div className="relative rounded-3xl overflow-hidden border border-gray-200 h-[350px] shadow-sm">
                   <JobLocationMap
                     locationGeo={resolvedJobGeo}
                     locationText={resolvedLocationText}
@@ -830,11 +821,11 @@ export default function WorkerJobDetails() {
                   
                   {/* Map Overlay Info */}
                   <div className="absolute bottom-6 left-6 right-6 z-[400]">
-                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl inline-flex items-center gap-3 shadow-2xl">
-                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                    <div className="bg-white/90 backdrop-blur-sm border border-gray-200 px-6 py-3 rounded-2xl inline-flex items-center gap-3 shadow-md">
+                       <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand">
                          <i className="fas fa-map-marker-alt"></i>
                        </div>
-                       <span className="text-sm font-bold text-white/90 tracking-tight">
+                       <span className="text-sm font-bold text-gray-900 tracking-tight">
                          {resolvedLocationText}
                        </span>
                     </div>
@@ -847,7 +838,7 @@ export default function WorkerJobDetails() {
                       type="button"
                       onClick={requestWorkerLocation}
                       disabled={geoLoading}
-                      className="text-primary text-sm font-bold flex items-center gap-2 hover:underline"
+                      className="text-brand text-sm font-bold flex items-center gap-2 hover:underline"
                     >
                       {geoLoading ? (
                         <>
@@ -868,11 +859,11 @@ export default function WorkerJobDetails() {
 
             {/* Live Tracking Map Overlay (Conditional) */}
             {isAcceptedApplication && poster.clientId && uid && (
-              <div className="bg-[#1a1a1a] border border-primary/20 rounded-xl p-8 bg-primary/5">
-                <h2 className="text-xl font-heading font-bold text-primary mb-4">
-                  <i className="fas fa-map-marked-alt mr-2"></i> Live Tracking
+              <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-8">
+                <h2 className="text-xl font-black text-gray-900 mb-4">
+                  <i className="fas fa-map-marked-alt text-brand mr-2"></i> Live Tracking
                 </h2>
-                <div className="rounded-2xl overflow-hidden border border-primary/30 h-[400px]">
+                <div className="rounded-2xl overflow-hidden border border-gray-200 h-[400px]">
                   <LiveTrackingMap
                     jobId={String(job._id || id)}
                     jobLocationGeo={resolvedJobGeo}
@@ -887,16 +878,16 @@ export default function WorkerJobDetails() {
 
             {/* 4. Application Status or Apply Section */}
             {hasApplied && application ? (
-               <div className="bg-[#1a1a1a] border border-primary/20 rounded-xl p-8 bg-primary/5">
+               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
                   <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2">
-                      <i className="fas fa-file-alt text-primary"></i>
+                    <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                      <i className="fas fa-file-alt text-brand"></i>
                       Your Application Status
                     </h2>
                     <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${
-                      application.status === 'accepted' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                      application.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                      'bg-primary/10 text-primary border-primary/20'
+                      application.status === 'accepted' ? 'bg-green-50 text-green-600 border-green-200' :
+                      application.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-200' :
+                      'bg-brand-light text-brand border-brand/20'
                     }`}>
                       {application.status || 'Pending'}
                     </span>
@@ -906,9 +897,9 @@ export default function WorkerJobDetails() {
                      {/* Proposal Text */}
                      <div>
                         <div className="flex items-center justify-between mb-4">
-                           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Your Proposal</h3>
+                           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Your Proposal</h3>
                            {!isEditingProposal && application.status === 'pending' && (
-                              <button onClick={handleEditProposal} className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline">
+                              <button onClick={handleEditProposal} className="text-brand text-[10px] font-black uppercase tracking-widest hover:underline">
                                 Edit Proposal
                               </button>
                            )}
@@ -919,20 +910,20 @@ export default function WorkerJobDetails() {
                               <textarea
                                 value={editedProposalText}
                                 onChange={(e) => setEditedProposalText(e.target.value)}
-                                className="w-full px-6 py-4 bg-[#111] border border-primary/30 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all outline-none text-white resize-none"
+                                className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all outline-none text-gray-900 resize-none"
                                 rows={6}
                               />
                               <div className="flex gap-3">
-                                 <button onClick={handleSaveProposal} disabled={saving || editedProposalText.length < 50} className="flex-1 py-3 rounded-xl bg-primary text-black font-bold text-xs uppercase tracking-widest transition-all hover:bg-primary-focus">
+                                 <button onClick={handleSaveProposal} disabled={saving || editedProposalText.length < 50} className="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-widest transition-all">
                                     {saving ? 'Saving...' : 'Save Changes'}
                                  </button>
-                                 <button onClick={handleCancelEdit} className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/10">
+                                 <button onClick={handleCancelEdit} className="px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold text-xs uppercase tracking-widest transition-all hover:bg-gray-50">
                                     Cancel
                                  </button>
                               </div>
                            </div>
                         ) : (
-                           <p className="text-white/70 bg-white/5 p-6 rounded-2xl border border-white/5 leading-relaxed italic">
+                           <p className="text-gray-700 bg-gray-50 p-6 rounded-2xl border border-gray-100 leading-relaxed italic">
                               "{application.proposalText || 'No proposal text provided.'}"
                            </p>
                         )}
@@ -940,48 +931,48 @@ export default function WorkerJobDetails() {
 
                      {/* Price Details */}
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="bg-[#111] border border-white/5 p-5 rounded-2xl">
-                           <span className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Original Bid</span>
-                           <span className="text-xl font-black text-white">৳{Number(application.proposedPrice || 0).toLocaleString()}</span>
+                        <div className="bg-gray-50 border border-gray-100 p-5 rounded-2xl">
+                           <span className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Original Bid</span>
+                           <span className="text-xl font-black text-gray-900">৳{Number(application.proposedPrice || 0).toLocaleString()}</span>
                         </div>
                         
                         {application.counterPrice && (
-                           <div className="bg-amber-500/5 border border-amber-500/20 p-5 rounded-2xl relative overflow-hidden">
-                              <div className="absolute top-0 right-0 p-2 bg-amber-500 text-black text-[8px] font-black uppercase tracking-widest rounded-bl-lg">Counter Offer</div>
-                              <span className="block text-[10px] font-bold text-amber-500/70 uppercase tracking-widest mb-2">Client Offered</span>
-                              <span className="text-xl font-black text-amber-500">৳{Number(application.counterPrice).toLocaleString()}</span>
+                           <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-2 bg-amber-400 text-amber-900 text-[8px] font-black uppercase tracking-widest rounded-bl-lg">Counter Offer</div>
+                              <span className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-2">Client Offered</span>
+                              <span className="text-xl font-black text-amber-600">৳{Number(application.counterPrice).toLocaleString()}</span>
                               
                               {application.status === 'pending' && !['accepted', 'declined'].includes((application.negotiationStatus || '').toLowerCase()) && (
                                  <div className="flex gap-2 mt-4">
-                                    <button onClick={() => handleCounterDecision('accept')} disabled={negotiatingPrice} className="flex-1 py-2 bg-amber-500 text-black text-[10px] font-black uppercase tracking-tighter rounded-lg hover:bg-amber-400 transition-all">Accept</button>
-                                    <button onClick={() => handleCounterDecision('decline')} disabled={negotiatingPrice} className="flex-1 py-2 bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-tighter rounded-lg hover:bg-white/10 transition-all">Decline</button>
+                                    <button onClick={() => handleCounterDecision('accept')} disabled={negotiatingPrice} className="flex-1 py-2 bg-amber-400 text-amber-900 text-[10px] font-black uppercase tracking-tighter rounded-lg hover:bg-amber-500 transition-all">Accept</button>
+                                    <button onClick={() => handleCounterDecision('decline')} disabled={negotiatingPrice} className="flex-1 py-2 bg-white border border-gray-200 text-gray-700 text-[10px] font-black uppercase tracking-tighter rounded-lg hover:bg-gray-50 transition-all">Decline</button>
                                  </div>
                               )}
                            </div>
                         )}
 
                         {application.finalPrice && (
-                           <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl col-span-full">
-                              <span className="block text-xs font-bold text-green-500/70 uppercase tracking-widest mb-2">Final Agreed Price</span>
-                              <span className="text-2xl font-black text-green-500">৳{Number(application.finalPrice).toLocaleString()}</span>
+                           <div className="bg-green-50 border border-green-200 p-5 rounded-2xl col-span-full">
+                              <span className="block text-xs font-bold text-green-700 uppercase tracking-widest mb-2">Final Agreed Price</span>
+                              <span className="text-2xl font-black text-green-600">৳{Number(application.finalPrice).toLocaleString()}</span>
                            </div>
                         )}
                      </div>
 
                      {/* Estimated Platform Fee Card - only show when accepted and price is known */}
                      {(application.status === 'accepted' || application.status === 'pending' || application.status === 'in-progress') && (application.finalPrice || application.proposedPrice) && (
-                       <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 w-full mt-4 relative overflow-hidden group">
+                       <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 w-full mt-4 relative overflow-hidden group">
                          {isFeeLoading && (
-                           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex items-center justify-center">
-                             <div className="loading loading-spinner loading-sm text-primary"></div>
+                           <div className="absolute inset-0 bg-white/40 backdrop-blur-sm z-10 flex items-center justify-center">
+                             <div className="loading loading-spinner loading-sm text-brand"></div>
                            </div>
                          )}
-                         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-2xl -mr-12 -mt-12 rounded-full"></div>
+                         <div className="absolute top-0 right-0 w-24 h-24 bg-brand-light blur-2xl -mr-12 -mt-12 rounded-full"></div>
                          
-                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-4 flex items-center justify-between">
+                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center justify-between">
                            <span>Estimated Earnings Breakdown</span>
                            {feeStats?.tier && (
-                             <span className="text-primary/60 bg-primary/10 px-2 py-0.5 rounded text-[8px] border border-primary/20">
+                             <span className="text-brand bg-brand-light px-2 py-0.5 rounded text-[8px] border border-brand/20">
                                {feeStats.tier.replace('_', ' ')}
                              </span>
                            )}
@@ -989,36 +980,36 @@ export default function WorkerJobDetails() {
                          
                          {feeStats ? (
                            <div className="space-y-3">
-                             <div className="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5">
-                               <span className="text-sm text-white/60">Agreed Labor Price</span>
-                               <span className="text-base font-bold text-white">৳{(Number(application.finalPrice || application.proposedPrice || 0)).toLocaleString()}</span>
+                             <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100">
+                               <span className="text-sm text-gray-600">Agreed Labor Price</span>
+                               <span className="text-base font-bold text-gray-900">৳{(Number(application.finalPrice || application.proposedPrice || 0)).toLocaleString()}</span>
                              </div>
                              
                              <div className="flex justify-between items-center px-3">
                                <div className="flex items-center gap-2">
-                                 <span className="text-sm text-white/40">Platform Fee</span>
+                                 <span className="text-sm text-gray-500">Platform Fee</span>
                                  <div className="tooltip tooltip-right" data-tip="PLATFORM_FIXED_FEE + TIERED_LABOR_PERCENTAGE">
-                                   <i className="fas fa-info-circle text-[10px] text-white/20 cursor-help"></i>
+                                   <i className="fas fa-info-circle text-[10px] text-gray-400 cursor-help"></i>
                                  </div>
                                </div>
-                               <span className="text-sm font-bold text-red-500/80">- ৳{feeStats.fee?.toLocaleString()}</span>
+                               <span className="text-sm font-bold text-red-500">- ৳{feeStats.fee?.toLocaleString()}</span>
                              </div>
                              
-                             <div className="mt-2 pt-3 border-t border-white/5 flex justify-between items-center px-3">
-                               <span className="text-base font-black text-white/90">Net Earnings</span>
+                             <div className="mt-2 pt-3 border-t border-gray-200 flex justify-between items-center px-3">
+                               <span className="text-base font-black text-gray-900">Net Earnings</span>
                                <div className="text-right">
                                  <span className="text-2xl font-black text-[#1ec86d]">৳{(Number(application.finalPrice || application.proposedPrice || 0) - feeStats.fee).toLocaleString()}</span>
-                                 <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest mt-1">Expected Payout</p>
+                                 <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">Expected Payout</p>
                                </div>
                              </div>
                            </div>
                          ) : (
-                           <p className="text-xs text-white/30 italic py-2">Calculating earnings projection...</p>
+                           <p className="text-xs text-gray-400 italic py-2">Calculating earnings projection...</p>
                          )}
                          
-                         <div className="mt-5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex gap-3 items-start">
+                         <div className="mt-5 p-3 rounded-xl bg-amber-50 border border-amber-200 flex gap-3 items-start">
                            <i className="fas fa-shield-alt text-amber-500 text-[10px] mt-1"></i>
-                           <p className="text-[10px] text-amber-500/70 leading-relaxed">
+                           <p className="text-[10px] text-amber-700 leading-relaxed">
                              This fee is only charged upon <span className="font-bold">successful completion</span> and will be added to your account's due balance.
                            </p>
                          </div>
@@ -1027,20 +1018,20 @@ export default function WorkerJobDetails() {
 
                      {/* Action Buttons */}
                      <div className="pt-4 flex gap-4">
-                        <button className="flex-1 py-4 rounded-xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-white/90 transition-all">
+                        <button className="flex-1 py-4 rounded-xl bg-white border border-gray-200 text-gray-700 font-black uppercase tracking-widest text-xs hover:bg-gray-50 transition-all">
                            Message Client
                         </button>
-                        <button className="flex-1 py-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-black uppercase tracking-widest text-xs hover:bg-red-500/20 transition-all">
+                        <button className="flex-1 py-4 rounded-xl bg-red-50 border border-red-200 text-red-600 font-black uppercase tracking-widest text-xs hover:bg-red-100 transition-all">
                            Withdraw Application
                         </button>
                      </div>
 
                      {/* Additional Charges Section */}
                      {(application.status === 'accepted' || application.status === 'completed') && (
-                        <div className="bg-[#111] border border-white/5 p-5 rounded-2xl w-full mt-4">
+                        <div className="bg-gray-50 border border-gray-100 p-5 rounded-2xl w-full mt-4">
                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <span className="block text-xs font-bold text-white/40 uppercase tracking-widest">Additional Charges & Tips</span>
-                              <button onClick={() => setShowExtraModal(true)} disabled={application.status === 'completed'} className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 transition-colors rounded-lg text-xs font-black uppercase tracking-widest disabled:opacity-50">
+                              <span className="block text-xs font-bold text-gray-500 uppercase tracking-widest">Additional Charges & Tips</span>
+                              <button onClick={() => setShowExtraModal(true)} disabled={application.status === 'completed'} className="px-4 py-2 bg-brand-light text-brand hover:bg-brand/20 transition-colors rounded-lg text-xs font-black uppercase tracking-widest disabled:opacity-50">
                                  + Request Extra
                               </button>
                            </div>
@@ -1048,28 +1039,28 @@ export default function WorkerJobDetails() {
                            {extraChargesList.length > 0 ? (
                               <div className="space-y-3 mt-4">
                                  {extraChargesList.map(charge => (
-                                    <div key={charge._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
+                                    <div key={charge._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
                                        <div>
                                           <div className="flex items-center gap-2 mb-1">
-                                             <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${charge.type === 'TIP' ? 'bg-purple-500/10 text-purple-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                             <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${charge.type === 'TIP' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
                                                 {charge.type.replace('_', ' ')}
                                              </span>
-                                             <span className="font-bold text-white text-sm">৳{Number(charge.amount).toLocaleString()}</span>
+                                             <span className="font-bold text-gray-900 text-sm">৳{Number(charge.amount).toLocaleString()}</span>
                                           </div>
-                                          <p className="text-xs text-white/50">{charge.description || 'No description provided'}</p>
+                                          <p className="text-xs text-gray-500">{charge.description || 'No description provided'}</p>
                                           {charge.receiptUrls && charge.receiptUrls.length > 0 && (
                                             <div className="flex gap-2 mt-2">
                                               {charge.receiptUrls.map((url, i) => (
-                                                <a key={i} href={base + url} target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline">View Receipt {i+1}</a>
+                                                <a key={i} href={base + url} target="_blank" rel="noreferrer" className="text-[10px] text-brand hover:underline">View Receipt {i+1}</a>
                                               ))}
                                             </div>
                                           )}
                                        </div>
                                        <div className="shrink-0">
                                           <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${
-                                             charge.status === 'APPROVED' ? 'bg-green-500/10 text-green-500' :
-                                             charge.status === 'REJECTED' ? 'bg-red-500/10 text-red-500' :
-                                             'bg-amber-500/10 text-amber-500'
+                                             charge.status === 'APPROVED' ? 'bg-green-50 text-green-600' :
+                                             charge.status === 'REJECTED' ? 'bg-red-50 text-red-600' :
+                                             'bg-amber-50 text-amber-600'
                                           }`}>
                                              {charge.status}
                                           </span>
@@ -1078,62 +1069,62 @@ export default function WorkerJobDetails() {
                                  ))}
                               </div>
                            ) : (
-                              <p className="text-xs text-white/30 italic mt-4">No additional charges requested.</p>
+                              <p className="text-xs text-gray-400 italic mt-4">No additional charges requested.</p>
                            )}
                         </div>
                      )}
                   </div>
                </div>
             ) : !hasApplied && (
-               <div className="bg-[#1a1a1a] border border-primary/10 rounded-xl p-8">
-                  <h2 className="text-xl font-heading font-bold text-white mb-8 flex items-center gap-3">
-                    <i className="fas fa-paper-plane text-primary text-sm"></i>
+               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
+                  <h2 className="text-xl font-black text-gray-900 mb-8 flex items-center gap-3">
+                    <i className="fas fa-paper-plane text-brand text-sm"></i>
                     Apply for this Job
                   </h2>
                   
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Your Proposed Price (৳)</label>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Your Proposed Price (৳)</label>
                       <div className="relative">
-                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40 font-bold">৳</span>
+                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">৳</span>
                          <input
                            type="number"
                            value={proposedPrice}
                            onChange={(e) => setProposedPrice(e.target.value)}
                            placeholder="15,000"
-                           className="w-full pl-10 pr-6 py-4 bg-[#111] border border-white/5 rounded-2xl focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold text-lg text-white"
+                           className="w-full pl-10 pr-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all outline-none font-bold text-lg text-gray-900"
                          />
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Your Proposal / Message</label>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Your Proposal / Message</label>
                       <textarea
                         value={proposal}
                         onChange={(e) => setProposal(e.target.value)}
                         placeholder="Briefly describe your experience with similar work..."
                         rows={6}
-                        className="w-full px-6 py-4 bg-[#111] border border-white/5 rounded-2xl focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none text-white resize-none"
+                        className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all outline-none text-gray-900 resize-none"
                       />
                       <div className="flex justify-between items-center mt-2 px-2">
-                         <span className={`text-[10px] font-bold ${proposal.length < 50 ? 'text-white/30' : 'text-green-500'}`}>
+                         <span className={`text-[10px] font-bold ${proposal.length < 50 ? 'text-gray-400' : 'text-green-500'}`}>
                            {proposal.length}/50 min characters
                          </span>
-                         {saving && <span className="loading loading-spinner loading-xs text-primary"></span>}
+                         {saving && <span className="loading loading-spinner loading-xs text-brand"></span>}
                       </div>
                     </div>
                     
                     <div className="flex gap-4 pt-4">
                         {profile?.isApplyBlocked ? (
-                          <div className="w-full bg-red-500/10 border border-red-500/20 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
-                            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
-                              <MdLock className="text-xl" />
+                          <div className="w-full bg-red-50 border border-red-200 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
+                            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                              <i className="fas fa-lock text-xl"></i>
                             </div>
                             <div>
-                              <h4 className="text-red-500 font-bold mb-1">Account Restricted</h4>
-                              <p className="text-white/60 text-xs">You cannot apply for new jobs until your due balance is cleared. Please visit your earnings page.</p>
+                              <h4 className="text-red-600 font-bold mb-1">Account Restricted</h4>
+                              <p className="text-gray-600 text-xs">You cannot apply for new jobs until your due balance is cleared. Please visit your earnings page.</p>
                             </div>
-                            <Link to="/earnings" className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-red-500/20">
+                            <Link to="/earnings" className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-sm">
                               Clear Dues & Resume Applying
                             </Link>
                           </div>
@@ -1142,11 +1133,11 @@ export default function WorkerJobDetails() {
                             <button
                               onClick={submitProposal}
                               disabled={saving || proposal.trim().length < 50 || !proposedPrice}
-                              className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#00C853] to-[#64DD17] text-black font-black uppercase tracking-widest text-sm shadow-xl shadow-green-500/10 hover:shadow-green-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                              className="flex-[2] py-4 rounded-2xl bg-brand hover:bg-brand-hover text-white font-black uppercase tracking-widest text-sm shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {saving ? 'Processing...' : 'Submit Proposal'}
                             </button>
-                            <button className="flex-1 py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-sm hover:bg-white/90 active:scale-95 transition-all">
+                            <button className="flex-1 py-4 rounded-2xl bg-white border border-gray-200 text-gray-700 font-black uppercase tracking-widest text-sm hover:bg-gray-50 transition-all">
                               Message Client
                             </button>
                           </>
@@ -1157,26 +1148,26 @@ export default function WorkerJobDetails() {
             )}
 
             {/* Existing Applicants List - Modernized */}
-            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-xl font-heading font-bold text-white flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                  <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-brand rounded-full"></span>
                     Recent Applicants
                   </h2>
-                  <span className="text-xs font-bold text-white/40 tracking-widest uppercase">{job.applicants?.length || 0} TOTAL</span>
+                  <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">{job.applicants?.length || 0} TOTAL</span>
                </div>
                
                {job.applicants && job.applicants.length > 0 ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {job.applicants.map((app, idx) => (
-                      <div key={idx} className="bg-[#111] border border-white/5 p-4 rounded-2xl hover:border-white/10 transition-all group">
+                      <div key={idx} className="bg-gray-50 border border-gray-100 p-4 rounded-2xl hover:border-gray-200 transition-all group">
                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-black">
+                            <div className="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center text-brand font-black">
                               {app.name?.charAt(0) || 'U'}
                             </div>
                             <div className="flex-1">
-                               <p className="font-bold text-white/90 group-hover:text-primary transition-colors">{app.name}</p>
-                               <div className="flex items-center gap-3 text-[10px] font-bold text-white/40 uppercase tracking-tighter">
+                               <p className="font-bold text-gray-900 group-hover:text-brand transition-colors">{app.name}</p>
+                               <div className="flex items-center gap-3 text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
                                   <span className="text-amber-500 flex items-center gap-1">
                                     <i className="fas fa-star"></i> {app.rating || 'N/A'}
                                   </span>
@@ -1189,8 +1180,8 @@ export default function WorkerJobDetails() {
                     ))}
                  </div>
                ) : (
-                 <div className="text-center py-10 bg-white/5 rounded-3xl border border-dashed border-white/10">
-                    <p className="text-white/40 font-bold uppercase tracking-widest text-xs">No applicants yet. Be the first!</p>
+                 <div className="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No applicants yet. Be the first!</p>
                  </div>
                )}
             </div>
@@ -1200,52 +1191,52 @@ export default function WorkerJobDetails() {
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
             
             {/* 1. About the Client */}
-            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8">
-               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-8">About the Client</h3>
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
+               <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-8">About the Client</h3>
                
                <div className="flex items-center gap-5 mb-8">
                   <div className="relative">
                     <img
                       src={clientPublic?.pfp || 'https://via.placeholder.com/150'}
                       alt={poster.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-brand"
                     />
-                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#0a0a0a] flex items-center justify-center text-[10px] text-white">
+                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] text-white">
                        <i className="fas fa-check"></i>
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-heading font-bold text-xl text-white">{poster.name}</h4>
+                    <h4 className="text-xl font-bold text-gray-900">{poster.name}</h4>
                     <div className="flex items-center gap-1 text-amber-500 text-sm mt-1">
                        <i className="fas fa-star"></i>
                        <i className="fas fa-star"></i>
                        <i className="fas fa-star"></i>
                        <i className="fas fa-star"></i>
                        <i className="fas fa-star"></i>
-                       <span className="text-white/40 text-xs ml-1">(12 reviews)</span>
+                       <span className="text-gray-500 text-xs ml-1">(12 reviews)</span>
                     </div>
                   </div>
                </div>
                
                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3 text-sm font-medium text-white/70">
+                  <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
                      <i className="fas fa-check-circle text-green-500"></i>
                      <span>Identity Verified</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm font-medium text-white/70">
+                  <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
                      <i className="fas fa-check-circle text-green-500"></i>
                      <span>Payment Verified</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm font-medium text-white/40">
+                  <div className="flex items-center gap-3 text-sm font-medium text-gray-500">
                      <i className="fas fa-calendar-alt"></i>
                      <span>Member since 2021</span>
                   </div>
                </div>
                
-               <div className="pt-6 border-t border-white/5">
+               <div className="pt-6 border-t border-gray-100">
                   <button 
                     onClick={() => navigate(`/client/${poster.clientId}`)}
-                    className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-primary text-xs font-black uppercase tracking-widest hover:bg-primary/10 hover:border-primary/30 transition-all"
+                    className="w-full py-4 rounded-xl bg-brand-light border border-brand/20 text-brand text-xs font-black uppercase tracking-widest hover:bg-brand/20 hover:border-brand/30 transition-all"
                   >
                     View Full Profile
                   </button>
@@ -1253,50 +1244,50 @@ export default function WorkerJobDetails() {
             </div>
 
             {/* 2. Safety Tips */}
-            <div className="bg-[#1a1a1a] border border-white/5 rounded-xl p-8 group">
-               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8 group">
+               <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
                  Hire Mistri Safety Tips
-                 <i className="fas fa-shield-alt text-primary opacity-50"></i>
+                 <i className="fas fa-shield-alt text-brand opacity-50"></i>
                </h3>
                
                <ul className="space-y-6">
                  <li className="flex gap-4">
-                    <div className="shrink-0 w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 text-[10px]">
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-green-50 flex items-center justify-center text-green-600 text-[10px]">
                       <i className="fas fa-check"></i>
                     </div>
-                    <p className="text-xs text-white/60 leading-relaxed">Always get a clear scope of work before starting.</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">Always get a clear scope of work before starting.</p>
                  </li>
                  <li className="flex gap-4">
-                    <div className="shrink-0 w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 text-[10px]">
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-green-50 flex items-center justify-center text-green-600 text-[10px]">
                       <i className="fas fa-check"></i>
                     </div>
-                    <p className="text-xs text-white/60 leading-relaxed">Request 20% advance only via platform escrow.</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">Request 20% advance only via platform escrow.</p>
                  </li>
                  <li className="flex gap-4">
-                    <div className="shrink-0 w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-[10px]">
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-brand-light flex items-center justify-center text-brand text-[10px]">
                       <i className="fas fa-info"></i>
                     </div>
-                    <p className="text-xs text-white/60 leading-relaxed">Contact support for any disputes or payment issues.</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">Contact support for any disputes or payment issues.</p>
                  </li>
                </ul>
             </div>
 
             {/* 3. Job Activity */}
-            <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-8">
-               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-8">Job Activity</h3>
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8">
+               <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-8">Job Activity</h3>
                
                <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                     <span className="text-sm text-white/60">Proposals</span>
-                     <span className="text-sm font-black text-white">5 - 10</span>
+                     <span className="text-sm text-gray-600">Proposals</span>
+                     <span className="text-sm font-black text-gray-900">5 - 10</span>
                   </div>
                   <div className="flex justify-between items-center">
-                     <span className="text-sm text-white/60">Interviewing</span>
-                     <span className="text-sm font-black text-white">2</span>
+                     <span className="text-sm text-gray-600">Interviewing</span>
+                     <span className="text-sm font-black text-gray-900">2</span>
                   </div>
                   <div className="flex justify-between items-center">
-                     <span className="text-sm text-white/60">Last View</span>
-                     <span className="text-sm font-black text-white">12 mins ago</span>
+                     <span className="text-sm text-gray-600">Last View</span>
+                     <span className="text-sm font-black text-gray-900">12 mins ago</span>
                   </div>
                </div>
             </div>
@@ -1305,45 +1296,38 @@ export default function WorkerJobDetails() {
         </div>
       </div>
 
-      {/* Footer Branding */}
-      <footer className="py-12 border-t border-white/5 mt-12 text-center">
-        <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.4em]">
-          © 2024 Hire Mistri • Professional Services Marketplace
-        </p>
-      </footer>
-
       {/* Extra Charge Request Modal */}
       {showExtraModal && (
-        <div className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-md p-6 relative">
-            <h3 className="text-xl font-bold mb-6">Request Additional Charge</h3>
+        <div className="fixed inset-0 z-[999] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md p-6 relative shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Request Additional Charge</h3>
             <form onSubmit={submitExtraCharge} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-white/60 mb-2">Charge Type</label>
-                <select value={extraType} onChange={e => setExtraType(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white">
+                <label className="block text-xs font-bold text-gray-600 mb-2">Charge Type</label>
+                <select value={extraType} onChange={e => setExtraType(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 focus:ring-2 focus:ring-brand/20 outline-none">
                    <option value="EXTRA_COST">Materials / Parts / Transport</option>
                    <option value="TIP">Discretionary Tip</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-white/60 mb-2">Amount (৳)</label>
-                <input type="number" value={extraAmount} onChange={e => setExtraAmount(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" required />
+                <label className="block text-xs font-bold text-gray-600 mb-2">Amount (৳)</label>
+                <input type="number" value={extraAmount} onChange={e => setExtraAmount(e.target.value)} placeholder="0.00" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 focus:ring-2 focus:ring-brand/20 outline-none" required />
               </div>
               <div>
-                <label className="block text-xs font-bold text-white/60 mb-2">Description</label>
-                <textarea value={extraDesc} onChange={e => setExtraDesc(e.target.value)} placeholder="What is this charge for?" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" required></textarea>
+                <label className="block text-xs font-bold text-gray-600 mb-2">Description</label>
+                <textarea value={extraDesc} onChange={e => setExtraDesc(e.target.value)} placeholder="What is this charge for?" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 focus:ring-2 focus:ring-brand/20 outline-none" required></textarea>
               </div>
               {extraType === 'EXTRA_COST' && (
                 <div>
-                  <label className="block text-xs font-bold text-white/60 mb-2">Receipts (Mandatory)</label>
-                  <input type="file" multiple accept="image/*" onChange={e => setExtraReceipts(Array.from(e.target.files))} className="w-full file:bg-primary file:border-none file:px-4 file:py-2 file:rounded-xl file:text-black file:font-bold file:mr-4 file:cursor-pointer text-white/70" required />
+                  <label className="block text-xs font-bold text-gray-600 mb-2">Receipts (Mandatory)</label>
+                  <input type="file" multiple accept="image/*" onChange={e => setExtraReceipts(Array.from(e.target.files))} className="w-full file:bg-brand-light file:border-none file:px-4 file:py-2 file:rounded-xl file:text-brand file:font-bold file:mr-4 file:cursor-pointer text-gray-600" required />
                 </div>
               )}
               <div className="flex gap-3 pt-4">
-                 <button type="submit" disabled={submittingExtra} className="flex-1 py-3 bg-primary text-black font-bold uppercase tracking-widest text-xs rounded-xl disabled:opacity-50">
+                 <button type="submit" disabled={submittingExtra} className="flex-1 py-3 bg-brand hover:bg-brand-hover text-white font-bold uppercase tracking-widest text-xs rounded-xl disabled:opacity-50 transition-colors">
                     {submittingExtra ? 'Submitting...' : 'Submit Request'}
                  </button>
-                 <button type="button" onClick={() => setShowExtraModal(false)} className="px-6 py-3 bg-white/10 text-white font-bold uppercase tracking-widest text-xs rounded-xl border border-white/10">
+                 <button type="button" onClick={() => setShowExtraModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 font-bold uppercase tracking-widest text-xs rounded-xl border border-gray-200 hover:bg-gray-200 transition-colors">
                     Cancel
                  </button>
               </div>
